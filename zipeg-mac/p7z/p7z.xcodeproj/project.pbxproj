@@ -1693,6 +1693,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B35F5111178100210021A620 /* Build configuration list for PBXNativeTarget "p7z" */;
 			buildPhases = (
+				B3EF1C3417A3FABB002ABB5B /* ShellScript */,
 				B35F5109178100210021A620 /* Sources */,
 				B35F510A178100210021A620 /* Frameworks */,
 			);
@@ -1730,6 +1731,22 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B3EF1C3417A3FABB002ABB5B /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "mkdir -p ../zipeg-ns/DerivedData/Zipeg/Build/Products/Debug\nmkdir -p ../zipeg-ns/DerivedData/Zipeg/Build/Products/Release\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B35F5109178100210021A620 /* Sources */ = {
