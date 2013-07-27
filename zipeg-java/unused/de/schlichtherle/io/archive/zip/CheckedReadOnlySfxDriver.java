@@ -1,0 +1,97 @@
+/*
+ * CheckedReadOnlySfxDriver.java
+ *
+ * Created on 30. Juni 2006, 00:06
+ */
+/*
+ * Copyright 2006 Schlichtherle IT Services
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package de.schlichtherle.io.archive.zip;
+
+import de.schlichtherle.io.rof.ReadOnlyFile;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.zip.ZipException;
+
+/**
+ * A {@link ReadOnlySfxDriver} which checks the CRC-32 value for all ZIP
+ * entries in input archives.
+ * The additional CRC-32 computation also disables the Direct Data Copying
+ * (DDC) feature, which makes this class comparably slow.
+ * <p>
+ * If there is a mismatch of the CRC-32 values for a ZIP entry in an input
+ * archive, the <code>close()</code> method of the corresponding input stream
+ * for the archive entry will throw a
+ * {@link de.schlichtherle.util.zip.CRC32Exception}.
+ * This exception is then propagated through to the corresponding file
+ * operation in the package <code>de.schlichtherle.io</code> where it is
+ * either allowed to pass on or is catched and processed accordingly.
+ * For example, the {@link de.schlichtherle.io.FileInputStream#close()}
+ * method passes the <code>CRC32Exception</code> on to the client
+ * application, whereas the
+ * {@link de.schlichtherle.io.File#catTo(OutputStream)} method returns
+ * <code>false</code> (as with most methods in the <code>File</code> class).
+ * Other than this, the archive entry will be processed normally.
+ * So if just the CRC-32 value for the entry in the archive file has been
+ * modified, you can still read its contents.
+ * <p>
+ * Instances of this class are immutable.
+ * 
+ * @see ReadOnlySfxDriver
+ * @see CheckedZip32InputArchive
+ * @see CheckedZip32OutputArchive
+ * 
+ * @author Christian Schlichtherle
+ * @version @version@
+ * @since TrueZIP 6.1
+ */
+public class CheckedReadOnlySfxDriver extends ReadOnlySfxDriver {
+
+    /**
+     * Equivalent to {@link #CheckedReadOnlySfxDriver(String)
+     * CheckedReadOnlySfxDriver(ENCODING)}.
+     * This parameter is based on heuristics.
+     */
+    public CheckedReadOnlySfxDriver() {
+        this(ENCODING);
+    }
+
+    /**
+     * Equivalent to
+     * {@link ReadOnlySfxDriver#ReadOnlySfxDriver(String)
+     * super(encoding)}.
+     * This parameter is based on heuristics.
+     */
+    public CheckedReadOnlySfxDriver(String encoding) {
+        super(encoding);
+    }
+    
+    protected Zip32InputArchive createZip32InputArchive(
+            ReadOnlyFile rof,
+            String encoding,
+            boolean preambled,
+            boolean postambled)
+    throws  NullPointerException,
+            UnsupportedEncodingException,
+            FileNotFoundException,
+            ZipException,
+            IOException {
+        return new CheckedZip32InputArchive(rof, encoding, preambled, postambled);
+    }
+}
