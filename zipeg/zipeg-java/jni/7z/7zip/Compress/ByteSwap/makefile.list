@@ -1,4 +1,0 @@
-SRCS=./ByteSwap.cpp
-
-ByteSwap.o : ./ByteSwap.cpp
-	$(CXX) $(CFLAGS) ./ByteSwap.cpp

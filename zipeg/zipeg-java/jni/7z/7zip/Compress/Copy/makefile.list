@@ -1,7 +1,0 @@
-SRCS= ./CopyCoder.cpp \
-../../Common/StreamUtils.cpp
-
-CopyCoder.o : ./CopyCoder.cpp
-	$(CXX) $(CFLAGS) ./CopyCoder.cpp
-StreamUtils.o : ../../Common/StreamUtils.cpp
-	$(CXX) $(CFLAGS) ../../Common/StreamUtils.cpp

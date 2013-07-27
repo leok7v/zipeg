@@ -1,8 +1,0 @@
-# Exclude Files From All Robots:
-
-User-agent: *
-Disallow: /downloads
-Disallow: /images
-Disallow: /contact.php
-
-# End robots.txt file

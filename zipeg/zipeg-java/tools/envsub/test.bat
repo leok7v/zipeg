@@ -1,1 +1,0 @@
-envsub.exe test.txt
