@@ -1,0 +1,4 @@
+/* Localized versions of Info.plist keys */
+CFBundleDisplayName = "Zipeg";
+NSHumanReadableCopyright = "Copyright © 2006-2013 Zipeg Labs.\nAll right reseved.";
+

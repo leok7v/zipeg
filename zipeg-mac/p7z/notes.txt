@@ -1,0 +1,27 @@
+*. Compile Flags:
+
+ ALLFLAGS=-m64 ${OPTFLAGS}   -DENV_MACOSX -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE  -D_REENTRANT -DENV_UNIX -DUNICODE -D_UNICODE -DBREAK_HANDLER $(LOCAL_FLAGS)
+ -I. -I../../../myWindows -I../../../ -I../../../include_windows
+ CXX=/Developer/usr/bin/llvm-g++ $(ALLFLAGS)
+ CC=/Developer/usr/bin/llvm-gcc $(ALLFLAGS)
+ LINK_SHARED=-bundle
+ LOCAL_LIBS=-framework CoreFoundation
+ LOCAL_LIBS_DLL=$(LOCAL_LIBS)
+
+In Xcode select dynlyb target 
+  search for Preprocessor Macros (you can enter them as an edit control)
+  do not use -D just
+    _FILE_OFFSET_BITS=64
+  search for User Header Search Paths and add:
+    p7z/CPP/include_windows p7z/CPP p7z/CPP/myWindows
+
+*. see:
+p7zip_9.20.1/CPP/7zip/CMAKE/CMakeLists_Format7zFree.txt CMakeLists_ALL.txt CMakeLists_7za.txt
+for the list of files to build. Get read of unused .cpp and .h files
+
+* use command line 
+   leaks <pid>
+  for leaks detection.
+
+
+

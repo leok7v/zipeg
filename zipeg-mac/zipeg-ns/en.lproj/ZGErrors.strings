@@ -1,0 +1,8 @@
+/*  ZGErrors.strings */
+
+"1000" = "Internal Error";
+"1001" = "File is not reachable";
+"1002" = "File is inaccessible";
+"1003" = "Failed to open archive";
+
+"1999" = "Out of Memory";
