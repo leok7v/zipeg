@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <title>Zipeg</title>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <link rel="stylesheet" href="style.css" type="text/css"/>
+    <script type="text/javascript">
+        function load() {
+            var e = document.getElementById("maincolumn");
+            e.innerHTML = '<div style="margin: 0 auto 0 auto; ' +
+                          'border-bottom: 1px solid #000000; margin-bottom: 5px; ' +
+                          'font-size: small; background-color: #000000; ' +
+                          'color: #ffffff;"><p style="margin: 2px 0 1px 0;"> ' +
+                          'YOUR TEXT HERE ' +
+                          '</p></div>';
+        }
+    </script>
+</head>
+
+
+<body onload="load();">
+<div id="pagewidth">
+
+    <div id="header"> Head | Head | Head</div>
+
+    <div id="wrapper" class="clearfix">
+        <div id="twocolumns" class="clearfix">
+            <div id="maincolumn">
+
+                <div class="tabBox" style="float:right;width:24em;">
+                    <div class="tabArea">
+                        <a class="tab" href="news.html" target="tabIframe1">News</a>
+                        <a class="tab" href="reviews.html" target="tabIframe1">Reviews</a>
+                        <a class="tab" href="links.html" target="tabIframe1">Links</a>
+
+                    </div>
+                    <div class="tabMain">
+                        <div class="tabIframeWrapper">
+                            <iframe class="tabContent" name="tabIframe1" src="news.html" marginheight="8"
+                                    marginwidth="8" frameborder="0" style="height:18ex;"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="demoBox">
+
+                    <h3>Tabs Demo</h3>
+
+                    <p>This page contains two separate tabbed displays and several sample content
+                        pages. Use your browser's <code>View Source</code> option to see the full
+                        source code.</p>
+
+                </div>
+
+                <p></p>
+
+                <div class="tabBox" style="clear:both;">
+                    <div class="tabArea">
+                        <a class="tab" href="win.main.html" target="tabIframe2">Windows</a>
+                        <a class="tab" href="mac.main.html" target="tabIframe2">Macintosh</a>
+                    </div>
+                    <div class="tabMain">
+                        <h4 id="title">Top Picks</h4>
+                        <div class="tabIframeWrapper">
+                            <iframe class="tabContent" name="tabIframe2" src="action.html" marginheight="8"
+                                    marginwidth="8" frameborder="0"></iframe>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+            <div id="rightcolumn">right Column
+                <p>Ei sit magna equidem disputando, in mea alienum facilisis gloriatur. Mei no illud ponderum. Nemore
+                    albucius pericula pro et, vim nulla gubergren delicatissimi in. Dicit mentitum voluptatibus at his.
+                    Cibo copiosae ea sea.
+                </p>
+            </div>
+
+        </div>
+
+        <div id="leftcolumn">Left Column
+            <p>Lorem ipsum vocibus fabellas eloquentiam his ei. At sea atqui propriae, sit ea laoreet voluptua. Hinc
+                omnis ut nam, dolore legendos nam ad. Iriure suavitate ne per, reque legendos vix an, ex stet nullam
+                moderatius quo. Mei ei eros sapientem reprimique.
+            </p>
+        </div>
+    </div>
+    <div id="footer"> Footer
+        <p>Et harum nominati cum, et eum numquam dissentias. Dolorum accommodare at mei, sit ne dicunt vivendo,
+            in ludus utinam feugait ius. Ullum pertinax repudiandae his cu. Eum nisl quaeque petentium at, vix
+            et recusabo aliquando conclusionemque, duo adipisci gubergren torquatos in. Mei puto omnes praesent
+            eu.
+        </p>
+    </div>
+</div>
+</body>
+</html>
