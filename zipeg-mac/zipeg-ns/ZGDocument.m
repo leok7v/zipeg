@@ -57,9 +57,10 @@
 @implementation ZGOutlineHeaderView
 
 - (id) initWithFrame:(NSRect)frame {
-    frame.size.height = 26;
+    frame.size.height = 17;
     self = [super initWithFrame:frame];
     self.autoresizesSubviews = true;
+/*
     NSRect bf = frame;
     bf.origin.x = 2;
     bf.origin.y = 2;
@@ -94,6 +95,7 @@
     search.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin;
 
     self.subviews = @[sc, search];
+*/ 
     return self;
 }
 
