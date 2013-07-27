@@ -1,0 +1,522 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns:fb="http://www.facebook.com/2008/fbml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<meta name="googlebot" content="noarchive, noodp">
+<meta name="robots" content="noarchive, noodp">
+<meta name="description" content="Zipeg - free utility to browse and extract (unzip) zip, rar , tar, tgz and other archives; freeware; Features: open rar files, open zip files; Platforms: windows, macintosh, mac os x, xp, vista, tiger, leopard; Zipeg is free alternative to 7-zip, WinZip, WinRar; free WinRar for Mac">
+<!-- Facebook meta -->
+<meta property="og:title" content="Zipeg free app to open RAR and ZIP files"/>
+<meta property="og:site_name" content="www.Zipeg.com"/>
+<meta property="og:image" content="http://www.zipeg.com/images/zipeg-128x128.png"/>
+<meta property="og:type" content="product"/>
+<meta property="og:url" content="http://www.zipeg.com/"/>
+<meta property="fb:admins" content="100000161633131"/>
+<meta property="fb:app_id" content="140468439300230"/>
+<meta property="og:description" content="Zipeg is free application for opening ZIP and RAR files on Mac and Windows. Zipeg helps to open RAR or ZIP archive, to find the right file inside archive and to unpack it."/>
+<!-- /Facebook meta -->
+
+<title>Zipeg - free application to open ZIP and RAR files on Mac and Windows.</title>
+<!--
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"></script>
+<script type="text/javascript">
+  var _uacct = "UA-1092687-1";
+  urchinTracker();
+</script>
+-->
+
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1092687-1']);
+  _gaq.push(['_setAllowAnchor', true]);
+  _gaq.push(['_trackPageview']);
+</script>
+
+<script src="zipeg.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+    var query={};
+    (function(){
+      eval(decodeURIComponent(
+		      location.search.replace(/\+/g,' ').replace(/[?&]([^=]+)=([^&]*)/g,
+			      "try { query.$1='$2'; } catch(e) {}")));
+    })();
+</script>
+
+<style type="text/css">
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+* a {
+  text-decoration: none;
+  outline: none;
+}
+
+* a img {
+  border: 0;
+}
+
+body {
+  font-family: "Lucida Grande", "Bitstream Vera Sans", Helvetica, Verdana, Arial, sans-serif;
+  background-color: white;
+  margin: 8px 8px 8px 8px;
+  text-align: center;
+}
+
+#page {
+  width: 910px;
+  text-align: left;
+}
+
+#main {
+  text-align: left;
+}
+
+#leftcol {
+  width: 360px;
+  float:left;
+  position:relative;
+  display: block;
+}
+
+div.twocols {
+  width: 550px;
+  float: right;
+  position: relative;
+  display: block;
+}
+
+div.rightcol {
+  width: 100%;
+  float: right;
+  position: relative;
+  text-align: center;
+}
+
+#download {
+  position: relative;
+  display: block;
+  width: 342px;
+  text-align: center;
+}
+
+#download a {
+  width: 342px;
+  text-align: center;
+  text-decoration: none;
+}
+
+#download a img {
+  border: 0;
+  width: 256px;
+  height: 82px;
+  text-decoration: none;
+}
+
+#download a span {
+  font-family: Arial, sans-serif;
+  width: 342px;
+  position: relative;
+  font-size: 10pt;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+#checklist li a span {
+  padding-top: 0;
+  padding-left: 0;
+}
+
+#checklist ul {
+  list-style: none;
+}
+
+#checklist p  {
+  width: 342px;
+  font-size: 0.9em;
+  text-indent: inherit;
+}
+
+#checklist li {
+  text-align: left;
+}
+
+#checklist li img {
+  border: 0;
+  width: 20px;
+  height: 30px;
+  text-align: left;
+}
+
+#description {
+  font: 0.9em normal;
+  text-align: left;
+  margin-left: 20px;
+  float: left;
+  position: relative;
+}
+
+#description a {
+  text-decoration: underline;
+}
+
+#retweet a.retweet {
+  width: 50px;
+  -moz-background-clip:border;
+  -moz-background-inline-policy:continuous;
+  background:transparent url(images/widget.gif) no-repeat scroll 0 -45px;
+  color:#FFFFFF;
+  cursor:pointer;
+  display:inline-block;
+  font-size:11px;
+  height:16px;
+  line-height:16px;
+  margin-top:3px;
+  padding:0;
+  text-align:left;
+  text-decoration:none;
+  font-family:Helvetica,Arial,Verdana;
+  border-style:none;
+}
+
+#retweet a.retweet:hover {
+  background-position:0 -61px;
+  color:#80B62A;
+  width:50px;
+}
+
+#tweet a.tweet {
+  width: 50px;
+  -moz-background-clip:border;
+  -moz-background-inline-policy:continuous;
+  background:transparent url(images/widget.gif) no-repeat scroll 0 -45px;
+  color:#FFFFFF;
+  cursor:pointer;
+  display:inline-block;
+  font-size:11px;
+  height:16px;
+  line-height:16px;
+  margin-top:3px;
+  padding:0;
+  text-align:left;
+  text-decoration:none;
+  font-family:Helvetica,Arial,Verdana;
+  border-style:none;
+}
+
+
+#tweet a.tweet:hover {
+  background-position:0 -61px;
+  color:#80B62A;
+  width:50px;
+}
+
+
+</style>
+<!--[if IE]>
+<style type="text/css">
+* a img {
+  behavior: url(iepngfix.htc);
+}
+* img {
+  behavior: url(iepngfix.htc);
+}
+</style>
+<![endif]-->
+
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+  var _uacct = "UA-1092687-1";
+  urchinTracker();
+</script>
+
+<script type="text/javascript">
+
+  var debug_force = "";  // "", "win", "mac", "unk"
+  var version = "2.9.4";
+
+  function isMac() {
+    if (debug_force == "mac") return true;
+    if (debug_force != "") return false;
+    var agt = navigator.userAgent.toLowerCase();
+//  alert("isMac()=" + (agt.indexOf("mac") != -1));
+    return agt.indexOf("mac") != -1;
+  }
+
+  function isWin() {
+    if (debug_force == "win") return true;
+    if (debug_force != "") return false;
+    var agt = navigator.userAgent.toLowerCase();
+    return agt.indexOf("win") != -1;
+  }
+
+  function removeAllChildren(e) {
+    while (e.childNodes.length > 0) {
+      e.removeChild(e.firstChild);
+    }
+  }
+
+  function replaceHtml(id, html) {
+    var e = document.getElementById(id);
+    var div = document.createElement("div");
+    div.innerHTML = html;
+    removeAllChildren(e);
+    e.appendChild(div);
+  }
+
+  function downloadButtonWin() {
+    replaceHtml("download.button",
+    '<br><a href="http://zipeg.googlecode.com/files/zipeg.2.9.4.1316.exe" onfocus="this.blur();" onclick="urchinTracker(\'downloads/ZipegForWindows.exe\');">' +
+    '<img src="img/download.zipeg.free.256x82.png" alt=""' +
+    '     title="Click to download Zipeg">' +
+    '<br><span>Zipeg ' + version + ' for Windows (1.3MB)<\/span>' +
+    '<\/a>');
+  }
+
+  function downloadButtonMac() {
+    replaceHtml("download.button",
+    '<br><a href="http://zipeg.googlecode.com/files/zipeg.2.9.4.1316.dmg" onfocus="this.blur();" onclick="urchinTracker(\'downloads/ZipegForMacintosh.dmg\');">' +
+    '<img src="img/download.zipeg.free.256x82.png" alt=""' +
+    '     title="Click to download Zipeg">' +
+    '<br><span>Zipeg ' + version + ' for Macintosh (2.4MB)<\/span>' +
+    '<br><span>universal binary<\/span>' +
+    '<\/a>');
+  }
+
+  function downloadButtonBoth() {
+    replaceHtml("download.button",
+    '<br><span style="color: green; font: 14pt bolder;">Download Zipeg - Free<\/span><br><br>' +
+    '<a href="http://zipeg.googlecode.com/files/zipeg.2.9.4.1316.exe" onfocus="this.blur();" onclick="urchinTracker(\'downloads/ZipegForWindows.exe\');">' +
+    '<span>Zipeg ' + version + ' for Windows (1.3MB)<\/span>' +
+    '<\/a><br><br>' +
+    '<a href="http://zipeg.googlecode.com/files/zipeg.2.9.4.1316.dmg" onfocus="this.blur();" onclick="urchinTracker(\'downloads/ZipegForMacintosh.dmg\');">' +
+    '<span>Zipeg ' + version + ' for Macintosh (2.4MB)<\/span>' +
+    '<\/a>');
+  }
+
+</script>
+
+
+</head>
+
+<body>
+<!--
+http://developers.facebook.com/docs/reference/javascript/
+-->
+<div id="fb-root"></div>
+<script type="text/javascript">
+  /* <![CDATA[ */
+  window.fbAsyncInit = function() {
+    FB.init({appId: '140468439300230', status: true, cookie: true,
+	     xfbml: true}, '/xd_receiver.html');
+  };
+  (function() {
+    var e = document.createElement('script'); e.async = true;
+    var proto = "file:" == document.location.protocol ? "http:" : document.location.protocol;
+    e.src = proto + '//connect.facebook.net/en_US/all.js';
+    document.getElementById('fb-root').appendChild(e);
+  }());
+  /* ]]> */
+</script>
+
+
+<center>
+  <div id="page">
+    <div id="main">
+      <div id="#home">
+        <div class="wrapper">
+          <div class="twocols" >
+            <div class="rightcol" id="rightcol">
+              <img src="zipeg.2.0.ss/zipeg.both.550x305.png"
+                   alt="zipeg screenshot"
+                   title="Zipeg screenshots"
+                   width="550"
+                   height="305">
+              <div id="description">
+                <p>
+                  Zipeg is the easiest way to open RAR or ZIP archive, find the right file inside archive and unpack it.
+                  Zip thru photo archives, see thumbnails, select and extract what you need.
+                </p>
+                <div id="video">
+                  <script type="text/javascript">
+                    if (isWin()) {
+                      replaceHtml("video", '<br>Video Tutorial: <a href="win.video.html">How to open RAR / ZIP files on Windows<\/a>.');
+                    } else if (isMac()) {
+                      replaceHtml("video", '<br>Video Tutorial: <a href="mac.video.html">How to open RAR / ZIP files on Macintosh<\/a>.');
+                    } else {
+                      replaceHtml("video", '<br>Video Tutorial: <a href="mac.video.html">How to open RAR / ZIP files on Macintosh<\/a>.' +
+                                           '<br><a href="win.video.html">How to open RAR / ZIP file on Windows<\/a>.');
+                    }
+                  </script>
+                  <noscript>
+                    <br>Video Tutorial:&nbsp;
+                    <a href="win.video.html">How to open RAR / ZIP files on Windows.</a><br>
+                    <a href="mac.video.html">How to open RAR / ZIP files on Macintosh.</a>
+                  </noscript>
+                </div>
+                <div id="alternative">
+                  <script type="text/javascript">
+                    if (isWin()) {
+                      replaceHtml("alternative", '<p><br>Also available for <a href="mac.video.html">Macintosh<\/a>.<\/p>');
+                    }
+                    else if (isMac()) {
+                      replaceHtml("alternative", '<p><br>Also available for <a href="win.video.html">Windows<\/a>.<\/p>');
+                    }
+                  </script>
+                  <br />
+                  <p>Problems with multipart archives? password protected archives? Please read
+                    <a href="zipeg.html" style="text-decoration: underline;"><span style="color: red;">FAQs</span></a>
+                  </p>
+                  <br />
+                    <p>Next version of experimental beta release is usually available at <a href="http://zipeg.googlecode.com">http://zipeg.googlecode.com</a></p>
+                  <br />
+                  <p>
+                    Zipeg development is an team of one.<br />
+                    I've worked hard over the years to keep Zipeg going.<br />
+                    Please consider making a donation to support Zipeg.
+                  </p>
+                  <br />
+                  <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+                    <input type="hidden" name="cmd" value="_s-xclick">
+                    <input type="hidden" name="hosted_button_id" value="7852998">
+                    <input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+                    <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="leftcol">
+            <div id="download">
+              <div id="download.button">
+                <script type="text/javascript">
+                  if (isWin()) {
+                    downloadButtonWin();
+                  }
+                  else if (isMac()) {
+                    downloadButtonMac();
+                  }
+                  else {
+                    downloadButtonBoth();
+                  }
+                </script>
+                <noscript>
+                  <br><span style="color: green; font: 14pt bolder;">Download Zipeg - Free</span><br><br>
+                  <a href="http://zipeg.googlecode.com/files/zipeg.2.9.4.1316.exe" onclick="urchinTracker('downloads/ZipegForWindows.exe');">
+                    <span>Zipeg 2.9.4 for Windows (1.3MB)</span>
+                  </a><br><br>
+                  <a href="http://zipeg.googlecode.com/files/zipeg.2.9.4.1316.dmg" onclick="urchinTracker('downloads/ZipegForMacintosh.dmg');">
+                    <span>Zipeg 2.9.4 for Macintosh (2.4MB)</span>
+                  </a>
+                </noscript>
+              </div>
+              <br>
+              <p>Zipeg is an ultimate tool for opening ZIP and RAR files on Mac and Windows.</p>
+              <p><small>(think of it as a free little brother of WinZip&trade;, WinRar&trade;, StuffIt&trade; family)
+              </small></p><br />
+	      <div style="display: inline-block;">
+		<span style="display: inline-block; vertical-align: top;" id="click-here"></span>
+		<script type="text/javascript">
+		  /* <![CDATA[ */
+		  (function() {
+		    if (query['fb_like']) {
+		      var i = document.createElement('img');
+		      i.src = "images/arrow_right_red_24x24.png";
+		      i.width = 24;
+		      i.height = 24;
+		      document.getElementById('click-here').appendChild(i);
+		    }
+		  }());
+		  /* ]]> */
+		</script>
+		<span style="display: inline-block;">
+		  <fb:like href="http://www.zipeg.com/" width="300" height="45"
+			   action="like" show_faces="true" layout="standard"
+			   colorscheme="light"
+		  ></fb:like>
+		</span>
+	      </div>
+              <br />
+              <p align="left">Zipeg supports:</p>
+            </div>
+            <div id="checklist">
+              <ul>
+                <li>
+                  <p>
+                    <span><img src="img/checkmark.20x30.png" alt=""></span>
+                    <strong>Formats:</strong> ZIP, RAR, 7z, ARJ, LHA, TGZ, TAR and many many more.
+                  </p><br>
+                </li>
+                <li>
+                  <p>
+                    <span><img src="img/checkmark.20x30.png" alt=""></span>
+                    <strong>Pictures and Photos</strong> - preview them instantly or open in external
+                    application.
+                  </p><br>
+                </li>
+                <li>
+                  <p>
+                    <span><img src="img/checkmark.20x30.png" alt=""></span>
+                    <strong>Filenames</strong> in your national alphabet.
+                  </p><br>
+                </li>
+                <li>
+                   <p>
+                     <span><img src="img/checkmark.20x30.png" alt=""></span>
+                     <strong>Windows:</strong> XP, Vista and Windows 7 <strong>Mac OS X:</strong> Tiger, Leopard and Snow Leopard.
+                   </p><br>
+                 </li>
+              </ul>
+              <!--
+              <div id="tweet">
+              <a class="tweet" href="http://twitter.com/home/?status=RT+%40zipeg+Got+Mac%3F+Check+out+Zipeg+at+http%3A%2F%2Fwww.zipeg.com" title="TweetMe!" target="_blank">TweetMe!</a>
+              </div>
+              -->
+              <p>
+                <a href="zipeg.html" style="text-decoration: underline;">Learn more (License, Support, <span style="color: red;">FAQs</span>, Donate...)</a>
+              </p>
+              <br />
+              <br />
+            </div>
+            <br /><br />
+          </div>
+        </div>
+      </div>
+      <!--
+        <a href="http://twitter.com/zipeg" title="follow Zipeg on Twitter" target="_blank"><img src="images/follow-zipeg-on-twitter.jpg" alt="follow Zipeg on Twitter" border="0"></a>
+       -->
+      <br />&nbsp;
+    </div>
+    <br />&nbsp;
+    <br />&nbsp;
+    <br />&nbsp;
+    <br />&nbsp;
+    <br />&nbsp;
+    <small>Copyright &copy; 2006-2012 Leo Kuznetsov.</small>
+  </div>
+</center>
+<script type="text/javascript">  (function() {
+  var ga = document.createElement('script');     ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:'   == document.location.protocol ? 'https://ssl'   : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!--
+<script src="//ah8.facebook.com/js/conversions/tracking.js" type="text/javascript"></script>
+<script type="text/javascript">
+try {
+  FB.Insights.impression({
+     'id' : 6002617715539,
+     'h' : '97b8dce578',
+     'value' : 0.001 // you can change this dynamically
+  });
+} catch (e) {}
+</script>
+-->
+</body>
+</html>

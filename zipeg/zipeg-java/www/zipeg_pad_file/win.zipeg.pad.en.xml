@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XML_DIZ_INFO>
+  <MASTER_PAD_VERSION_INFO>
+    <MASTER_PAD_VERSION>2.00</MASTER_PAD_VERSION>
+    <MASTER_PAD_EDITOR>RoboSoft 3.1.560</MASTER_PAD_EDITOR>
+    <MASTER_PAD_INFO>Portable Application Description, or PAD for short, is a data set that is used by shareware authors to disseminate information to anyone interested in their software products. To find out more go to http://www.asp-shareware.org/pad</MASTER_PAD_INFO>
+  </MASTER_PAD_VERSION_INFO>
+  <RoboSoft>
+    <Company_UIN>CMP-0079073F856</Company_UIN>
+    <Product_UIN>APP-007907E9D8A</Product_UIN>
+    <Search_String>Zipeg for Windows</Search_String>
+    <Search_String_Unique>Zipeg for Windows</Search_String_Unique>
+    <Publish_on_CD>TRUE</Publish_on_CD>
+    <Company_Description></Company_Description>
+    <Press_Release_Search_String></Press_Release_Search_String>
+    <NewsFeed_Search_String></NewsFeed_Search_String>
+    <Search_Engine_Search_String></Search_Engine_Search_String>
+    <Web_Directories_Search_String></Web_Directories_Search_String>
+    <Comments_For_Reviewer></Comments_For_Reviewer>
+    <Additional_Categories></Additional_Categories>
+    <Backlink></Backlink>
+  </RoboSoft>
+  <Company_Info>
+    <Company_Name>Zipeg</Company_Name>
+    <Address_1>121 Finite Loop</Address_1>
+    <Address_2></Address_2>
+    <City_Town>www.zipeg.com</City_Town>
+    <State_Province>CA</State_Province>
+    <Zip_Postal_Code>94501</Zip_Postal_Code>
+    <Country>United States of America</Country>
+    <Company_WebSite_URL>http://www.zipeg.com/</Company_WebSite_URL>
+    <Contact_Info>
+      <Contact_First_Name>Leo</Contact_First_Name>
+      <Contact_Last_Name>Kuznetsov</Contact_Last_Name>
+      <Contact_Email>support@zipeg.com</Contact_Email>
+      <Author_First_Name>Leo</Author_First_Name>
+      <Author_Last_Name>Kuznetsov</Author_Last_Name>
+      <Author_Email>support@zipeg.com</Author_Email>
+    </Contact_Info>
+    <Support_Info>
+      <Sales_Email>sales@zipeg.com</Sales_Email>
+      <Support_Email>support@zipeg.com</Support_Email>
+      <General_Email>support@zipeg.com</General_Email>
+      <Sales_Phone></Sales_Phone>
+      <Support_Phone></Support_Phone>
+      <General_Phone></General_Phone>
+      <Fax_Phone></Fax_Phone>
+    </Support_Info>
+  </Company_Info>
+  <ASP>
+    <ASP_FORM>Y</ASP_FORM>
+    <ASP_Member>N</ASP_Member>
+    <ASP_Member_Number></ASP_Member_Number>
+  </ASP>
+  <OISV>
+    <OISV_FORM>Y</OISV_FORM>
+    <OISV_Member>N</OISV_Member>
+    <OISV_Member_Number></OISV_Member_Number>
+  </OISV>
+  <Program_Info>
+    <Program_Name>Zipeg for Windows</Program_Name>
+    <Program_Version>2.9.4</Program_Version>
+    <Program_Release_Month>07</Program_Release_Month>
+    <Program_Release_Day>13</Program_Release_Day>
+    <Program_Release_Year>2012</Program_Release_Year>
+    <Program_Cost_Dollars>0.00</Program_Cost_Dollars>
+    <Program_Type>Freeware</Program_Type>
+    <Program_Release_Status>Minor Update</Program_Release_Status>
+    <Program_Install_Support>Install and Uninstall</Program_Install_Support>
+      <Program_OS_Support>
+        Win7 x32,Win7 x64,WinOther,WinServer,WinVista,WinVista x64,WinXP
+      </Program_OS_Support>
+    <Program_Language>English</Program_Language>
+    <Program_Specific_Category>Utilities</Program_Specific_Category>
+    <Program_Category_Class>System Utilities::File Compression</Program_Category_Class>
+    <File_Info>
+      <File_Size_Bytes>1717384</File_Size_Bytes>
+      <File_Size_K>1677</File_Size_K>
+      <File_Size_MB>1.6</File_Size_MB>
+      <Filename_Versioned></Filename_Versioned>
+      <Filename_Previous></Filename_Previous>
+      <Filename_Generic></Filename_Generic>
+      <Filename_Long></Filename_Long>
+    </File_Info>
+    <Expire_Info>
+      <Has_Expire_Info>N</Has_Expire_Info>
+      <Expire_Based_On>Days</Expire_Based_On>
+      <Expire_Count></Expire_Count>
+      <Expire_Other_Info></Expire_Other_Info>
+      <Expire_Month></Expire_Month>
+      <Expire_Day></Expire_Day>
+      <Expire_Year></Expire_Year>
+    </Expire_Info>
+    <Includes_JAVA_VM>N</Includes_JAVA_VM>
+    <Includes_VB_Runtime>N</Includes_VB_Runtime>
+    <Includes_DirectX>N</Includes_DirectX>
+    <Program_Cost_Other_Code></Program_Cost_Other_Code>
+    <Program_Cost_Other></Program_Cost_Other>
+    <Program_Change_Info></Program_Change_Info>
+    <Program_System_Requirements></Program_System_Requirements>
+    <Limitations></Limitations>
+    <Awards></Awards>
+    <Program_Categories></Program_Categories>
+  </Program_Info>
+  <Web_Info>
+    <Application_URLs>
+      <Application_Info_URL>http://www.zipeg.com/</Application_Info_URL>
+      <Application_Order_URL>http://www.zipeg.com/</Application_Order_URL>
+      <Application_Screenshot_URL>http://www.zipeg.com/img/zipeg.2.9.win.png</Application_Screenshot_URL>
+      <Application_Icon_URL>http://www.zipeg.com/images/zipeg-32x32.gif</Application_Icon_URL>
+      <Application_XML_File_URL>http://www.zipeg.com/zipeg_pad_file/win.zipeg.pad.en.xml</Application_XML_File_URL>
+    </Application_URLs>
+    <Download_URLs>
+      <Primary_Download_URL>http://zipeg.com/downloads/ZipegForWindows.exe</Primary_Download_URL>
+      <Secondary_Download_URL>http://zipeg.googlecode.com/files/zipeg.2.9.4.1316.exe</Secondary_Download_URL>
+      <Additional_Download_URL_1></Additional_Download_URL_1>
+      <Additional_Download_URL_2></Additional_Download_URL_2>
+    </Download_URLs>
+  </Web_Info>
+  <Permissions>
+    <Distribution_Permissions>Copyright (c) 2006-2012, Leo Kuznetsov, www.zipeg.com
+All rights reserved.
+
+Redistribution of Zipeg and use in any forms, without modification, is permitted provided that the following conditions are met:
+
+Redistributions must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+Neither the name of the www.zipeg.com nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</Distribution_Permissions>
+    <EULA>Copyright (c) 2006-2012, Leo Kuznetsov, www.zipeg.com
+All rights reserved.
+
+Redistribution of Zipeg and use in any forms, without modification, is permitted provided that the following conditions are met:
+
+Redistributions must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+Neither the name of the www.zipeg.com nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</EULA>
+  </Permissions>
+  <Affiliates>
+    <Affiliates_FORM>Y</Affiliates_FORM>
+    <Affiliates_VERSION>1.1</Affiliates_VERSION>
+    <Affiliates_URL>http://www.asp-shareware.org/pad/extensions/Affiliates.htm</Affiliates_URL>
+    <Affiliates_FORM_VER></Affiliates_FORM_VER>
+    <Affiliates_Information_Page></Affiliates_Information_Page>
+    <Affiliates_BMTMicro_Order_Page></Affiliates_BMTMicro_Order_Page>
+    <Affiliates_BMTMicro_Vendor_ID></Affiliates_BMTMicro_Vendor_ID>
+    <Affiliates_BMTMicro_Product_ID></Affiliates_BMTMicro_Product_ID>
+    <Affiliates_BMTMicro_Maximum_Commission_Rate></Affiliates_BMTMicro_Maximum_Commission_Rate>
+    <Affiliates_DigiBuy_Order_Page></Affiliates_DigiBuy_Order_Page>
+    <Affiliates_DigiBuy_Vendor_ID></Affiliates_DigiBuy_Vendor_ID>
+    <Affiliates_DigiBuy_Product_ID></Affiliates_DigiBuy_Product_ID>
+    <Affiliates_DigiBuy_Maximum_Commission_Rate></Affiliates_DigiBuy_Maximum_Commission_Rate>
+    <Affiliates_DigitalCandle_Order_Page></Affiliates_DigitalCandle_Order_Page>
+    <Affiliates_DigitalCandle_Vendor_ID></Affiliates_DigitalCandle_Vendor_ID>
+    <Affiliates_DigitalCandle_Product_ID></Affiliates_DigitalCandle_Product_ID>
+    <Affiliates_DigitalCandle_Maximum_Commission_Rate></Affiliates_DigitalCandle_Maximum_Commission_Rate>
+    <Affiliates_Emetrix_Order_Page></Affiliates_Emetrix_Order_Page>
+    <Affiliates_Emetrix_Vendor_ID></Affiliates_Emetrix_Vendor_ID>
+    <Affiliates_Emetrix_Product_ID></Affiliates_Emetrix_Product_ID>
+    <Affiliates_Emetrix_Maximum_Commission_Rate></Affiliates_Emetrix_Maximum_Commission_Rate>
+    <Affiliates_eSellerate_Order_Page></Affiliates_eSellerate_Order_Page>
+    <Affiliates_eSellerate_Vendor_ID></Affiliates_eSellerate_Vendor_ID>
+    <Affiliates_eSellerate_Product_ID></Affiliates_eSellerate_Product_ID>
+    <Affiliates_eSellerate_Maximum_Commission_Rate></Affiliates_eSellerate_Maximum_Commission_Rate>
+    <Affiliates_Kagi_Order_Page></Affiliates_Kagi_Order_Page>
+    <Affiliates_Kagi_Vendor_ID></Affiliates_Kagi_Vendor_ID>
+    <Affiliates_Kagi_Product_ID></Affiliates_Kagi_Product_ID>
+    <Affiliates_Kagi_Maximum_Commission_Rate></Affiliates_Kagi_Maximum_Commission_Rate>
+    <Affiliates_NorthStarSol_Order_Page></Affiliates_NorthStarSol_Order_Page>
+    <Affiliates_NorthStarSol_Vendor_ID></Affiliates_NorthStarSol_Vendor_ID>
+    <Affiliates_NorthStarSol_Product_ID></Affiliates_NorthStarSol_Product_ID>
+    <Affiliates_NorthStarSol_Maximum_Commission_Rate></Affiliates_NorthStarSol_Maximum_Commission_Rate>
+    <Affiliates_Order1_Order_Page></Affiliates_Order1_Order_Page>
+    <Affiliates_Order1_Vendor_ID></Affiliates_Order1_Vendor_ID>
+    <Affiliates_Order1_Product_ID></Affiliates_Order1_Product_ID>
+    <Affiliates_Order1_Maximum_Commission_Rate></Affiliates_Order1_Maximum_Commission_Rate>
+    <Affiliates_Osolis_Order_Page></Affiliates_Osolis_Order_Page>
+    <Affiliates_Osolis_Vendor_ID></Affiliates_Osolis_Vendor_ID>
+    <Affiliates_Osolis_Product_ID></Affiliates_Osolis_Product_ID>
+    <Affiliates_Osolis_Maximum_Commission_Rate></Affiliates_Osolis_Maximum_Commission_Rate>
+    <Affiliates_Regnet_Order_Page></Affiliates_Regnet_Order_Page>
+    <Affiliates_Regnet_Vendor_ID></Affiliates_Regnet_Vendor_ID>
+    <Affiliates_Regnet_Product_ID></Affiliates_Regnet_Product_ID>
+    <Affiliates_Regnet_Maximum_Commission_Rate></Affiliates_Regnet_Maximum_Commission_Rate>
+    <Affiliates_Regnow_Order_Page></Affiliates_Regnow_Order_Page>
+    <Affiliates_Regnow_Vendor_ID></Affiliates_Regnow_Vendor_ID>
+    <Affiliates_Regnow_Product_ID></Affiliates_Regnow_Product_ID>
+    <Affiliates_Regnow_Maximum_Commission_Rate></Affiliates_Regnow_Maximum_Commission_Rate>
+    <Affiliates_Regsoft_Order_Page></Affiliates_Regsoft_Order_Page>
+    <Affiliates_Regsoft_Vendor_ID></Affiliates_Regsoft_Vendor_ID>
+    <Affiliates_Regsoft_Product_ID></Affiliates_Regsoft_Product_ID>
+    <Affiliates_Regsoft_Maximum_Commission_Rate></Affiliates_Regsoft_Maximum_Commission_Rate>
+    <Affiliates_ShareIt_Order_Page></Affiliates_ShareIt_Order_Page>
+    <Affiliates_ShareIt_Vendor_ID></Affiliates_ShareIt_Vendor_ID>
+    <Affiliates_ShareIt_Product_ID></Affiliates_ShareIt_Product_ID>
+    <Affiliates_ShareIt_Maximum_Commission_Rate></Affiliates_ShareIt_Maximum_Commission_Rate>
+    <Affiliates_SWReg_Order_Page></Affiliates_SWReg_Order_Page>
+    <Affiliates_SWReg_Vendor_ID></Affiliates_SWReg_Vendor_ID>
+    <Affiliates_SWReg_Product_ID></Affiliates_SWReg_Product_ID>
+    <Affiliates_SWReg_Maximum_Commission_Rate></Affiliates_SWReg_Maximum_Commission_Rate>
+    <Affiliates_V-Share_Order_Page></Affiliates_V-Share_Order_Page>
+    <Affiliates_V-Share_Vendor_ID></Affiliates_V-Share_Vendor_ID>
+    <Affiliates_V-Share_Product_ID></Affiliates_V-Share_Product_ID>
+    <Affiliates_V-Share_Maximum_Commission_Rate></Affiliates_V-Share_Maximum_Commission_Rate>
+    <Affiliates_VFree_Order_Page></Affiliates_VFree_Order_Page>
+    <Affiliates_VFree_Vendor_ID></Affiliates_VFree_Vendor_ID>
+    <Affiliates_VFree_Product_ID></Affiliates_VFree_Product_ID>
+    <Affiliates_VFree_Maximum_Commission_Rate></Affiliates_VFree_Maximum_Commission_Rate>
+    <Affiliates_Yaskifo_Order_Page></Affiliates_Yaskifo_Order_Page>
+    <Affiliates_Yaskifo_Vendor_ID></Affiliates_Yaskifo_Vendor_ID>
+    <Affiliates_Yaskifo_Product_ID></Affiliates_Yaskifo_Product_ID>
+    <Affiliates_Yaskifo_Maximum_Commission_Rate></Affiliates_Yaskifo_Maximum_Commission_Rate>
+  </Affiliates>
+  <Simtel>
+    <Simtel_FORM>Y</Simtel_FORM>
+    <SIMTEL_FORM_VER>1.6 11/26/2002</SIMTEL_FORM_VER>
+    <Simtel_Platform></Simtel_Platform>
+    <Simtel_Category></Simtel_Category>
+  </Simtel>
+  <Delphi>
+    <D1>FALSE</D1>
+    <D2>FALSE</D2>
+    <D3>FALSE</D3>
+    <D4>FALSE</D4>
+    <D5>FALSE</D5>
+    <D6>FALSE</D6>
+    <D7>FALSE</D7>
+    <BCB1>FALSE</BCB1>
+    <BCB3>FALSE</BCB3>
+    <BCB4>FALSE</BCB4>
+    <BCB5>FALSE</BCB5>
+    <BCB6>FALSE</BCB6>
+    <K1>FALSE</K1>
+    <K2></K2>
+    <K3></K3>
+    <D1_URL></D1_URL>
+    <D2_URL></D2_URL>
+    <D3_URL></D3_URL>
+    <D4_URL></D4_URL>
+    <D5_URL></D5_URL>
+    <D6_URL></D6_URL>
+    <D7_URL></D7_URL>
+    <BCB1_URL></BCB1_URL>
+    <BCB3_URL></BCB3_URL>
+    <BCB4_URL></BCB4_URL>
+    <BCB5_URL></BCB5_URL>
+    <BCB6_URL></BCB6_URL>
+    <K1_URL></K1_URL>
+    <K2_URL></K2_URL>
+    <K3_URL></K3_URL>
+    <Type></Type>
+    <Price></Price>
+    <Source></Source>
+    <File_Location></File_Location>
+    <Link_URL></Link_URL>
+    <Download_URL></Download_URL>
+    <Version></Version>
+    <Notes></Notes>
+  </Delphi>
+  <PADRING>
+    <PADRING_FORM>N</PADRING_FORM>
+    <PADRING></PADRING>
+  </PADRING>
+  <NewsFeed>
+    <NewsFeed_FORM>Y</NewsFeed_FORM>
+    <NewsFeed_VERSION>1.0</NewsFeed_VERSION>
+    <NewsFeed_URL>http://Submit-Everywhere.com/extensions/NewsFeed.htm</NewsFeed_URL>
+    <NewsFeed_DESCRIPTION>This PAD extension allows you to add your RSS and Atom news feeds info into your PAD file. This info can be used by RSS feed submission software or by feed directories themselves.</NewsFeed_DESCRIPTION>
+    <NewsFeed_Type>RSS 0.90</NewsFeed_Type>
+    <NewsFeed_Language>English</NewsFeed_Language>
+    <NewsFeed_Purpose>News</NewsFeed_Purpose>
+    <NewsFeed_Feed_URL></NewsFeed_Feed_URL>
+    <NewsFeed_Site_Name></NewsFeed_Site_Name>
+    <NewsFeed_Site_URL></NewsFeed_Site_URL>
+    <NewsFeed_Author_First_Name></NewsFeed_Author_First_Name>
+    <NewsFeed_Author_Last_Name></NewsFeed_Author_Last_Name>
+    <NewsFeed_Author_Email></NewsFeed_Author_Email>
+    <NewsFeed_Title></NewsFeed_Title>
+    <NewsFeed_Description_70></NewsFeed_Description_70>
+    <NewsFeed_Description_250></NewsFeed_Description_250>
+  </NewsFeed>
+  <OnlineShops>
+    <OnlineShops_FORM>Y</OnlineShops_FORM>
+    <OnlineShops_VERSION>1.0</OnlineShops_VERSION>
+    <OnlineShops_URL>http://Submit-Everywhere.com/extensions/OnlineShops.htm</OnlineShops_URL>
+    <OnlineShops_DESCRIPTION>This PAD extension allows you to check these sites distribution agreements and decide wether you wish to sell your product through them</OnlineShops_DESCRIPTION>
+    <OnlineShops_PalmGear></OnlineShops_PalmGear>
+    <OnlineShops_PocketLand></OnlineShops_PocketLand>
+    <OnlineShops_PDAssi></OnlineShops_PDAssi>
+    <OnlineShops_PDATopSoft></OnlineShops_PDATopSoft>
+    <OnlineShops_PocketGear></OnlineShops_PocketGear>
+    <OnlineShops_Softonic></OnlineShops_Softonic>
+    <OnlineShops_Winowin></OnlineShops_Winowin>
+    <OnlineShops_Handango_Agreement></OnlineShops_Handango_Agreement>
+    <OnlineShops_Handango></OnlineShops_Handango>
+  </OnlineShops>
+  <Runtime>
+    <OS_Flags/>
+  </Runtime>
+  <Press_Release>
+    <Press_Release>Free Zipeg app is a universal .rar and .zip file opener.
+December 17, 2010 -- Free Zipeg app is a universal .rar and .zip file opener.
+Zipeg is universal .rar and .zip file opener. If you ever needed just one photo, song or document from the huge archive that has been downloaded or arrived via email - Zipeg is definitely right for you. Zipeg is tiny but mighty utility. It handles the alphabet soup of variety of archives in addition to commonplace zip and rar. It also does tar, tgz, gzip, bzip2, iso just to name a few. Zipeg allows you to chose the destination where to extract and merge files (default is your Desktop), intelligently handles the folder names.
+Zipeg for Windows has a very simple interface that will appeal to all users. The minimal command buttons allow you to open files, and extract and preview them. There is also an Options button that lets you select the file you would like the program to open by default, and also where to place the destination file. After opening a compressed file, the file's contents is displayed in the main window. Hovering the mouse over each individual file displays the file's size, including the compression size and the modification date. The preview option allows to view the entire file without having to extract it first.
+Zipeg keeps you in charge of the extraction process. This freeware app is recommended for all users. Does not need administrative priviledges to install. Zipeg leaves no traces on the computer after being uninstalled.
+Zipeg also opens arj, lha/lzh, 7z, tar, gz, tgz, bzip2, cpio, rpm, iso, chm, z, cbr, cbz, war, ear and some other file formats.
+Zipeg has advanced support for multi-part and password protected archives (provided the user knows the password).
+</Press_Release>
+    <Summary>Zipeg is a powerful and easy-to-use free archive opener application that allows users to open and unpack zip and rar files. It is the simple decompression tool of choice for more than 1,000,000 users who have downloaded it from www.apple.com, macupdate, versiontracker, and download.com.</Summary>
+    <Headline>Free Zipeg app is a universal .rar and .zip file opener.</Headline>
+  </Press_Release>
+  <Article>
+    <Article_FORM></Article_FORM>
+    <Article_VERSION></Article_VERSION>
+    <Article_Title></Article_Title>
+    <Article_URL></Article_URL>
+    <Article_Summary></Article_Summary>
+    <Article_Keywords></Article_Keywords>
+    <Article_Author_Info></Article_Author_Info>
+    <Article_Photo_URL></Article_Photo_URL>
+    <Article_Photo_Local></Article_Photo_Local>
+    <Article_Text></Article_Text>
+    <Article_Text_Plain></Article_Text_Plain>
+  </Article>
+  <ESC>
+    <ESC_FORM></ESC_FORM>
+  </ESC>
+  <Program_Descriptions>
+    <English>
+      <Keywords>windows, xp, vista, 2000, zip, archive, archiver, compression, free, unzip, java, browser, extractor, extract, browse, explore, explorer, Intel, compress, decompress, compression, decompression, expand, expander, jpg, exif</Keywords>
+        <Char_Desc_45>universal rar, zip file opener</Char_Desc_45>
+        <Char_Desc_80>Zipeg is free universal .rar and .zip file opener.</Char_Desc_80>
+        <Char_Desc_250>Zipeg is universal .rar and .zip file opener that works on Windows XP, Vista, Windows7.</Char_Desc_250>
+        <Char_Desc_450>Zipeg is free utility for Windows. Zipeg allows you to open and explore content of zip, rar and other archives, preview files and images before you extract/unzip them. Extract only the files you want. Zip thru photo archives. See image thumbnails. Zipeg allows you to decide what do you want to extract. You can choose what to extract and where to put extracted files or just drag and drop them.</Char_Desc_450>
+        <Char_Desc_2000>
+Zipeg is universal .rar and .zip file opener that works on Windows and Mac OS X. If you ever needed just one photo, song or document from the huge archive that has been downloaded or arrived via email - Zipeg is definitely right for you. Zipeg is tiny but mighty utility. It handles the alphabet soup of variety of archives in addition to commonplace zip and rar. It also does tar, tgz, gzip, bzip2, iso just to name a few. Zipeg allows you to chose the destination where to extract and merge files (default is your Desktop), intelligently handles the folder names. You can select individual folder inside archive and extract only that folder and subfolders.
+Zipeg fully support multipart rar and zip files (those that come in multitude as file.part1.rar ... file.part99.rar) and password protected files (provided that you know the password). It also capable of viewing the photographs by launching preview application and opening other type of documents in associated programs. Zipeg is absolutely free and works on XP, Vista, Windows-7 with all levels of UAC. It is also runs on Mac Tiger, Leopard and Snow Leopard operating systems for those of you who uses both.
+        </Char_Desc_2000>
+    </English>
+  </Program_Descriptions>
+</XML_DIZ_INFO>
