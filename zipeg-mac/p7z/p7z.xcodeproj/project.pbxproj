@@ -35,11 +35,6 @@
 		B318AD511787FF34000B49B1 /* HashMapS2L.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B318AD4F1787FF34000B49B1 /* HashMapS2L.cpp */; };
 		B319FFC21784447F00EA825F /* DllExports2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B319FFC11784447F00EA825F /* DllExports2.cpp */; };
 		B332D7FF178130A00089145F /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B332D7FE178130A00089145F /* CoreFoundation.framework */; };
-		B35F5115178114AF0021A620 /* p7z.hpp in Headers */ = {isa = PBXBuildFile; fileRef = B35F5114178114AF0021A620 /* p7z.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
-		B39F1D3F17924B8E00472FEF /* PropID.h in Headers */ = {isa = PBXBuildFile; fileRef = B3A6E132178240FF00739DD3 /* PropID.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		B39F1D4117924C9600472FEF /* HashMapS2L.hpp in Headers */ = {isa = PBXBuildFile; fileRef = B318AD501787FF34000B49B1 /* HashMapS2L.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
-		B39F1D4217924C9E00472FEF /* NanoTime.hpp in Headers */ = {isa = PBXBuildFile; fileRef = B3A5D5C21783EDB600D78792 /* NanoTime.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
-		B39F1D4B17924E3F00472FEF /* c.h in Headers */ = {isa = PBXBuildFile; fileRef = B3A5D5C41783F6C100D78792 /* c.h */; };
 		B3A6E219178240FF00739DD3 /* 7zBuf2.c in Sources */ = {isa = PBXBuildFile; fileRef = B3A6DF87178240FF00739DD3 /* 7zBuf2.c */; };
 		B3A6E21A178240FF00739DD3 /* 7zCrc.c in Sources */ = {isa = PBXBuildFile; fileRef = B3A6DF88178240FF00739DD3 /* 7zCrc.c */; };
 		B3A6E21C178240FF00739DD3 /* 7zCrcOpt.c in Sources */ = {isa = PBXBuildFile; fileRef = B3A6DF8A178240FF00739DD3 /* 7zCrcOpt.c */; };
@@ -1693,21 +1688,6 @@
 		};
 /* End PBXGroup section */
 
-/* Begin PBXHeadersBuildPhase section */
-		B35F510B178100210021A620 /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				B35F5115178114AF0021A620 /* p7z.hpp in Headers */,
-				B39F1D3F17924B8E00472FEF /* PropID.h in Headers */,
-				B39F1D4217924C9E00472FEF /* NanoTime.hpp in Headers */,
-				B39F1D4117924C9600472FEF /* HashMapS2L.hpp in Headers */,
-				B39F1D4B17924E3F00472FEF /* c.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXHeadersBuildPhase section */
-
 /* Begin PBXNativeTarget section */
 		B35F510C178100210021A620 /* p7z */ = {
 			isa = PBXNativeTarget;
@@ -1715,7 +1695,6 @@
 			buildPhases = (
 				B35F5109178100210021A620 /* Sources */,
 				B35F510A178100210021A620 /* Frameworks */,
-				B35F510B178100210021A620 /* Headers */,
 			);
 			buildRules = (
 			);
@@ -2041,7 +2020,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "Mac Developer: Leo Kuznetsov (PWZ4F2PXF7)";
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -2081,7 +2060,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "Mac Developer: Leo Kuznetsov (PWZ4F2PXF7)";
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -2139,6 +2118,7 @@
 				OTHER_CPLUSPLUSFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx10.8;
+				STRIP_INSTALLED_PRODUCT = YES;
 				USER_HEADER_SEARCH_PATHS = "p7z/CPP/include_windows p7z/CPP p7z/CPP/myWindows";
 			};
 			name = Debug;
@@ -2178,6 +2158,7 @@
 				OTHER_CPLUSPLUSFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx10.8;
+				STRIP_INSTALLED_PRODUCT = YES;
 				USER_HEADER_SEARCH_PATHS = "p7z/CPP/include_windows p7z/CPP p7z/CPP/myWindows";
 			};
 			name = Release;
