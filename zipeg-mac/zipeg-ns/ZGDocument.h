@@ -1,9 +1,5 @@
 
 @interface ZGDocument : NSDocument
-/*
-@property (weak) IBOutlet NSOutlineView* outlineView;
-@property (weak) IBOutlet NSTableView *tableView;
-*/
 @property NSOutlineView* outlineView;
 @property NSTableView *tableView;
 

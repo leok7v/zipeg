@@ -51,29 +51,33 @@
 
 + (NSSize) minMaxVisibleColumnContentSize: (NSTableView*) view columnIndex: (int) cx {
     assert(view != null);
+    const int EXTRA = 250; // about 10 milliseconds for 500 rows
     NSInteger rowCount = view.numberOfRows;
     CGFloat maxHeight = view.rowHeight;
     if (!view.dataSource) {
         return NSMakeSize(-1, -1);
     }
+//  timestamp("minMaxVisibleColumnContentSize");
     NSOutlineView* ov = [view isKindOfClass: NSOutlineView.class] ? (NSOutlineView*)view : null;
     ZGTableViewDataSource* tds = [view.dataSource isKindOfClass: ZGTableViewDataSource.class] ?
                                  (ZGTableViewDataSource*)view.dataSource : null;
     assert((ov != null) != (tds != null));
     CGRect visibleRect = view.enclosingScrollView.contentView.visibleRect;
+    // trace(@"%@", NSStringFromRect(visibleRect));
     NSRange range = [view rowsInRect:visibleRect];
-    NSUInteger from = MAX(0, range.location);
-    NSUInteger to = MIN(range.location + range.length, rowCount);
+    int from = (int)MAX(0, range.location);
+    int to = (int)MIN(range.location + range.length, rowCount);
     CGFloat indentationPerLevel = ov != null ? ov.indentationPerLevel : 0;
-    if (ov != null) {
-        trace(@"ov.outlineTableColumn=%@", ov.outlineTableColumn);
-    } else {
-        trace(@"tv.tableColumn[%d]=%@", cx, view.tableColumns[cx]);
-    }
     NSTableColumn *tableColumn = view.tableColumns[cx];
     CGFloat minWidth = tableColumn.minWidth;
     CGFloat width = [tableColumn.headerCell cellSize].width;
     CGFloat maxWidth = MAX(minWidth, width);
+    from = (int)MAX(0, from - EXTRA);
+    to += EXTRA;
+    if (from - EXTRA < 0) {
+        to -= (from - EXTRA);
+    }
+    to = (int)MIN(to, rowCount);
     for (NSInteger i = from; i < to; i++) {
         NSCell *cell = [tableColumn dataCellForRow:i];
         id item = ov != null ? [ov itemAtRow: i] : [tds itemAtRow: i];
@@ -102,6 +106,7 @@
         maxWidth = MAX(maxWidth, size.width + x); // emiprecally found extra pixels
         maxHeight = MAX(maxHeight, size.height);
     }
+//  timestamp("minMaxVisibleColumnContentSize");
     return NSMakeSize(maxWidth, maxHeight);
 }
 
@@ -127,6 +132,18 @@
         });
     } else {
         //trace("sizeTableViewToContents skipped");
+    }
+}
+
+- (void)tableView:(NSTableView *)tableView didClickTableColumn:(NSTableColumn *)tableColumn {
+    trace(@"TODO: extend to more than one column");
+    // see: -tableView:sortDescriptorsDidChange: in TableViewDataSource
+    //      which sets sortDescriptorPrototype to null on 3rd click on column header
+    NSTableColumn* tc = tableView.tableColumns[0];
+    if (tc.sortDescriptorPrototype == null) {
+        NSSortDescriptor *sd = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES
+                                                              selector:@selector(localizedCaseInsensitiveCompare:)];
+        tc.sortDescriptorPrototype = sd; // do not reload data, sort will happen on next click
     }
 }
 

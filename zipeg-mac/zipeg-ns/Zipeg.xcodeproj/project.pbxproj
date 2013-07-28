@@ -247,7 +247,6 @@
 		B3BECD9C179A149300B07871 /* universalchardet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = universalchardet.c; path = ../chardet/universalchardet.c; sourceTree = "<group>"; };
 		B3BECD9D179A149300B07871 /* universalchardet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = universalchardet.h; path = ../chardet/universalchardet.h; sourceTree = "<group>"; };
 		B3BF7D2C1792462500A3E5EF /* main.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = SOURCE_ROOT; };
-		B3C2F809179FEA1800265B85 /* the-sheepfold-public-domain.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = "the-sheepfold-public-domain.jpg"; path = "Resources/the-sheepfold-public-domain.jpg"; sourceTree = "<group>"; };
 		B3D1BE5D17973662007BE5E7 /* MacMem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MacMem.h; sourceTree = SOURCE_ROOT; };
 		B3D1BE5E1797366E007BE5E7 /* MacMem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MacMem.c; sourceTree = SOURCE_ROOT; };
 		B3E1F0BB17A1E22A003D3E68 /* ZGTableViewDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGTableViewDataSource.h; sourceTree = "<group>"; };
@@ -381,12 +380,16 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B32EB9C61798CEDA00D8A129 /* ZGDocument.xib */,
+				B32EB9C41798CEDA00D8A129 /* MainMenu.xib */,
+				B39F1D291792485F00472FEF /* Credits.rtf */,
+				B39F1D2C1792486C00472FEF /* InfoPlist.strings */,
+				B35D1E461794CBEB00A0210F /* ZGErrors.strings */,
+				B3037E091799E20D00A49FF3 /* zipeg-archive.icns */,
 				B3FC1D9C17A0B40B00BE0ED3 /* leaf-0-64x64.png */,
 				B3FC1D9D17A0B40B00BE0ED3 /* leaf-1-64x64.png */,
 				B3FC1D9E17A0B40B00BE0ED3 /* leaf-2-64x64.png */,
 				B3FC1D9F17A0B40B00BE0ED3 /* leaf-3-64X64.png */,
-				B3C2F809179FEA1800265B85 /* the-sheepfold-public-domain.jpg */,
-				B3037E091799E20D00A49FF3 /* zipeg-archive.icns */,
 				B32EB9CC1798E70E00D8A129 /* action-normal.png */,
 				B32EB9CD1798E70E00D8A129 /* action-pressed.png */,
 				B32EB9CE1798E70E00D8A129 /* add-normal.png */,
@@ -403,11 +406,6 @@
 				B32EB9D71798E70E00D8A129 /* size.png */,
 				B32EB9D81798E70E00D8A129 /* status-normal.png */,
 				B32EB9D91798E70E00D8A129 /* status-pressed.png */,
-				B32EB9C41798CEDA00D8A129 /* MainMenu.xib */,
-				B32EB9C61798CEDA00D8A129 /* ZGDocument.xib */,
-				B39F1D291792485F00472FEF /* Credits.rtf */,
-				B39F1D2C1792486C00472FEF /* InfoPlist.strings */,
-				B35D1E461794CBEB00A0210F /* ZGErrors.strings */,
 			);
 			name = Resources;
 			sourceTree = "<group>";

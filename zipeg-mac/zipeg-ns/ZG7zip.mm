@@ -64,24 +64,26 @@ static NSMutableArray *leafNode;
 
 @implementation ZG7zipItem
 
-+ (void)initialize {
++ (void) initialize {
     assert(self == [ZG7zipItem class]);
     leafNode = [[NSMutableArray alloc] init];
 }
 
-- (void)dealloc {
-//    trace(@"");
-}
-
-- (id) initWith:(ZG7zip*) archive name:(NSString *) name index:(int) i isLeaf:(BOOL) leaf {
+- (id) initWith:(ZG7zip*) archive name:(NSString*) name index:(int) i isLeaf:(BOOL) leaf {
     self = [super init];
-    if (self) {
+    if (self != null) {
+        alloc_count(self);
         _archive = archive;
         _name = name;
         _index = i;
         _children = leaf ? leafNode : [NSMutableArray new];
     }
     return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
+    //  trace(@"");
 }
 
 - (void)addChild:(NSObject<ZGItemProtocol>*)child {
@@ -140,7 +142,7 @@ static NSMutableArray* filterOut(ZG7zip* a, NSMutableArray* childs) {
     }
 }
 
-- (NSMutableArray *)children {
+- (NSMutableArray*) children {
     if (_children == leafNode) {
         return null;
     } else {
@@ -201,9 +203,10 @@ struct D : P7Z::Delegate {
 
 @implementation ZG7zip
 
-- (id)init {
+- (id) init {
     self = [super init];
-    if (self) {
+    if (self != null) {
+        alloc_count(self);
         _root = [[ZG7zipItem alloc] initWith:self name:@"" index:-1 isLeaf:false];
         _tree = [[ZG7zipItem alloc] initWith:self name:@"" index:-1 isLeaf:false];
         [_root.children addObject:_tree];
@@ -216,7 +219,8 @@ struct D : P7Z::Delegate {
     return self;
 }
 
-- (void)dealloc {
+- (void) dealloc {
+    dealloc_count(self);
     if (a != null) {
         a->close();
     }
@@ -413,10 +417,6 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
     return index < 0 || [_isFolders isSet:index];
 }
 
-//typedef struct {
-//    const char* name; CFStringEncoding enc;
-//} EncodingsMap;
-
 static struct { const char* name; CFStringEncoding enc; } kEncodingsMap [] = {
     // CHARDET_ENCODING_X_ISO_10646_UCS_4 should not ever happen...
     {CHARDET_ENCODING_ISO_2022_JP,      kCFStringEncodingISO_2022_JP_3},
@@ -463,76 +463,6 @@ static CFStringEncoding CHARDET_ENCODING_to_CFStringEncoding(const char* encodin
     }
     return (CFStringEncoding)-1;
 }
-
-#if 0
-if (strcmp(encoding, CHARDET_ENCODING_ISO_2022_JP) == 0) {
-    return kCFStringEncodingISO_2022_JP_3;
-} else if (strcmp(encoding, CHARDET_ENCODING_ISO_2022_CN) == 0) {
-    return kCFStringEncodingISO_2022_CN_EXT;
-} else if (strcmp(encoding, CHARDET_ENCODING_ISO_2022_KR) == 0) {
-    return kCFStringEncodingISO_2022_KR;
-} else if (strcmp(encoding, CHARDET_ENCODING_ISO_8859_5) == 0) {
-    return kCFStringEncodingISOLatinCyrillic;
-} else if (strcmp(encoding, CHARDET_ENCODING_ISO_8859_7) == 0) {
-    return kCFStringEncodingISOLatinGreek;
-} else if (strcmp(encoding, CHARDET_ENCODING_ISO_8859_8) == 0) {
-    return kCFStringEncodingISOLatinHebrew;
-} else if (strcmp(encoding, CHARDET_ENCODING_BIG5) == 0) {
-    return kCFStringEncodingBig5;
-} else if (strcmp(encoding, CHARDET_ENCODING_GB18030) == 0) {
-    return kCFStringEncodingGB_18030_2000;
-} else if (strcmp(encoding, CHARDET_ENCODING_EUC_JP) == 0) {
-    return kCFStringEncodingEUC_JP;
-} else if (strcmp(encoding, CHARDET_ENCODING_EUC_KR) == 0) {
-    return kCFStringEncodingEUC_KR;
-} else if (strcmp(encoding, CHARDET_ENCODING_EUC_TW) == 0) {
-    return kCFStringEncodingEUC_TW;
-} else if (strcmp(encoding, CHARDET_ENCODING_SHIFT_JIS) == 0) {
-    return kCFStringEncodingShiftJIS;
-} else if (strcmp(encoding, CHARDET_ENCODING_IBM855) == 0) {
-    return kCFStringEncodingDOSCyrillic;
-} else if (strcmp(encoding, CHARDET_ENCODING_IBM866) == 0) {
-    return kCFStringEncodingDOSRussian;
-} else if (strcmp(encoding, CHARDET_ENCODING_KOI8_R) == 0) {
-    return kCFStringEncodingKOI8_R;
-} else if (strcmp(encoding, CHARDET_ENCODING_MACCYRILLIC) == 0) {
-    return kCFStringEncodingMacCyrillic;
-} else if (strcmp(encoding, CHARDET_ENCODING_WINDOWS_1250) == 0) {
-    return kCFStringEncodingWindowsLatin2;
-} else if (strcmp(encoding, CHARDET_ENCODING_WINDOWS_1251) == 0) {
-    return kCFStringEncodingWindowsCyrillic;
-} else if (strcmp(encoding, CHARDET_ENCODING_WINDOWS_1252) == 0) {
-    return kCFStringEncodingWindowsLatin1;
-} else if (strcmp(encoding, CHARDET_ENCODING_WINDOWS_1253) == 0) {
-    return kCFStringEncodingWindowsGreek;
-} else if (strcmp(encoding, CHARDET_ENCODING_WINDOWS_1255) == 0) {
-    return kCFStringEncodingWindowsHebrew;
-} else if (strcmp(encoding, CHARDET_ENCODING_HZ_GB_2312) == 0) {
-    return kCFStringEncodingHZ_GB_2312;
-} else if (strcmp(encoding, CHARDET_ENCODING_X_ISO_10646_UCS_4_3412) == 0) {
-    // https://en.wikipedia.org/wiki/Universal_Character_Set
-    return kCFStringEncodingUTF32BE; // with the BOM header (thus must be external in CFString)
-} else if (strcmp(encoding, CHARDET_ENCODING_X_ISO_10646_UCS_4_2143) == 0) {
-    // https://en.wikipedia.org/wiki/Universal_Character_Set
-    return kCFStringEncodingUTF32LE; // with the BOM header (thus must be external in CFString)
-} else if (strcmp(encoding, CHARDET_ENCODING_ISO_8859_2) == 0) {
-    return kCFStringEncodingISOLatin2;
-} else if (strcmp(encoding, CHARDET_ENCODING_TIS_620) == 0) {
-    // http://en.wikipedia.org/wiki/ISO/IEC_8859-11
-    return kCFStringEncodingISOLatinThai;
-} else if (strcmp(encoding, CHARDET_ENCODING_UTF_8) == 0) {
-    return kCFStringEncodingUTF8;
-} else if (strcmp(encoding, CHARDET_ENCODING_UTF_16LE) == 0) {
-    return kCFStringEncodingUTF16LE;
-} else if (strcmp(encoding, CHARDET_ENCODING_UTF_16LE) == 0) {
-    return kCFStringEncodingUTF16BE;
-} else if (strcmp(encoding, CHARDET_ENCODING_UTF_32LE) == 0) {
-    return kCFStringEncodingUTF32LE;
-} else if (strcmp(encoding, CHARDET_ENCODING_UTF_32BE) == 0) {
-    return kCFStringEncodingUTF32BE;
-}
-#endif
-
 
 static CFStringEncoding detectEncoding(P7Z& a) {
     int n = a.getNumberOfItems();

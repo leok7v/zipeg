@@ -21,40 +21,19 @@
     return self;
 }
 
-/*
-- (id) initWithWindow:( NSWindow*) window {
-    @throw @"Should not be called"; // see .h for refernce why
-}
-
-- (id) initWithWindowNibName: (NSString*) nn owner: (id) o {
-    if (o != self) {
-        @throw @"Should not be called"; // see .h for refernce why
-    }
-    return [super initWithWindowNibName: nn owner: o];
-}
-
-- (id) initWithWindowNibPath: (NSString*) NibPath owner: (id) owner {
-    @throw @"Should not be called"; // see .h for refernce why
-}
-*/
-
 - (void) setWindow: (NSWindow*) w {
     [super setWindow: w];
-    trace(@"");
 }
 
 - (void) loadWindow {
     [super loadWindow];
-    trace(@"");
 }
 
 - (void)windowWillLoad {
-    trace(@"");
 }
 
 - (void)windowDidLoad {
     [super windowDidLoad];
-    trace(@"");
     [self.document windowControllerDidLoadNib: self];
 }
 

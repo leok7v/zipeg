@@ -72,12 +72,30 @@
 - (void)tableView:(NSTableView *)tableView sortDescriptorsDidChange:(NSArray *)oldDescriptors {
     NSObject<ZGItemProtocol>* it = [self selectedItem];
     if (it != null) {
-        if (_sorted == null) { // has not been sorted yet
-            _sorted = [NSMutableArray arrayWithArray:it.children];
+        // tableView:didClickTableColumn: in ZGTableViewDelegate
+        // which sets sortDescriptorPrototype back after it's been null-ified
+        NSArray* sortDescriptors = _document.tableView.sortDescriptors;
+        // trace(@"old=%@ new=%@", oldDescriptors, sortDescriptors);
+        if (oldDescriptors != null && oldDescriptors.count > 0 && sortDescriptors != null && sortDescriptors.count > 0) {
+            NSSortDescriptor* o = oldDescriptors[0];
+            NSSortDescriptor* n = sortDescriptors[0];
+            if (o.ascending == false && n.ascending == true) {
+                // instead of sorting remove sort descriptor prototype
+                NSTableColumn* tc = tableView.tableColumns[0];
+                tc.sortDescriptorPrototype = null; // this will reset header state to unsorted
+                _sorted = null;
+                [tableView reloadData];
+                return;
+            }
         }
-        // TODO: sort directories to the top
-        [_sorted sortUsingDescriptors: [_document.tableView sortDescriptors]];
-        [tableView reloadData];
+        if (sortDescriptors != null && sortDescriptors.count > 0) {
+            if (_sorted == null) { // has not been sorted yet
+                _sorted = [NSMutableArray arrayWithArray:it.children];
+            }
+            // TODO: sort directories to the top
+            [_sorted sortUsingDescriptors: _document.tableView.sortDescriptors];
+            [tableView reloadData];
+        }
     }
 }
 

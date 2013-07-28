@@ -23,14 +23,6 @@
     NSObject<ZGItemFactory>* archive;
     NSWindow* __weak window;
 }
-/*
-@property (weak) IBOutlet NSSearchField* searchField;
-@property (weak) IBOutlet NSView* contentView;
-@property (weak) IBOutlet NSToolbar* toolbar;
-@property (weak) IBOutlet NSSplitView* splitView;
-@property (weak) IBOutlet NSLevelIndicator* levelIndicator;
-@property (strong) IBOutlet NSMenu *tableRowContextMenu;
-*/
 @property NSSearchField* searchField;
 @property NSView* contentView;
 @property NSToolbar* toolbar;
@@ -134,7 +126,7 @@
 - (void)makeWindowControllers {
     ZGWindowController* wc = [ZGWindowController new];
     [self addWindowController: wc];
-    trace("wc.document=%@ %s (self %@)", wc.document, wc.document == self ? "==" : "!=", self);
+    // trace("wc.document=%@ %s (self %@)", wc.document, wc.document == self ? "==" : "!=", self);
     [wc window]; // this actually loads Nib (see docs)
 }
 
@@ -149,6 +141,8 @@
         _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: archive.root];
         _outlineView.dataSource = _outlineViewDataSource;
         [_outlineView reloadData];
+[_outlineView expandItem:null expandChildren:true]; // expand all
+        
         NSIndexSet* is = [NSIndexSet indexSetWithIndex:0];
         [_outlineView selectRowIndexes:is byExtendingSelection:false];
         _tableViewDatatSource = [[ZGTableViewDataSource alloc] initWithDocument: self];
@@ -203,7 +197,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     // this is called after readFromURL
     window = controller.window;
     window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
-    dumpViews(window.contentView, 0);
+    // dumpViews(window.contentView, 0);
     [super windowControllerDidLoadNib:controller];
     _contentView = [[NSView alloc] initWithFrame: [window.contentView frame]];
     NSRect bounds = _contentView.frame;
@@ -211,6 +205,8 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     bounds.size.height -= 60;
     NSRect tbounds = bounds;
     tbounds.size.width /= 2;
+    tbounds.origin.x = 0;
+    tbounds.origin.y = 0;
     _outlineView = [[NSOutlineView alloc] initWithFrame: tbounds];
     _outlineView.focusRingType = NSFocusRingTypeNone;
     _tableView = [[NSTableView alloc] initWithFrame: tbounds];
@@ -222,22 +218,23 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     _contentView.autoresizesSubviews = true;
     _contentView.subviews = @[_splitView];
     controller.window.contentView = _contentView;
-    dumpViews(_contentView, 0);
+    // dumpViews(_contentView, 0);
     
     assert(_contentView != null);
     assert(controller.window.contentView == _contentView);
     assert(_tableView != null);
-//  assert(_toolbar != null);
-//  assert(_levelIndicator != null);
     assert(_splitView != null);
     assert(_outlineView != null);
 
+    //  assert(_toolbar != null);
+    //  assert(_levelIndicator != null);
+    
     NSTableColumn* tableColumn = [NSTableColumn new];
     [_outlineView addTableColumn: tableColumn];
     _outlineView.outlineTableColumn = tableColumn;
     tableColumn.dataCell = [ZGImageAndTextCell new];
-    tableColumn.minWidth = 100;
-    tableColumn.maxWidth = 10000;
+    tableColumn.minWidth = 92;
+    tableColumn.maxWidth = 3000;
     tableColumn.editable = true;
     assert(_outlineView.outlineTableColumn == tableColumn);
     assert(_outlineView.tableColumns[0] == tableColumn);
@@ -245,19 +242,13 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     tableColumn = [NSTableColumn new];
     [_tableView addTableColumn: tableColumn];
     tableColumn.dataCell = [ZGImageAndTextCell new];
-    tableColumn.minWidth = 100;
-    tableColumn.maxWidth = 10000;
+    tableColumn.minWidth = 92;
+    tableColumn.maxWidth = 3000;
     tableColumn.editable = true;
     assert(_tableView.tableColumns[0] == tableColumn);
 
     NSSortDescriptor *sd = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES
                                                 selector:@selector(localizedCaseInsensitiveCompare:)];
-/*
-    NSSortDescriptor* sd = [NSSortDescriptor sortDescriptorWithKey:@"date" ascending: true
-        comparator:^NSComparisonResult(id o1, id o2) {
-            return NSOrderedSame;
-    }];
-*/
     tableColumn.sortDescriptorPrototype = sd;
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
     [tableColumn addObserver:self forKeyPath:@"width" options: 0 context: null];
@@ -266,8 +257,8 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
         [_tableView addTableColumn: tableColumn];
         assert(_tableView.tableColumns[i] == tableColumn);
         tableColumn.dataCell = [NSTextFieldCell new];
-        tableColumn.minWidth = 100;
-        tableColumn.maxWidth = 10000;
+        tableColumn.minWidth = 92;
+        tableColumn.maxWidth = 3000;
         tableColumn.editable = true;
     }
     [controller.window addObserver:self forKeyPath:@"firstResponder" options: 0 context: null];
@@ -275,7 +266,11 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     _contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _outlineView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _outlineView.allowsEmptySelection = false;
-    _outlineView.menu = _tableRowContextMenu;
+    // Xcode:
+    // unfocused: Gradient 0.96 0.96 0.96 -> 0.91, 0.91, 0.91
+    // focused: Gradient 0.91 0.92 0.94 -> 0.85 0.87 0.90
+    _outlineView.backgroundColor = [NSColor colorWithCalibratedRed:0.88 green:0.89 blue:0.92 alpha:1];
+//  _outlineView.menu = _tableRowContextMenu;
 
     _tableView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _tableView.allowsColumnReordering = true;
@@ -283,7 +278,15 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     _tableView.allowsMultipleSelection = true;
     _tableView.allowsColumnSelection = false;
     _tableView.allowsEmptySelection = true; // otherwise deselectAll won't work
-    _tableView.menu = _tableRowContextMenu;
+    _tableView.allowsTypeSelect = true;
+    _tableView.usesAlternatingRowBackgroundColors = true;
+//  _tableView.menu = _tableRowContextMenu; // TODO:
+    NSFont* font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
+    for (int i = 0; i < _tableView.tableColumns.count; i++) {
+        NSTableColumn* tc = _tableView.tableColumns[i];
+        NSTableHeaderCell* hc = tc.headerCell;
+        hc.font = font;
+    }
     
     [_tableView setDraggingSourceOperationMask : NSDragOperationCopy forLocal: NO];
     [_tableView setDraggingSourceOperationMask : NSDragOperationGeneric forLocal: YES];
@@ -565,7 +568,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     }
     if ([archive setFilter:s]) {
         [_outlineView reloadData];
-        [_outlineView expandItem:null expandChildren:true];
+        [_outlineView expandItem:null expandChildren:true]; // expand all
         [self sizeOutlineViewToContents];
         _searchField.textColor = _searchTextColor;
     } else {
