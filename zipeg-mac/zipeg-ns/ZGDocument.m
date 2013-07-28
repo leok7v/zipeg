@@ -9,6 +9,7 @@
 #import "ZGOutlineViewDataSource.h"
 #import "ZGTableViewDataSource.h"
 #import "ZGSplitViewDelegate.h"
+#import "ZGWindowController.h"
 #import "ZGWindowPresenter.h"
 
 
@@ -20,13 +21,22 @@
 
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* archive;
+    NSWindow* __weak window;
 }
+/*
 @property (weak) IBOutlet NSSearchField* searchField;
 @property (weak) IBOutlet NSView* contentView;
 @property (weak) IBOutlet NSToolbar* toolbar;
 @property (weak) IBOutlet NSSplitView* splitView;
 @property (weak) IBOutlet NSLevelIndicator* levelIndicator;
 @property (strong) IBOutlet NSMenu *tableRowContextMenu;
+*/
+@property NSSearchField* searchField;
+@property NSView* contentView;
+@property NSToolbar* toolbar;
+@property NSSplitView* splitView;
+@property NSLevelIndicator* levelIndicator;
+@property NSMenu *tableRowContextMenu;
 
 @property NSTextFieldCell* textCell;
 @property ZGOutlineViewDelegate* outlineViewDelegate; // TODO: can be local
@@ -54,53 +64,14 @@
 
 // TODO: this is not a good place for any controls
 // because I intend to turn this view OFF for plain (folderless) archives
+// also it probably better to have ZGOutlineHeaderViewCell implemented?
 @implementation ZGOutlineHeaderView
 
 - (id) initWithFrame:(NSRect)frame {
     frame.size.height = 17;
     self = [super initWithFrame:frame];
     self.autoresizesSubviews = true;
-/*
-    NSRect bf = frame;
-    bf.origin.x = 2;
-    bf.origin.y = 2;
-    bf.size.width = 32 * 3 + 4;
-    NSSegmentedControl  *sc = [[NSSegmentedControl alloc] initWithFrame:bf];
-    sc.segmentCount = 3;
-    [sc setWidth:32 forSegment:0];
-    [sc setWidth:32 forSegment:1];
-    [sc setWidth:32 forSegment:2];
-    [sc setLabel:@"" forSegment:0];
-    [sc setLabel:@"" forSegment:1];
-    [sc setLabel:@"" forSegment:2];
-
-    NSImage* image = [NSImage imageNamed:@"expand.png"];
-    image.size = NSMakeSize(16, 16);
-    [sc setImage:image forSegment:0];
-    image = [NSImage imageNamed:@"collapse.png"];
-    image.size = NSMakeSize(16, 16);
-    [sc setImage:image forSegment:1];
-    image = [NSImage imageNamed:@"search.png"];
-    image.size = NSMakeSize(16, 16);
-    [sc setImage:image forSegment:2];
-    sc.segmentStyle = NSSegmentStyleTexturedSquare;
-
-    sc.target = self;
-    sc.action = @selector(segmentAction:);
-
-    NSRect sf = frame;
-    sf.origin.x += bf.origin.x + bf.size.width;
-    sf.size.width -= bf.origin.x + bf.size.width;
-    NSSearchField *search = [[NSSearchField alloc] initWithFrame: sf];
-    search.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin;
-
-    self.subviews = @[sc, search];
-*/ 
     return self;
-}
-
-- (void) segmentAction:(id) sender {
-    // trace(@"sender=%@", sender);
 }
 
 - (void)drawRect:(NSRect)dirtyRect {
@@ -156,14 +127,23 @@
 
 - (void)  dealloc {
     dealloc_count(self);
-//    trace(@"");
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    trace(@"");
 }
 
+- (void)makeWindowControllers {
+    ZGWindowController* wc = [ZGWindowController new];
+    [self addWindowController: wc];
+    trace("wc.document=%@ %s (self %@)", wc.document, wc.document == self ? "==" : "!=", self);
+    [wc window]; // this actually loads Nib (see docs)
+}
+
+/* TODO: gone! because of makeWindowControllers
 - (NSString*) windowNibName {
     return @"ZGDocument";
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
-
+*/
+ 
 - (void) reloadOutlineView {
     if (_outlineView != null && archive != null) {
         _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: archive.root];
@@ -187,7 +167,7 @@ static void dumpViews(NSView* v, int level) {
     for (int i = 0; i < level; i++) {
         indent = [indent stringByAppendingString:@"    "];
     }
-    trace(@"%@%@", indent, [v class]);
+    trace(@"%@%@ %@", indent, v.class, NSStringFromRect(v.frame));
     if (v.subviews != null) {
         for (id s in v.subviews) {
             dumpViews(s, level + 1);
@@ -195,30 +175,80 @@ static void dumpViews(NSView* v, int level) {
     }
 }
 
+static NSSplitView* createSplitView(NSRect r, NSView* left, NSView* right) {
+    NSSplitView* sv = [[NSSplitView alloc] initWithFrame: r];
+    sv.vertical = true;
+    sv.dividerStyle = NSSplitViewDividerStyleThin;
+    sv.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    sv.autoresizesSubviews = true;
+    sv.subviews = @[left, right];
+    return sv;
+}
+
+static NSScrollView* createScrollView(NSRect r, NSView* v) {
+    NSScrollView* sv = [[NSScrollView alloc] initWithFrame: r];
+    sv.documentView = v;
+    sv.hasVerticalScroller = true;
+    sv.hasHorizontalScroller = true;
+    sv.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    sv.autoresizesSubviews = true;
+    return sv;
+}
+
+- (void)windowControllerWillLoadNib:(NSWindowController *)windowController {
+    trace(@"");
+}
+
 - (void) windowControllerDidLoadNib: (NSWindowController*) controller {
     // this is called after readFromURL
+    window = controller.window;
+    window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
+    dumpViews(window.contentView, 0);
     [super windowControllerDidLoadNib:controller];
-//  dumpViews(_contentView, 0);
+    _contentView = [[NSView alloc] initWithFrame: [window.contentView frame]];
+    NSRect bounds = _contentView.frame;
+    bounds.origin.y += 30;
+    bounds.size.height -= 60;
+    NSRect tbounds = bounds;
+    tbounds.size.width /= 2;
+    _outlineView = [[NSOutlineView alloc] initWithFrame: tbounds];
+    _outlineView.focusRingType = NSFocusRingTypeNone;
+    _tableView = [[NSTableView alloc] initWithFrame: tbounds];
+    _tableView.focusRingType = NSFocusRingTypeNone;
+
+    _splitView = createSplitView(bounds,
+                                 createScrollView(tbounds, _outlineView),
+                                 createScrollView(tbounds, _tableView));
+    _contentView.autoresizesSubviews = true;
+    _contentView.subviews = @[_splitView];
+    controller.window.contentView = _contentView;
+    dumpViews(_contentView, 0);
+    
     assert(_contentView != null);
     assert(controller.window.contentView == _contentView);
     assert(_tableView != null);
-    assert(_toolbar != null);
+//  assert(_toolbar != null);
+//  assert(_levelIndicator != null);
     assert(_splitView != null);
     assert(_outlineView != null);
-    assert(_levelIndicator != null);
-    controller.window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
 
-    NSTableColumn* tableColumn = _outlineView.tableColumns[0];
+    NSTableColumn* tableColumn = [NSTableColumn new];
+    [_outlineView addTableColumn: tableColumn];
+    _outlineView.outlineTableColumn = tableColumn;
     tableColumn.dataCell = [ZGImageAndTextCell new];
     tableColumn.minWidth = 100;
     tableColumn.maxWidth = 10000;
     tableColumn.editable = true;
+    assert(_outlineView.outlineTableColumn == tableColumn);
+    assert(_outlineView.tableColumns[0] == tableColumn);
 
-    tableColumn = _tableView.tableColumns[0];
+    tableColumn = [NSTableColumn new];
+    [_tableView addTableColumn: tableColumn];
     tableColumn.dataCell = [ZGImageAndTextCell new];
     tableColumn.minWidth = 100;
     tableColumn.maxWidth = 10000;
     tableColumn.editable = true;
+    assert(_tableView.tableColumns[0] == tableColumn);
 
     NSSortDescriptor *sd = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES
                                                 selector:@selector(localizedCaseInsensitiveCompare:)];
@@ -231,8 +261,10 @@ static void dumpViews(NSView* v, int level) {
     tableColumn.sortDescriptorPrototype = sd;
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
     [tableColumn addObserver:self forKeyPath:@"width" options: 0 context: null];
-    for (int i = 1; i < 2; i++) {
-        tableColumn = _tableView.tableColumns[i];
+    for (int i = 1; i < 3; i++) {
+        tableColumn = [NSTableColumn new];
+        [_tableView addTableColumn: tableColumn];
+        assert(_tableView.tableColumns[i] == tableColumn);
         tableColumn.dataCell = [NSTextFieldCell new];
         tableColumn.minWidth = 100;
         tableColumn.maxWidth = 10000;
@@ -250,9 +282,6 @@ static void dumpViews(NSView* v, int level) {
     _tableView.allowsColumnResizing = true;
     _tableView.allowsMultipleSelection = true;
     _tableView.allowsColumnSelection = false;
-    _tableView.allowsColumnReordering = true;
-    _tableView.allowsColumnReordering = true;
-    _tableView.allowsColumnReordering = true;
     _tableView.allowsEmptySelection = true; // otherwise deselectAll won't work
     _tableView.menu = _tableRowContextMenu;
     
@@ -340,6 +369,7 @@ static void dumpViews(NSView* v, int level) {
 }
 
 + (BOOL)autosavesInPlace {
+    // this is for autosaving documents like text files... see NSDocumentController -setAutosavingDelay:
     return false;
 }
 
@@ -356,9 +386,11 @@ static void dumpViews(NSView* v, int level) {
 }
 
 - (void)close {
+/* TODO: later
     NSTableColumn* tc = _tableView.tableColumns[0];
     assert(tc != null);
     [tc removeObserver:self forKeyPath:@"width"];
+*/
 /* TODO:
  it is impossible to add remove window FirstResponder observers w/o subclassing NSWindowController
  which is actually recommended by Apple:

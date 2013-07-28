@@ -65,6 +65,11 @@
     NSUInteger from = MAX(0, range.location);
     NSUInteger to = MIN(range.location + range.length, rowCount);
     CGFloat indentationPerLevel = ov != null ? ov.indentationPerLevel : 0;
+    if (ov != null) {
+        trace(@"ov.outlineTableColumn=%@", ov.outlineTableColumn);
+    } else {
+        trace(@"tv.tableColumn[%d]=%@", cx, view.tableColumns[cx]);
+    }
     NSTableColumn *tableColumn = view.tableColumns[cx];
     CGFloat minWidth = tableColumn.minWidth;
     CGFloat width = [tableColumn.headerCell cellSize].width;
