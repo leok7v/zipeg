@@ -5,13 +5,13 @@ static const char* REMOVED = "this entry has been removed";
 HashMapS2L::HashMapS2L(int c) : HashMapS2L(c, 0) {
 }
 
-HashMapS2L::HashMapS2L(int c, uint64_t not_a_value) {
+HashMapS2L::HashMapS2L(int c, int64_t not_a_value) {
     assert(c >= 4);
     if (c < 4) {
         throw "HashMapS2L capacity < 4";
     } else {
         keys = (char**)calloc(c, sizeof(char*));
-        values = (uint64_t*)calloc(c, sizeof(uint64_t));
+        values = (int64_t*)calloc(c, sizeof(int64_t));
         capacity = c;
         not_found = not_a_value;
     }
@@ -45,7 +45,7 @@ static int hash(const char* k, int capacity) { /* assumes k != null && k[0] != 0
     return h;
 }
 
-bool HashMapS2L::put(const char* k, uint64_t v) {
+bool HashMapS2L::put(const char* k, int64_t v) {
     if (v == not_found || k == null || k[0] == 0 || keys == null || values == null) {
         return false;
     } else {
@@ -72,7 +72,7 @@ bool HashMapS2L::put(const char* k, uint64_t v) {
     }
 }
 
-uint64_t HashMapS2L::remove(const char* k) {
+int64_t HashMapS2L::remove(const char* k) {
     if (k == null || k[0] == 0 || keys == null || values == null) {
         return not_found;
     }
@@ -94,7 +94,7 @@ uint64_t HashMapS2L::remove(const char* k) {
     }
 }
 
-uint64_t HashMapS2L::get(const char* k) {
+int64_t HashMapS2L::get(const char* k) const {
     int h = hash(k, capacity);
     int h0 = h;
     for (;;) {
@@ -110,3 +110,10 @@ uint64_t HashMapS2L::get(const char* k) {
         }
     }
 }
+
+const char* HashMapS2L::keyAt(int pos) const {
+    assert(0 <= pos && pos < capacity);
+    const char* k = keys[pos];
+    return k == REMOVED ? null : k;
+}
+

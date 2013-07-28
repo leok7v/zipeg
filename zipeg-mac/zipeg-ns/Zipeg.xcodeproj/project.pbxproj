@@ -34,6 +34,7 @@
 		B35D1E4A1794DC8300A0210F /* ZGDate.m in Sources */ = {isa = PBXBuildFile; fileRef = B35D1E491794DC8300A0210F /* ZGDate.m */; };
 		B36196D617959F6800C515E4 /* ZGBitset.m in Sources */ = {isa = PBXBuildFile; fileRef = B36196D517959F6800C515E4 /* ZGBitset.m */; };
 		B36196D91795BB8E00C515E4 /* ZGUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = B36196D81795BB8E00C515E4 /* ZGUtils.mm */; };
+		B361A43517A3FE28008C8199 /* libp7z.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = B39F1D4817924CBE00472FEF /* libp7z.dylib */; };
 		B37E554B179278DF00E54693 /* zipeg.icns in Resources */ = {isa = PBXBuildFile; fileRef = B37E554A179278DF00E54693 /* zipeg.icns */; };
 		B37E554F1792857400E54693 /* ZGImageAndTextCell.m in Sources */ = {isa = PBXBuildFile; fileRef = B37E554E1792857400E54693 /* ZGImageAndTextCell.m */; };
 		B37E55541792864200E54693 /* ZGOutlineViewDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B37E55511792864200E54693 /* ZGOutlineViewDelegate.m */; };
@@ -45,13 +46,8 @@
 		B39F1D2A1792486C00472FEF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D2C1792486C00472FEF /* InfoPlist.strings */; };
 		B3BAB36E17936C9C006C4E75 /* ZG7zip.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3BAB36D17936C9C006C4E75 /* ZG7zip.mm */; };
 		B3BAB3711793CAB0006C4E75 /* ZGNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = B3BAB3701793CAB0006C4E75 /* ZGNumber.m */; };
-		B3BECD9E179A149300B07871 /* Big5Freq.tab in Resources */ = {isa = PBXBuildFile; fileRef = B3BECD67179A149300B07871 /* Big5Freq.tab */; };
 		B3BECD9F179A149300B07871 /* CharDistribution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD68179A149300B07871 /* CharDistribution.cpp */; };
 		B3BECDA0179A149300B07871 /* dll.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD6A179A149300B07871 /* dll.cpp */; };
-		B3BECDA1179A149300B07871 /* EUCKRFreq.tab in Resources */ = {isa = PBXBuildFile; fileRef = B3BECD6B179A149300B07871 /* EUCKRFreq.tab */; };
-		B3BECDA2179A149300B07871 /* EUCTWFreq.tab in Resources */ = {isa = PBXBuildFile; fileRef = B3BECD6C179A149300B07871 /* EUCTWFreq.tab */; };
-		B3BECDA3179A149300B07871 /* GB2312Freq.tab in Resources */ = {isa = PBXBuildFile; fileRef = B3BECD6D179A149300B07871 /* GB2312Freq.tab */; };
-		B3BECDA4179A149300B07871 /* JISFreq.tab in Resources */ = {isa = PBXBuildFile; fileRef = B3BECD6E179A149300B07871 /* JISFreq.tab */; };
 		B3BECDA5179A149300B07871 /* JpCntx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD6F179A149300B07871 /* JpCntx.cpp */; };
 		B3BECDA6179A149300B07871 /* LangBulgarianModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD71179A149300B07871 /* LangBulgarianModel.cpp */; };
 		B3BECDA7179A149300B07871 /* LangCyrillicModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD72179A149300B07871 /* LangCyrillicModel.cpp */; };
@@ -78,7 +74,6 @@
 		B3BECDBD179A149300B07871 /* nsUTF8Prober.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD99179A149300B07871 /* nsUTF8Prober.cpp */; };
 		B3BECDBE179A149300B07871 /* universalchardet.c in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD9C179A149300B07871 /* universalchardet.c */; };
 		B3BF7D2D1792462500A3E5EF /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7D2C1792462500A3E5EF /* main.mm */; };
-		B3C2F80A179FEA1800265B85 /* the-sheepfold-public-domain.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B3C2F809179FEA1800265B85 /* the-sheepfold-public-domain.jpg */; };
 		B3D1BE5F1797366E007BE5E7 /* MacMem.c in Sources */ = {isa = PBXBuildFile; fileRef = B3D1BE5E1797366E007BE5E7 /* MacMem.c */; };
 		B3E1F0BD17A1E22A003D3E68 /* ZGTableViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E1F0BC17A1E22A003D3E68 /* ZGTableViewDataSource.m */; };
 		B3F7414C17A1F923009A8ECF /* ZGTableViewDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B3F7414B17A1F923009A8ECF /* ZGTableViewDelegate.m */; };
@@ -109,6 +104,19 @@
 			remoteInfo = p7z;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B361A43417A3FE10008C8199 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				B361A43517A3FE28008C8199 /* libp7z.dylib in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		B3037DD317998FC300A49FF3 /* ru */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = ru; path = ru.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -275,14 +283,6 @@
 			children = (
 				B39F1D5817924FB600472FEF /* p7z */,
 				B3BECD66179A147800B07871 /* chardet */,
-				B3485C6D179F2E6E001B91F5 /* ZGApplication.h */,
-				B3F7414D17A21B79009A8ECF /* ZGImages.h */,
-				B3F7414E17A21B79009A8ECF /* ZGImages.m */,
-				B3485C6E179F2E6E001B91F5 /* ZGApplication.m */,
-				B37E555617928A3700E54693 /* ZGAppDelegate.h */,
-				B37E555717928A3700E54693 /* ZGAppDelegate.m */,
-				B3D1BE5D17973662007BE5E7 /* MacMem.h */,
-				B3D1BE5E1797366E007BE5E7 /* MacMem.c */,
 				B36196D71795BB8E00C515E4 /* ZGUtils.h */,
 				B36196D81795BB8E00C515E4 /* ZGUtils.mm */,
 				B3BAB36F1793CAB0006C4E75 /* ZGNumber.h */,
@@ -291,15 +291,21 @@
 				B36196D517959F6800C515E4 /* ZGBitset.m */,
 				B35D1E481794DC8300A0210F /* ZGDate.h */,
 				B35D1E491794DC8300A0210F /* ZGDate.m */,
+				B3F7414D17A21B79009A8ECF /* ZGImages.h */,
+				B3F7414E17A21B79009A8ECF /* ZGImages.m */,
 				B35D1E3F1794CA3B00A0210F /* ZGErrors.h */,
 				B35D1E401794CA3B00A0210F /* ZGErrors.m */,
+				B3485C6D179F2E6E001B91F5 /* ZGApplication.h */,
+				B3485C6E179F2E6E001B91F5 /* ZGApplication.m */,
+				B37E555617928A3700E54693 /* ZGAppDelegate.h */,
+				B37E555717928A3700E54693 /* ZGAppDelegate.m */,
+				B3D1BE5D17973662007BE5E7 /* MacMem.h */,
+				B3D1BE5E1797366E007BE5E7 /* MacMem.c */,
 				B32FF53117933C6B0083146C /* ZGItemProtocol.h */,
 				B3BAB36C17936C9B006C4E75 /* ZG7zip.h */,
 				B3BAB36D17936C9C006C4E75 /* ZG7zip.mm */,
 				B37E555917928BF300E54693 /* ZGFileSystem.h */,
 				B37E555A17928BF300E54693 /* ZGFileSystem.m */,
-				B34FEB6C1792443D005D798B /* ZGDocument.h */,
-				B34FEB6D1792443D005D798B /* ZGDocument.m */,
 				B3FC1D9717A0929000BE0ED3 /* ZGHeroView.h */,
 				B3FC1D9817A0929000BE0ED3 /* ZGHeroView.m */,
 				B3FC1DA417A0BAED00BE0ED3 /* ZGWindowPresenter.h */,
@@ -316,6 +322,8 @@
 				B37E55531792864200E54693 /* ZGSplitViewDelegate.m */,
 				B37E554D1792857400E54693 /* ZGImageAndTextCell.h */,
 				B37E554E1792857400E54693 /* ZGImageAndTextCell.m */,
+				B34FEB6C1792443D005D798B /* ZGDocument.h */,
+				B34FEB6D1792443D005D798B /* ZGDocument.m */,
 				B35EDC7A1799E36F00E6CCF9 /* Zipeg-Info.plist */,
 				B37E554A179278DF00E54693 /* zipeg.icns */,
 				B34FEB611792443D005D798B /* Supporting Files */,
@@ -490,6 +498,7 @@
 				B34FEB531792443D005D798B /* Sources */,
 				B34FEB541792443D005D798B /* Frameworks */,
 				B34FEB551792443D005D798B /* Resources */,
+				B361A43417A3FE10008C8199 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -574,12 +583,6 @@
 				B3037DDA1799A29E00A49FF3 /* collapse.png in Resources */,
 				B3037DDB1799A29E00A49FF3 /* expand-all-vertical.png in Resources */,
 				B3037E0A1799E20E00A49FF3 /* zipeg-archive.icns in Resources */,
-				B3BECD9E179A149300B07871 /* Big5Freq.tab in Resources */,
-				B3BECDA1179A149300B07871 /* EUCKRFreq.tab in Resources */,
-				B3BECDA2179A149300B07871 /* EUCTWFreq.tab in Resources */,
-				B3BECDA3179A149300B07871 /* GB2312Freq.tab in Resources */,
-				B3BECDA4179A149300B07871 /* JISFreq.tab in Resources */,
-				B3C2F80A179FEA1800265B85 /* the-sheepfold-public-domain.jpg in Resources */,
 				B3FC1DA017A0B40B00BE0ED3 /* leaf-0-64x64.png in Resources */,
 				B3FC1DA117A0B40B00BE0ED3 /* leaf-1-64x64.png in Resources */,
 				B3FC1DA217A0B40B00BE0ED3 /* leaf-2-64x64.png in Resources */,
