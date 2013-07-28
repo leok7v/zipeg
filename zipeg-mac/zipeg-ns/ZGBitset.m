@@ -1,4 +1,5 @@
 #import "ZGBitset.h"
+#import "ZGUtils.h"
 
 #define N ((int)sizeof(UInt64)*8)
 
@@ -13,11 +14,13 @@
 
 - (void)dealloc {
     free(_bits);
+    dealloc_count(self);
     trace(@"");
 }
 
 - (id)initWithCapacity:(int)numBits {
     if (self) {
+        alloc_count(self);
         _numBits = numBits;
         int n = (numBits + N - 1) / N;
         _bits = (UInt64 *)calloc(n, sizeof(UInt64));

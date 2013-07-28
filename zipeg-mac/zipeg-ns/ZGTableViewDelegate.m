@@ -18,12 +18,16 @@
 
 - (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
+    if (self != null) {
+        alloc_count(self);
+    }
     _document = doc;
     return self;
 }
 
 - (void) dealloc {
-//    trace(@"");
+    dealloc_count(self);
+    trace(@"");
 }
 
 - (void)tableView: (NSTableView *) tableView willDisplayCell: (id) cell

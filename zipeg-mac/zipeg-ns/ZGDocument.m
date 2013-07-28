@@ -145,13 +145,17 @@
 
 - (id) init {
     self = [super init];
-    _operationQueue = [NSOperationQueue new];
-    _operationQueue.maxConcurrentOperationCount = 1; // TODO: can it be 2?
-    _encoding = (CFStringEncoding)-1;
+    if (self != null) {
+        alloc_count(self);
+        _operationQueue = [NSOperationQueue new];
+        _operationQueue.maxConcurrentOperationCount = 1; // TODO: can it be 2?
+        _encoding = (CFStringEncoding)-1;
+    }
     return self;
 }
 
 - (void)  dealloc {
+    dealloc_count(self);
 //    trace(@"");
 }
 
@@ -251,6 +255,11 @@ static void dumpViews(NSView* v, int level) {
     _tableView.allowsColumnReordering = true;
     _tableView.allowsEmptySelection = true; // otherwise deselectAll won't work
     _tableView.menu = _tableRowContextMenu;
+    
+    [_tableView setDraggingSourceOperationMask : NSDragOperationCopy forLocal: NO];
+    [_tableView setDraggingSourceOperationMask : NSDragOperationGeneric forLocal: YES];
+    // TODO: for now:
+    [_tableView registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
 
     _outlineViewDelegate = [[ZGOutlineViewDelegate alloc] initWithDocument: self];;
     _outlineView.delegate = _outlineViewDelegate;
@@ -310,7 +319,7 @@ static void dumpViews(NSView* v, int level) {
         if ([o isKindOfClass:NSTableColumn.class] &&
             o == [_tableView.tableColumns objectAtIndex: resizedColumn]) {
             NSTableColumn* tc = (NSTableColumn*)o;
-            trace(@"User resized table column %@", tc);
+            console(@"User resized table column %@", tc);
             // TODO: does it affect autosizing? for how long?
         }
     }
@@ -331,14 +340,61 @@ static void dumpViews(NSView* v, int level) {
 }
 
 + (BOOL)autosavesInPlace {
-    return YES;
+    return false;
+}
+
++ (BOOL)canConcurrentlyReadDocumentsOfType:(NSString *)typeName {
+    return true;
+}
+
+- (BOOL)hasUnautosavedChanges {
+    return false;
+}
+
+- (BOOL) isDocumentEdited {
+    return false;
 }
 
 - (void)close {
+    NSTableColumn* tc = _tableView.tableColumns[0];
+    assert(tc != null);
+    [tc removeObserver:self forKeyPath:@"width"];
+/* TODO:
+ it is impossible to add remove window FirstResponder observers w/o subclassing NSWindowController
+ which is actually recommended by Apple:
+ https://developer.apple.com/library/mac/#documentation/DataManagement/Conceptual/DocBasedAppProgrammingGuideForOSX/KeyObjects/KeyObjects.html
+    NSWindow* w = [self.windowControllers[0] window];
+    assert(w != null);
+    [w removeObserver:self forKeyPath:@"firstResponder"];
+*/
     [_operationQueue cancelAllOperations];
     [_operationQueue waitUntilAllOperationsAreFinished];
     [super close];
+    trace_allocs();
 }
+
+
+
+- (BOOL)writeSelectionToPasteboard:(NSPasteboard *)pasteboard {
+    // This method will be called for services, or for drags originating from the preview column ZipEntryView, and it calls the previous method
+    return false; // TODO: depending on FirstResponder being table or outline view
+}
+
++ (void)registerServices {
+    static BOOL registeredServices = NO;
+    if (!registeredServices) {
+        [NSApp setServicesProvider:self];
+        registeredServices = YES;
+    }
+}
+
++ (void)exportData:(NSPasteboard *)pasteboard userData:(NSString *)data error:(NSString **)error {
+    ZGDocument *d = [[[NSApp makeWindowsPerform: @selector(windowController) inOrder:YES] windowController] document];
+    if (d) {
+        [d writeSelectionToPasteboard:pasteboard];
+    }
+}
+
 
 - (NSData *)dataOfType:(NSString *)typeName error:(NSError **)outError {
     // Insert code here to write your document to data of the specified type.

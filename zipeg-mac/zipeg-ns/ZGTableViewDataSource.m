@@ -19,7 +19,7 @@
 }
 
 - (void)dealloc {
-//    trace(@"");
+    trace(@"");
 }
 
 - (NSObject<ZGItemProtocol>*) selectedItem {
@@ -79,6 +79,42 @@
         [_sorted sortUsingDescriptors: [_document.tableView sortDescriptors]];
         [tableView reloadData];
     }
+}
+
+- (NSArray*) tableView: (NSTableView*) tv namesOfPromisedFilesDroppedAtDestination: (NSURL*) dest
+             forDraggedRowsWithIndexes: (NSIndexSet*) rowIndexes {
+    NSMutableArray *draggedFilenames = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
+    NSUInteger i = [rowIndexes firstIndex];
+    while (i != NSNotFound) {
+        NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
+        NSString *destPath = [[dest path] stringByAppendingPathComponent: it.name];
+        [draggedFilenames addObject:destPath];
+        i = [rowIndexes indexGreaterThanIndex: i];
+    }
+    return draggedFilenames;
+}
+
+- (NSArray*) namesOfPromisedFilesDroppedAtDestination: (NSURL*) d {
+    return [self tableView: _document.tableView namesOfPromisedFilesDroppedAtDestination:d
+ forDraggedRowsWithIndexes: _document.tableView.selectedRowIndexes];
+}
+
+- (BOOL)tableView:(NSTableView *)tv writeRowsWithIndexes:(NSIndexSet*) rowIndexes
+     toPasteboard:(NSPasteboard*)pboard {
+    BOOL retval = NO;
+    NSUInteger i = [rowIndexes firstIndex];
+    while (i != NSNotFound) {
+        NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
+        [pboard declareTypes:@[NSFilesPromisePboardType, NSFilenamesPboardType, NSStringPboardType] owner:self];
+        if ([pboard setPropertyList:@[[it.name pathExtension]] forType:NSFilesPromisePboardType]) {
+            retval = YES;
+        }
+        if ([pboard setString: it.name forType:NSStringPboardType]) {
+            retval = YES;
+        }
+        i = [rowIndexes indexGreaterThanIndex: i];
+    }
+    return retval;
 }
 
 @end

@@ -9,5 +9,4 @@
 - (BOOL) progress:(long long)pos ofTotal:(long long)total;
 - (BOOL) progressFile:(long long)fileno ofTotal:(long long)totalNumberOfFiles;
 
-
 @end
