@@ -11,6 +11,10 @@
 		B3037DDB1799A29E00A49FF3 /* expand-all-vertical.png in Resources */ = {isa = PBXBuildFile; fileRef = B3037DD91799A29E00A49FF3 /* expand-all-vertical.png */; };
 		B3037E0A1799E20E00A49FF3 /* zipeg-archive.icns in Resources */ = {isa = PBXBuildFile; fileRef = B3037E091799E20D00A49FF3 /* zipeg-archive.icns */; };
 		B30A705117A4B3D200059168 /* ZGWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = B30A705017A4B3D200059168 /* ZGWindowController.m */; };
+		B322F07B17A6136B00715C6D /* ZGToolbar.m in Sources */ = {isa = PBXBuildFile; fileRef = B322F07A17A6136B00715C6D /* ZGToolbar.m */; };
+		B322F07E17A613A500715C6D /* ZGToolbarDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B322F07D17A613A500715C6D /* ZGToolbarDelegate.m */; };
+		B322F08017A613E100715C6D /* license.txt in Resources */ = {isa = PBXBuildFile; fileRef = B322F07F17A613E100715C6D /* license.txt */; };
+		B322F08217A643E700715C6D /* save-64x64.png in Resources */ = {isa = PBXBuildFile; fileRef = B322F08117A643E700715C6D /* save-64x64.png */; };
 		B32EB9C81798CEDA00D8A129 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9C41798CEDA00D8A129 /* MainMenu.xib */; };
 		B32EB9C91798CEDA00D8A129 /* ZGDocument.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9C61798CEDA00D8A129 /* ZGDocument.xib */; };
 		B32EB9DA1798E70E00D8A129 /* action-normal.png in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9CC1798E70E00D8A129 /* action-normal.png */; };
@@ -129,6 +133,12 @@
 		B3037E091799E20D00A49FF3 /* zipeg-archive.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = "zipeg-archive.icns"; path = "Resources/zipeg-archive.icns"; sourceTree = "<group>"; };
 		B30A704F17A4B3D200059168 /* ZGWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGWindowController.h; sourceTree = "<group>"; };
 		B30A705017A4B3D200059168 /* ZGWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGWindowController.m; sourceTree = "<group>"; };
+		B322F07917A6136B00715C6D /* ZGToolbar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGToolbar.h; sourceTree = "<group>"; };
+		B322F07A17A6136B00715C6D /* ZGToolbar.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGToolbar.m; sourceTree = "<group>"; };
+		B322F07C17A613A500715C6D /* ZGToolbarDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGToolbarDelegate.h; sourceTree = "<group>"; };
+		B322F07D17A613A500715C6D /* ZGToolbarDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGToolbarDelegate.m; sourceTree = "<group>"; };
+		B322F07F17A613E100715C6D /* license.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = license.txt; sourceTree = "<group>"; };
+		B322F08117A643E700715C6D /* save-64x64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "save-64x64.png"; path = "Resources/save-64x64.png"; sourceTree = "<group>"; };
 		B32EB9C51798CEDA00D8A129 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		B32EB9C71798CEDA00D8A129 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ZGDocument.xib; sourceTree = "<group>"; };
 		B32EB9CC1798E70E00D8A129 /* action-normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "action-normal.png"; path = "Resources/action-normal.png"; sourceTree = "<group>"; };
@@ -283,6 +293,7 @@
 		B34FEB4E1792443D005D798B = {
 			isa = PBXGroup;
 			children = (
+				B322F07F17A613E100715C6D /* license.txt */,
 				B39F1D5817924FB600472FEF /* p7z */,
 				B3BECD66179A147800B07871 /* chardet */,
 				B36196D71795BB8E00C515E4 /* ZGUtils.h */,
@@ -312,6 +323,10 @@
 				B3FC1D9817A0929000BE0ED3 /* ZGHeroView.m */,
 				B3FC1DA417A0BAED00BE0ED3 /* ZGWindowPresenter.h */,
 				B3FC1DA517A0BAED00BE0ED3 /* ZGWindowPresenter.m */,
+				B322F07917A6136B00715C6D /* ZGToolbar.h */,
+				B322F07A17A6136B00715C6D /* ZGToolbar.m */,
+				B322F07C17A613A500715C6D /* ZGToolbarDelegate.h */,
+				B322F07D17A613A500715C6D /* ZGToolbarDelegate.m */,
 				B37E555C1793019400E54693 /* ZGOutlineViewDataSource.h */,
 				B37E555D1793019400E54693 /* ZGOutlineViewDataSource.m */,
 				B37E55501792864200E54693 /* ZGOutlineViewDelegate.h */,
@@ -380,6 +395,7 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B322F08117A643E700715C6D /* save-64x64.png */,
 				B32EB9C61798CEDA00D8A129 /* ZGDocument.xib */,
 				B32EB9C41798CEDA00D8A129 /* MainMenu.xib */,
 				B39F1D291792485F00472FEF /* Credits.rtf */,
@@ -590,6 +606,8 @@
 				B3FC1DA117A0B40B00BE0ED3 /* leaf-1-64x64.png in Resources */,
 				B3FC1DA217A0B40B00BE0ED3 /* leaf-2-64x64.png in Resources */,
 				B3FC1DA317A0B40B00BE0ED3 /* leaf-3-64X64.png in Resources */,
+				B322F08017A613E100715C6D /* license.txt in Resources */,
+				B322F08217A643E700715C6D /* save-64x64.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -649,6 +667,8 @@
 				B3F7414C17A1F923009A8ECF /* ZGTableViewDelegate.m in Sources */,
 				B3F7414F17A21B79009A8ECF /* ZGImages.m in Sources */,
 				B30A705117A4B3D200059168 /* ZGWindowController.m in Sources */,
+				B322F07B17A6136B00715C6D /* ZGToolbar.m in Sources */,
+				B322F07E17A613A500715C6D /* ZGToolbarDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

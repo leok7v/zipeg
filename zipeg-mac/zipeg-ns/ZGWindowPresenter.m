@@ -97,7 +97,7 @@
 
 - (void) dismissSheet:(id) s {
     if ([s isKindOfClass:[NSWindow class]]) {
-        [[NSApplication sharedApplication] endSheet:s];
+        [NSApplication.sharedApplication endSheet:s];
         [s orderOut:null];
     }
     if (![s isEqual:sheetWindow]) {

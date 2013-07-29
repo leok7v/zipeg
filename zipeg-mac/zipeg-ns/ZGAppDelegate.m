@@ -1,5 +1,6 @@
 #include "c.h"
 #import "ZGAppDelegate.h"
+#import "ZGDocument.h"
 #import "ZGErrors.h"
 
 @interface ZGAppDelegate() {
@@ -10,14 +11,11 @@
 @implementation ZGAppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *) notification {
-    [[NSApplication sharedApplication] setPresentationOptions:NSFullScreenWindowMask];
-    
+    NSApplication.sharedApplication.presentationOptions = NSFullScreenWindowMask;
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
     [ud setObject:@[@"ru", @"en", @"es"] forKey:@"AppleLanguages"];
     [ud synchronize];
-
     ZGErrorsInit();
-    
     _applicationHasStarted = true;
 }
 
@@ -26,12 +24,13 @@
 }
 
 - (BOOL) openLastDocument {
-    NSDocumentController *controller = [NSDocumentController sharedDocumentController];
-    NSArray *documents = [controller recentDocumentURLs];
-    if ([documents count] > 0) { // If there is a recent document, try to open it.
+    NSDocumentController* dc = NSDocumentController.sharedDocumentController;
+    NSArray* rds = dc.recentDocumentURLs;
+    if (rds != null && rds.count > 0) { // If there is a recent document, try to open it.
         NSError *error = null;
-        [controller openDocumentWithContentsOfURL:[documents objectAtIndex:0] display:YES error:&error];
-        if (error != null) { // If there was no error, then prevent untitled from appearing.
+        [dc openDocumentWithContentsOfURL: rds[0] display: true error: &error];
+        if (error != null) {
+            // If there was no error, then prevent untitled from appearing.
             // TODO: DASHBOARD HERE instead of New Untitled File
             return true;
         }
@@ -46,6 +45,27 @@
         return [self openLastDocument];
     }
     return true;
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
+/*
+ NSTerminateCancel = 0,
+ NSTerminateNow = 1,
+ NSTerminateLater = 2
+ */
+    NSDocumentController* dc = NSDocumentController.sharedDocumentController;
+    NSArray* docs = dc.documents;
+    if (docs != null && docs.count > 0) {
+        for (int i = 0; i < docs.count; i++) {
+            ZGDocument* doc = (ZGDocument*)docs[i];
+            if (![doc documentCanClose]) {
+                return NSTerminateCancel;
+            }
+        }
+    }
+    return NSTerminateNow;
+    // NSTerminateLater: the app itself will be responsible for later termination
+    // OSX will just gray out (disable) App Quit and will stay this way forever...
 }
 
 @end

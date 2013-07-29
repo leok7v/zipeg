@@ -1,0 +1,4 @@
+All source code and other resouces in this folder and subfolders are
+Copyright (c) 2006-2013 Zipeg Labs & Leo Kuznetsov. All rights reserved.
+unless mentioned otherwise.
+

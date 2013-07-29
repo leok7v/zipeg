@@ -123,5 +123,8 @@ static ZGFileSystemItem *g_root;
     return false; // not implemented
 }
 
+- (void) close {
+    // not implemented
+}
 
 @end

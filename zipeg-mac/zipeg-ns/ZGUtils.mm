@@ -45,6 +45,23 @@ FOUNDATION_EXPORT void trace_allocs() {
     }
 }
 
+static void _dumpViews(NSView* v, int level) {
+    NSString* indent = @"";
+    for (int i = 0; i < level; i++) {
+        indent = [indent stringByAppendingString:@"    "];
+    }
+    trace(@"%@%@ %@", indent, v.class, NSStringFromRect(v.frame));
+    if (v.subviews != null) {
+        for (id s in v.subviews) {
+            _dumpViews(s, level + 1);
+        }
+    }
+}
+
+FOUNDATION_EXPORT void dumpViews(NSView* v) {
+    _dumpViews(v, 0);
+}
+
 @implementation ZGUtils
 
 

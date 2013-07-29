@@ -26,8 +26,8 @@
 }
 
 - (void) dealloc {
+    trace(@"%@", self);
     dealloc_count(self);
-    trace(@"");
 }
 
 - (void)tableView: (NSTableView *) tableView willDisplayCell: (id) cell

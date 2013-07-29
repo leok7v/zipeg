@@ -45,13 +45,15 @@
 - (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
     if (self) {
+        alloc_count(self);
         _document = doc;
     }
     return self;
 }
 
 - (void) dealloc {
-//    trace(@"");
+    trace(@"%@", self);
+    dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 

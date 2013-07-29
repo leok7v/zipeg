@@ -14,11 +14,15 @@
 
 - (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
-    _document = doc;
+    if (self != null) {
+        alloc_count(self);
+        _document = doc;
+    }
     return self;
 }
 
 - (void)dealloc {
+    dealloc_count(self);
     trace(@"");
 }
 

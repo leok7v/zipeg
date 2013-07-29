@@ -40,6 +40,7 @@ FOUNDATION_EXPORT int ZGApplicationMain(int argc, const char **argv) {
 }
 
 - (void) sendEvent:(NSEvent*) e  {
+    // trace(@"%@", e);
     [super sendEvent: e];
 }
 

@@ -14,6 +14,7 @@
 - (id)initWithDocument: (ZGDocument*) doc andRootItem:(NSObject<ZGItemProtocol>*)root {
     self = [super init];
     if (self) {
+        alloc_count(self);
         _root = root;
         _document = doc;
     }
@@ -21,7 +22,8 @@
 }
 
 - (void)dealloc {
-//    trace(@"");
+    trace(@"");
+    dealloc_count(self);
 }
 
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {

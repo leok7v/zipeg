@@ -32,7 +32,7 @@ struct D;
     NSMutableArray* _pnames;
     NSMutableArray* _props;
     NSOperation* _op;
-    ZGDocument* document;
+    ZGDocument* __weak document;
     int pathIndex; // in pnames
     int items;
     int properties;
@@ -220,6 +220,7 @@ struct D : P7Z::Delegate {
 }
 
 - (void) dealloc {
+    trace(@"");
     dealloc_count(self);
     if (a != null) {
         a->close();
@@ -229,8 +230,21 @@ struct D : P7Z::Delegate {
     if (_w_password) {
         delete[] _w_password;
     }
-    trace(@"");
 }
+
+- (void) close {
+    trace(@"");
+    if (a != null) {
+        a->close();
+    }
+    delete a; a = null;
+    delete d; d = null;
+    if (_w_password) {
+        delete[] _w_password;
+        _w_password = null;
+    }
+}
+
 
 static bool ignore(const NSString* pathname) {
      // TODO: for now ignore resource forks and Finder's .DS_Store
@@ -464,8 +478,8 @@ static CFStringEncoding CHARDET_ENCODING_to_CFStringEncoding(const char* encodin
     return (CFStringEncoding)-1;
 }
 
-static CFStringEncoding detectEncoding(P7Z& a) {
-    int n = a.getNumberOfItems();
+- (CFStringEncoding) detectEncoding {
+    int n = a->getNumberOfItems();
     bool b = true;
     char encoding[CHARDET_MAX_ENCODING_NAME] = {0};
     chardet_t det;
@@ -473,7 +487,7 @@ static CFStringEncoding detectEncoding(P7Z& a) {
     long long deadline = NanoTime::time() + 1000 * 1000 * 50; // 50 milliseconds
     long long chars = 0;
     for (int i = 0; i < n && b; i++) {
-        const char* name = a.getItemName(i);
+        const char* name = a->getItemName(i);
         b = name != null;
         if (b) {
             int len = (int)strlen(name);
@@ -481,7 +495,7 @@ static CFStringEncoding detectEncoding(P7Z& a) {
             chars += len;
             b = r != CHARDET_RESULT_NOMEMORY;
         }
-        if ((i % 100 == 0 && NanoTime::time() > deadline) || chars > 1024 * 1024) {
+        if ((i % 100 == 0 && NanoTime::time() > deadline) || chars > 1024 * 1024 || self.isCancelled) {
             break;
         }
     }
@@ -539,12 +553,15 @@ static CFStringEncoding detectEncoding(P7Z& a) {
                 *err = ZGOutOfMemoryError();
                 return false;
             }
-            a->iterateArchiveProperies();
-            
-            CFStringEncoding encoding = detectEncoding(*a);
-            a->setCodePage(encoding);
-            a->iterateAllItems();
-            b = [self buildTree];
+            b = a->iterateArchiveProperies();
+            if (b) {
+                CFStringEncoding encoding = [self detectEncoding];
+                a->setCodePage(encoding);
+                b = a->iterateAllItems();
+                if (b) {
+                    b = [self buildTree];
+                }
+            }
         } else {
             if (_error == null && _password != null) {
                 _error = @"invalid password";

@@ -14,4 +14,5 @@
             document: (ZGDocument*) doc
            operation: (NSOperation*) op error:(NSError**) err;
 - (BOOL) setFilter:(NSString*)filterText;
+- (void) close;
 @end

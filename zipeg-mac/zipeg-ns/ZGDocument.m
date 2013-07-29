@@ -11,21 +11,23 @@
 #import "ZGSplitViewDelegate.h"
 #import "ZGWindowController.h"
 #import "ZGWindowPresenter.h"
-
+#import "ZGToolbar.h"
+#import "ZGToolbarDelegate.h"
 
 @interface ZGOutlineHeaderView : NSTableHeaderView {
-    
 }
-@property ZGDocument* document;
+@property ZGDocument* __weak document;
 @end
 
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* archive;
-    NSWindow* __weak window;
+    NSWindow* __weak _window;
 }
+
 @property NSSearchField* searchField;
 @property NSView* contentView;
-@property NSToolbar* toolbar;
+@property ZGToolbar* toolbar;
+@property ZGToolbarDelegate* toolbarDelegate;
 @property NSSplitView* splitView;
 @property NSLevelIndicator* levelIndicator;
 @property NSMenu *tableRowContextMenu;
@@ -49,7 +51,7 @@
 @property NSTextField* password_input;
 @property dispatch_semaphore_t password_semaphore;
 
-- (IBAction) searchFieldAction: (id)sender;
+- (void) searchFieldAction: (id)sender;
 - (void) openArchiveForOperation: (NSOperation*) op;
 
 @end
@@ -105,7 +107,6 @@
 
 @implementation ZGDocument
 
-
 - (id) init {
     self = [super init];
     if (self != null) {
@@ -117,25 +118,26 @@
     return self;
 }
 
-- (void)  dealloc {
+- (void) dealloc {
+    trace(@"%@", self);
     dealloc_count(self);
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-    trace(@"");
+// TODO:
+//  [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)makeWindowControllers {
     ZGWindowController* wc = [ZGWindowController new];
     [self addWindowController: wc];
     // trace("wc.document=%@ %s (self %@)", wc.document, wc.document == self ? "==" : "!=", self);
-    [wc window]; // this actually loads Nib (see docs)
+    // [wc window]; // this actually loads Nib (see docs)
+    [self windowControllerDidLoadNib: wc];
 }
 
-/* TODO: gone! because of makeWindowControllers
 - (NSString*) windowNibName {
-    return @"ZGDocument";
+    assert(false);
+    @throw @"ZGDocument should remain nib-less";
 }
-*/
- 
+
 - (void) reloadOutlineView {
     if (_outlineView != null && archive != null) {
         _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: archive.root];
@@ -156,25 +158,13 @@
     }
 }
 
-static void dumpViews(NSView* v, int level) {
-    NSString* indent = @"";
-    for (int i = 0; i < level; i++) {
-        indent = [indent stringByAppendingString:@"    "];
-    }
-    trace(@"%@%@ %@", indent, v.class, NSStringFromRect(v.frame));
-    if (v.subviews != null) {
-        for (id s in v.subviews) {
-            dumpViews(s, level + 1);
-        }
-    }
-}
-
 static NSSplitView* createSplitView(NSRect r, NSView* left, NSView* right) {
     NSSplitView* sv = [[NSSplitView alloc] initWithFrame: r];
     sv.vertical = true;
     sv.dividerStyle = NSSplitViewDividerStyleThin;
     sv.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     sv.autoresizesSubviews = true;
+    sv.autosaveName = @"Zipeg Split View";
     sv.subviews = @[left, right];
     return sv;
 }
@@ -192,15 +182,23 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
 - (void)windowControllerWillLoadNib:(NSWindowController *)windowController {
     trace(@"");
 }
-
+/*
+- (void) restoreDocumentWindowWithIdentifier: (NSString*) id
+                                       state: (NSCoder*) state
+                           completionHandler: (void(^)(NSWindow*, NSError*)) completionHandler {
+   trace(@"");
+}
+*/
 - (void) windowControllerDidLoadNib: (NSWindowController*) controller {
     // this is called after readFromURL
-    window = controller.window;
-    window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
+    _window = controller.window;
+    assert(_window != null);
+    _window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
+    [self setWindow: _window]; // weak
     // dumpViews(window.contentView, 0);
-    [super windowControllerDidLoadNib:controller];
-    _contentView = [[NSView alloc] initWithFrame: [window.contentView frame]];
-    NSRect bounds = _contentView.frame;
+    NSRect bounds = [_window.contentView bounds];
+    _contentView = [[NSView alloc] initWithFrame: [_window.contentView frame]];
+    bounds = _contentView.frame;
     bounds.origin.y += 30;
     bounds.size.height -= 60;
     NSRect tbounds = bounds;
@@ -226,7 +224,13 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     assert(_splitView != null);
     assert(_outlineView != null);
 
-    //  assert(_toolbar != null);
+    _toolbar = [ZGToolbar new];
+    assert(_toolbar != null);
+    _toolbarDelegate = [[ZGToolbarDelegate alloc] initWithDocument: self];
+    assert(_toolbarDelegate != null);
+    _toolbar.delegate = _toolbarDelegate; // weak reference
+    _window.toolbar = _toolbar;
+ 
     //  assert(_levelIndicator != null);
     
     NSTableColumn* tableColumn = [NSTableColumn new];
@@ -251,7 +255,8 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
                                                 selector:@selector(localizedCaseInsensitiveCompare:)];
     tableColumn.sortDescriptorPrototype = sd;
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
-    [tableColumn addObserver:self forKeyPath:@"width" options: 0 context: null];
+// TODO:
+//  [tableColumn addObserver:self forKeyPath:@"width" options: 0 context: null];
     for (int i = 1; i < 3; i++) {
         tableColumn = [NSTableColumn new];
         [_tableView addTableColumn: tableColumn];
@@ -261,7 +266,6 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
         tableColumn.maxWidth = 3000;
         tableColumn.editable = true;
     }
-    [controller.window addObserver:self forKeyPath:@"firstResponder" options: 0 context: null];
     
     _contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _outlineView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
@@ -313,7 +317,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     _outlineView.headerView = [[ZGOutlineHeaderView alloc] initWithFrame:_outlineView.frame];
     _outlineView.headerView.autoresizingMask =  NSViewWidthSizable | NSViewMaxXMargin;
     
-    
+/* TODO:
     NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
     clipView.postsFrameChangedNotifications = true;
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -328,6 +332,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
                                            selector: @selector(outlineViewSelectionDidChange:)
                                                name: @"NSOutlineViewSelectionDidChangeNotification"
                                              object: _outlineView];
+*/
     _windowPresenter = [ZGWindowPresenter windowPresenterFor: controller.window];
     
     if (_url != null) {
@@ -335,17 +340,18 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
         [_operationQueue addOperation:operation];
     }
     [_contentView addSubview: _heroView];
+    dumpViews(_contentView);
+}
+
+- (void) firstResponderChanged {
+    NSResponder* fr = [[self.windowControllers[0] window] firstResponder];
+    trace(@"first responder changed to %@", fr);
+    if (fr == _tableView) {
+        [_tableViewDelegate tableViewBecameFirstResponder: _tableView];
+    }
 }
 
 - (void)observeValueForKeyPath: (NSString*) keyPath ofObject: (id) o change: (NSDictionary*)change context: (void*) context {
-    if ([keyPath isEqualToString:@"firstResponder"]) {
-        NSResponder* fr = [[self.windowControllers[0] window] firstResponder];
-        // trace(@"first responder changed to %@", fr);
-        if (fr == _tableView) {
-            [_tableViewDelegate tableViewBecameFirstResponder: _tableView];
-        }
-        return;
-    }
     NSInteger resizedColumn = _tableView.headerView.resizedColumn;
     if (resizedColumn != -1) {
         if ([o isKindOfClass:NSTableColumn.class] &&
@@ -388,27 +394,46 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     return false;
 }
 
+- (BOOL) documentCanClose {
+    if (_operationQueue.operations.count > 0) {
+        // TODO: replace with Presenter and dismiss when all ops are done
+        NSBeginInformationalAlertSheet(
+            @"Operation is in Progress", @"OK",@"Cancel",@"",
+            _window,
+            self, // modalDelegate
+            @selector(closeDidEnd:returnCode:contextInfo:),
+            null, // didDismissSelector
+            null, @"fmt=%@", @"args");
+    }
+    return _operationQueue.operations.count == 0;
+}
+
+- (void) closeDidEnd: (NSWindow*)sheet returnCode: (int) rc contextInfo:(void *) contextInfo {
+    if (rc == NSAlertDefaultReturn) {
+        [_operationQueue cancelAllOperations];
+        [_operationQueue waitUntilAllOperationsAreFinished];
+        [_window orderOut:null]; // ???
+        // TODO: cannot do it here because other documents can still be working.... [NSApp terminate:nil];
+    } else {
+        trace(@"Quit - canceled");
+    }
+    trace(@"");
+}
+
 - (void)close {
-/* TODO: later
+/* TODO:
     NSTableColumn* tc = _tableView.tableColumns[0];
     assert(tc != null);
     [tc removeObserver:self forKeyPath:@"width"];
-*/
-/* TODO:
- it is impossible to add remove window FirstResponder observers w/o subclassing NSWindowController
- which is actually recommended by Apple:
- https://developer.apple.com/library/mac/#documentation/DataManagement/Conceptual/DocBasedAppProgrammingGuideForOSX/KeyObjects/KeyObjects.html
-    NSWindow* w = [self.windowControllers[0] window];
-    assert(w != null);
-    [w removeObserver:self forKeyPath:@"firstResponder"];
-*/
+*/ 
     [_operationQueue cancelAllOperations];
     [_operationQueue waitUntilAllOperationsAreFinished];
+    if (archive != null) {
+        [archive close];
+        archive = null;
+    }
     [super close];
-    trace_allocs();
 }
-
-
 
 - (BOOL)writeSelectionToPasteboard:(NSPasteboard *)pasteboard {
     // This method will be called for services, or for drags originating from the preview column ZipEntryView, and it calls the previous method
@@ -490,12 +515,15 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
             NSWindowController* wc = doc.windowControllers[0];
             assert(wc.window == doc.windowPresenter.window);
             [doc.windowPresenter presentSheetWithSheet:alert delegate:self
-                                        didEndSelector:@selector(didEndPresentedAlert:returnCode:contextInfo:)
+                                        didEndSelector:@selector(didEndOpenError:returnCode:contextInfo:)
                                            contextInfo: null];
         }
     });
 }
 
+- (void) didEndOpenError: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) ctx {
+    [_window orderOut: null];
+}
 
 - (NSString*) askForPasswordFromBackgroundThread {
     assert(![NSThread isMainThread]);
@@ -540,11 +568,6 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     dispatch_semaphore_signal(_password_semaphore);
 }
 
-
-- (void) didEndPresentedAlert: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) ctx {
-    [self close];
-}
-
 - (BOOL) progress:(long long)pos ofTotal:(long long)total {
     // TODO: connect to progress bar(s)
     // trace(@"%llu of %llu", pos, total);
@@ -557,7 +580,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     return true; // TODO: cancel button
 }
 
-- (IBAction) searchFieldAction: (id) sender {
+- (void) searchFieldAction: (id) sender {
     if (!archive) {
         return;
     }
@@ -577,3 +600,4 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
 }
 
 @end
+
