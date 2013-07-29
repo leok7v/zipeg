@@ -1,7 +1,7 @@
 #import "ZGImageAndTextCell.h"
 
 #define kImageOriginXOffset  7
-#define kImageOriginYOffset -1
+#define kImageOriginYOffset  2
 
 #define kTextOriginXOffset   8
 

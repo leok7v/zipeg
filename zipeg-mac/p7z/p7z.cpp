@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "myPrivate.h"
-#include "client.h" // TODO: remove me
 #include "p7z.hpp"
 
 #include "Common/IntToString.h"

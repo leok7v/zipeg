@@ -9,7 +9,11 @@
     if (self) {
         alloc_count(self);
         window.delegate = self;
+        window.restorable = false; // do not restore on crash
         self.shouldCloseDocument = true;
+        self.shouldCascadeWindows = true;
+//        window.backingType =
+        [window setOneShot: true];
         window.releasedWhenClosed = false; // this will crash close window with ARC if true
         window.styleMask = NSTitledWindowMask | NSClosableWindowMask |
                            NSMiniaturizableWindowMask | NSResizableWindowMask |
@@ -23,6 +27,15 @@
             [window setFrame: NSMakeRect(0, 0, window.minSize.width, window.minSize.height) display: true animate: false];
         }
         [window addObserver:self forKeyPath:@"firstResponder" options: 0 context: null];
+        
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(windowDidBecomeKey:)
+                                                   name:NSWindowDidBecomeKeyNotification
+                                                 object:null];
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(windowDidResignKey:)
+                                                   name:NSWindowDidResignKeyNotification
+                                                 object:null];
     }
     return self;
 }
@@ -31,6 +44,18 @@
     trace(@"%@", self);
     dealloc_count(self);
 }
+
+
+- (void) windowDidBecomeKey: (NSNotification *) notification  {
+    ZGDocument* d = self.document;
+    return [d windowDidBecomeKey];
+}
+
+- (void) windowDidResignKey: (NSNotification *) notification  {
+    ZGDocument* d = self.document;
+    return [d windowDidResignKey];
+}
+
 
 - (BOOL)windowShouldClose:(id)sender {
     assert([self.document isKindOfClass: ZGDocument.class]);

@@ -119,6 +119,7 @@
             NSTableColumn* tableColumn = v.tableColumns[i];
             tableColumn.width = MAX(tableColumn.width, size.width + 16);
             v.rowHeight = size.height;
+            [_document.window.contentView setNeedsDisplay: true];
         }
     }
 }

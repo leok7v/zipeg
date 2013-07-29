@@ -24,7 +24,6 @@
 - (void) dealloc {
     trace(@"%@", self);
     dealloc_count(self);
-    trace_allocs();
 }
 
 

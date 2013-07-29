@@ -119,13 +119,14 @@
     }
 }
 
-- (void)_sizeOutlineViewToContents:(NSOutlineView*) outlineView {
-    assert(outlineView != null);
-    NSSize size = [ZGTableViewDelegate minMaxVisibleColumnContentSize:outlineView columnIndex: 0];
-    if (size.width > 0 && size.height > 0) {
-        NSTableColumn* tableColumn = outlineView.tableColumns[0];
-        tableColumn.width = size.width;
-        outlineView.rowHeight = size.height;
+- (void)_sizeOutlineViewToContents:(NSOutlineView*) v {
+    assert(v != null);
+    NSSize s = [ZGTableViewDelegate minMaxVisibleColumnContentSize: v columnIndex: 0];
+    if (s.width > 0 && s.height > 0) {
+        NSTableColumn* tc = v.tableColumns[0];
+        tc.width = s.width;
+        v.rowHeight = s.height;
+        [_document.window.contentView setNeedsDisplay: true];
     }
 }
 

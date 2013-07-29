@@ -1,6 +1,7 @@
 
 @interface ZGApplication : NSApplication
 
++ (void) deferedTraceAllocs;
+
 @end
 
-// FOUNDATION_EXPORT int ZGApplicationMain(int argc, const char **argv);

@@ -17,7 +17,7 @@
 
 #ifdef ENV_BEOS
 
-/* TODO : optimize the code and verify the returned values */ 
+/* TO-DO : optimize the code and verify the returned values */ 
 
 WRes Thread_Create(CThread *thread, THREAD_FUNC_RET_TYPE (THREAD_FUNC_CALL_TYPE *startAddress)(void *), LPVOID parameter)
 { 

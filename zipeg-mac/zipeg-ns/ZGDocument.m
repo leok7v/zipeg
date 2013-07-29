@@ -13,11 +13,7 @@
 #import "ZGWindowPresenter.h"
 #import "ZGToolbar.h"
 #import "ZGToolbarDelegate.h"
-
-@interface ZGOutlineHeaderView : NSTableHeaderView {
-}
-@property ZGDocument* __weak document;
-@end
+#import "ZGApplication.h"
 
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* archive;
@@ -33,11 +29,11 @@
 @property NSMenu *tableRowContextMenu;
 
 @property NSTextFieldCell* textCell;
-@property ZGOutlineViewDelegate* outlineViewDelegate; // TODO: can be local
-@property ZGOutlineViewDataSource* outlineViewDataSource; // TODO: can be local
-@property ZGTableViewDelegate* tableViewDelegate; // TODO: can be local
-@property ZGTableViewDataSource* tableViewDatatSource; // TODO: can be local
-@property ZGSplitViewDelegate* splitViewDelegate; // TODO: can be local
+@property ZGOutlineViewDelegate* outlineViewDelegate;
+@property ZGOutlineViewDataSource* outlineViewDataSource;
+@property ZGTableViewDelegate* tableViewDelegate;
+@property ZGTableViewDataSource* tableViewDatatSource;
+@property ZGSplitViewDelegate* splitViewDelegate;
 @property NSColor* searchTextColor;
 @property NSOperationQueue* operationQueue;
 @property NSURL* url;
@@ -56,15 +52,16 @@
 
 @end
 
-// TODO: this is not a good place for any controls
-// because I intend to turn this view OFF for plain (folderless) archives
-// also it probably better to have ZGOutlineHeaderViewCell implemented?
+@interface ZGOutlineHeaderView : NSTableHeaderView
+@end
+
 @implementation ZGOutlineHeaderView
 
-- (id) initWithFrame:(NSRect)frame {
+- (id) initWithFrame: (NSRect) frame {
     frame.size.height = 17;
     self = [super initWithFrame:frame];
     self.autoresizesSubviews = true;
+    self.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin;
     return self;
 }
 
@@ -121,8 +118,8 @@
 - (void) dealloc {
     trace(@"%@", self);
     dealloc_count(self);
-// TODO:
-//  [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [NSNotificationCenter.defaultCenter removeObserver:self];
+    [ZGApplication deferedTraceAllocs];
 }
 
 - (void)makeWindowControllers {
@@ -130,7 +127,7 @@
     [self addWindowController: wc];
     // trace("wc.document=%@ %s (self %@)", wc.document, wc.document == self ? "==" : "!=", self);
     // [wc window]; // this actually loads Nib (see docs)
-    [self windowControllerDidLoadNib: wc];
+    [self setupDocumentWindow: wc];
 }
 
 - (NSString*) windowNibName {
@@ -143,7 +140,7 @@
         _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: archive.root];
         _outlineView.dataSource = _outlineViewDataSource;
         [_outlineView reloadData];
-[_outlineView expandItem:null expandChildren:true]; // expand all
+[_outlineView expandItem:null expandChildren:true]; // TODO: this is just temporary expand all, remove me
         
         NSIndexSet* is = [NSIndexSet indexSetWithIndex:0];
         [_outlineView selectRowIndexes:is byExtendingSelection:false];
@@ -151,9 +148,9 @@
         _tableView.dataSource = _tableViewDatatSource;
         [_tableView reloadData];
         dispatch_async(dispatch_get_current_queue(), ^{
-            //          [_outlineView expandItem:null expandChildren:true];
-            //          [self sizeOutlineViewToContents];
             [_outlineViewDelegate expandOne:_outlineView];
+            [self sizeOutlineViewToContents];
+            [_tableViewDelegate sizeTableViewToContents: _tableView];
         });
     }
 }
@@ -179,25 +176,22 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     return sv;
 }
 
-- (void)windowControllerWillLoadNib:(NSWindowController *)windowController {
-    trace(@"");
-}
-/*
-- (void) restoreDocumentWindowWithIdentifier: (NSString*) id
-                                       state: (NSCoder*) state
+/* this is not needed because NSController.m window.setRestorable = false
+- (void) restoreDocumentWindowWithIdentifier: (NSString*) id state: (NSCoder*) state
                            completionHandler: (void(^)(NSWindow*, NSError*)) completionHandler {
-   trace(@"");
+    trace(@"%@ %@", id, state);
+    [super restoreDocumentWindowWithIdentifier: id state: state completionHandler: completionHandler];
 }
 */
-- (void) windowControllerDidLoadNib: (NSWindowController*) controller {
+
+- (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
     // this is called after readFromURL
     _window = controller.window;
     assert(_window != null);
     _window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
     [self setWindow: _window]; // weak
-    // dumpViews(window.contentView, 0);
     NSRect bounds = [_window.contentView bounds];
-    _contentView = [[NSView alloc] initWithFrame: [_window.contentView frame]];
+    _contentView = [[NSView alloc] initWithFrame: [_window.contentView bounds]];
     bounds = _contentView.frame;
     bounds.origin.y += 30;
     bounds.size.height -= 60;
@@ -209,14 +203,12 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     _outlineView.focusRingType = NSFocusRingTypeNone;
     _tableView = [[NSTableView alloc] initWithFrame: tbounds];
     _tableView.focusRingType = NSFocusRingTypeNone;
-
     _splitView = createSplitView(bounds,
                                  createScrollView(tbounds, _outlineView),
                                  createScrollView(tbounds, _tableView));
     _contentView.autoresizesSubviews = true;
     _contentView.subviews = @[_splitView];
     controller.window.contentView = _contentView;
-    // dumpViews(_contentView, 0);
     
     assert(_contentView != null);
     assert(controller.window.contentView == _contentView);
@@ -255,8 +247,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
                                                 selector:@selector(localizedCaseInsensitiveCompare:)];
     tableColumn.sortDescriptorPrototype = sd;
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
-// TODO:
-//  [tableColumn addObserver:self forKeyPath:@"width" options: 0 context: null];
+    [tableColumn addObserver:self forKeyPath:@"width" options: 0 context: null];
     for (int i = 1; i < 3; i++) {
         tableColumn = [NSTableColumn new];
         [_tableView addTableColumn: tableColumn];
@@ -270,10 +261,12 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     _contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _outlineView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _outlineView.allowsEmptySelection = false;
+    _outlineView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleSourceList;
+
     // Xcode:
     // unfocused: Gradient 0.96 0.96 0.96 -> 0.91, 0.91, 0.91
     // focused: Gradient 0.91 0.92 0.94 -> 0.85 0.87 0.90
-    _outlineView.backgroundColor = [NSColor colorWithCalibratedRed:0.88 green:0.89 blue:0.92 alpha:1];
+//  _outlineView.backgroundColor = [NSColor colorWithCalibratedRed:0.88 green:0.89 blue:0.92 alpha:1];
 //  _outlineView.menu = _tableRowContextMenu;
 
     _tableView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
@@ -315,16 +308,14 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     _levelIndicator.intValue = 5000;
 
     _outlineView.headerView = [[ZGOutlineHeaderView alloc] initWithFrame:_outlineView.frame];
-    _outlineView.headerView.autoresizingMask =  NSViewWidthSizable | NSViewMaxXMargin;
     
-/* TODO:
     NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
     clipView.postsFrameChangedNotifications = true;
-    [[NSNotificationCenter defaultCenter] addObserver:self
+    [NSNotificationCenter.defaultCenter addObserver:self
                                              selector:@selector(oulineViewContentBoundsDidChange:)
                                                  name:NSViewBoundsDidChangeNotification
                                                object:clipView];
-    [[NSNotificationCenter defaultCenter] addObserver:self
+    [NSNotificationCenter.defaultCenter addObserver:self
                                              selector:@selector(oulineViewContentBoundsDidChange:)
                                                  name:NSViewFrameDidChangeNotification
                                                object:clipView];
@@ -332,7 +323,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
                                            selector: @selector(outlineViewSelectionDidChange:)
                                                name: @"NSOutlineViewSelectionDidChangeNotification"
                                              object: _outlineView];
-*/
+    
     _windowPresenter = [ZGWindowPresenter windowPresenterFor: controller.window];
     
     if (_url != null) {
@@ -340,7 +331,37 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
         [_operationQueue addOperation:operation];
     }
     [_contentView addSubview: _heroView];
-    dumpViews(_contentView);
+//  dumpViews(_contentView);
+}
+
+
+- (void) windowDidBecomeKey {
+    // unfocused: Gradient 0.96 0.96 0.96 -> 0.91, 0.91, 0.91
+    // focused: Gradient 0.91 0.92 0.94 -> 0.85 0.87 0.90
+/*
+    NSColor* c = [[NSColor windowBackgroundColor] colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
+//  c = [NSColor redColor];
+    NSColor* gb = [NSColor colorWithCalibratedRed: 0 green: 0 blue: 1 alpha:1];
+    c = [c blendedColorWithFraction: 0.25 ofColor: gb];
+c = [[NSColor windowBackgroundColor] colorUsingColorSpace: [NSColorSpace sRGBColorSpace]];
+    float r = c.redComponent;
+    float g = c.greenComponent;
+    float b = c.blueComponent;
+    float a = c.alphaComponent;
+    trace(@"%f %f %f %f", r, g, b, a);
+//    c = [NSColor colorWithCalibratedRed: r green: g blue: b alpha: a];
+    _outlineView.backgroundColor = c; // [NSColor colorWithCalibratedRed:0.88 green:0.89 blue:0.92 alpha:1];
+    _outlineView.needsDisplay = true;
+*/
+}
+
+- (void) windowDidResignKey {
+/*
+    // unfocused: Gradient 0.96 0.96 0.96 -> 0.91, 0.91, 0.91
+    // focused: Gradient 0.91 0.92 0.94 -> 0.85 0.87 0.90
+    _outlineView.backgroundColor = [NSColor windowBackgroundColor];
+    _outlineView.needsDisplay = true;
+*/ 
 }
 
 - (void) firstResponderChanged {
@@ -403,7 +424,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
             self, // modalDelegate
             @selector(closeDidEnd:returnCode:contextInfo:),
             null, // didDismissSelector
-            null, @"fmt=%@", @"args");
+            null, @"");  // could be: @"fmt=%@", @"args"
     }
     return _operationQueue.operations.count == 0;
 }
@@ -421,11 +442,9 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
 }
 
 - (void)close {
-/* TODO:
     NSTableColumn* tc = _tableView.tableColumns[0];
     assert(tc != null);
     [tc removeObserver:self forKeyPath:@"width"];
-*/ 
     [_operationQueue cancelAllOperations];
     [_operationQueue waitUntilAllOperationsAreFinished];
     if (archive != null) {
@@ -478,7 +497,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
 
 - (BOOL) readFromURL:(NSURL *)absoluteURL ofType:(NSString *)typeName encoding: (CFStringEncoding) encoding
         error:(NSError **)error {
-    // this is called before windowControllerDidLoadNib
+    // this is called before window is created or setup
     _url = absoluteURL;
     _encoding = encoding;
     _typeName = typeName;
@@ -510,13 +529,15 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder:_outlineView];
-        } else {
-            NSAlert* alert = [NSAlert alertWithError:error];
+        } else if (error != null) {
+            NSAlert* alert = [NSAlert alertWithError: error];
             NSWindowController* wc = doc.windowControllers[0];
             assert(wc.window == doc.windowPresenter.window);
             [doc.windowPresenter presentSheetWithSheet:alert delegate:self
                                         didEndSelector:@selector(didEndOpenError:returnCode:contextInfo:)
                                            contextInfo: null];
+        } else {
+            // error == null - aborted by user
         }
     });
 }

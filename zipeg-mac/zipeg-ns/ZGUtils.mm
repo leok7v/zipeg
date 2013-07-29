@@ -39,7 +39,7 @@ FOUNDATION_EXPORT void trace_allocs() {
         if (k != null) {
             int64_t v = map.get(k);
             if (v != NOT_A_VALUE) {
-                trace("%s %lld", k, v);
+                NSLog(@"%s %lld", k, v);
             }
         }
     }
@@ -50,7 +50,7 @@ static void _dumpViews(NSView* v, int level) {
     for (int i = 0; i < level; i++) {
         indent = [indent stringByAppendingString:@"    "];
     }
-    trace(@"%@%@ %@", indent, v.class, NSStringFromRect(v.frame));
+    NSLog(@"%@%@ %@", indent, v.class, NSStringFromRect(v.frame));
     if (v.subviews != null) {
         for (id s in v.subviews) {
             _dumpViews(s, level + 1);
