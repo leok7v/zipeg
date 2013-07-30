@@ -2,6 +2,7 @@
 #include "p7z.hpp"
 #include "HashMapS2L.hpp"
 #include "NanoTime.hpp"
+#import "MacMem.h"
 
 FOUNDATION_EXPORT uint64_t timestamp(const char* label) {
     return NanoTime::timestamp(label);
@@ -43,6 +44,7 @@ FOUNDATION_EXPORT void trace_allocs() {
             }
         }
     }
+    NSLog(@"%lld bytes in %lld allocs", mstat.bytes, mstat.allocs);
 }
 
 static void _dumpViews(NSView* v, int level) {

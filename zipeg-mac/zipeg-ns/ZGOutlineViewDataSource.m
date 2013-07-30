@@ -28,22 +28,26 @@
 
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {
     NSObject<ZGItemProtocol>* i = item == null ? _root : item;
+    trace("%@ %@.folderChildren=%ld parent=%@", item, i.name, i.folderChildren.count, i.parent == null ? @"null" : i.parent.name);
     return i.folderChildren.count;
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isItemExpandable:(id)item {
     NSObject<ZGItemProtocol>* i = item == null ? _root : item;
+    trace("%@.isItemExpandable=%@", i.name, i.folderChildren != null ? @"true" : @"false");
     return i.folderChildren != null;
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item {
     NSObject<ZGItemProtocol>* i = item == null ? _root : item;
+    trace("%@[%ld]=%@", i.name, index, ((NSObject<ZGItemProtocol>*)i.folderChildren[index]).name);
     return i.folderChildren[index];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
-//  trace(@"objectValueForTableColumn %@ %@", item, [item relativePath]);
-    return (item == nil) ? @"/" : [item name];
+    NSObject<ZGItemProtocol>* i = item == null ? _root : item;
+    trace(@"objectValueForTableColumn %@=%@", item, i.name);
+    return i.name;
 }
 
 #pragma mark -
@@ -61,7 +65,6 @@
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView sortDescriptorsDidChange:(NSArray *)oldDescriptors {
-    
 }
 
 #pragma mark -

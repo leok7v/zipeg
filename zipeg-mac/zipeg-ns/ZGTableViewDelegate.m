@@ -87,8 +87,9 @@
             ZGImageAndTextCell* itc = (ZGImageAndTextCell*)cell;
             NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)item;
             NSImage* nodeIcon = it.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
-            [itc setImage: nodeIcon];
-            [itc setStringValue: it.name];
+            itc.image = nodeIcon;
+            itc.stringValue = it.name;
+            itc.representedObject = it;
         } else if ([cell isKindOfClass: [NSTextFieldCell class]]) {
             // assume this is table
             NSObject* o = [tds tableView:view objectValueForTableColumn:tableColumn row:i];

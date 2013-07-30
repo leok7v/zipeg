@@ -38,6 +38,8 @@
     return false;
 }
 
+// http://stackoverflow.com/questions/7564290/why-isnt-applicationshouldopenuntitledfile-being-called
+
 - (BOOL) applicationShouldOpenUntitledFile:(NSApplication *) sender {
     // http://www.cocoawithlove.com/2008/05/open-previous-document-on-application.html
     // On startup, when asked to open an untitled file, open the last opened file instead

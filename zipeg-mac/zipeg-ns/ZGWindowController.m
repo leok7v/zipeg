@@ -1,18 +1,24 @@
 #import "ZGWindowController.h"
 #import "ZGDocument.h"
 
-@implementation ZGWindowController
+@implementation ZGWindowController {
+    NSPoint cascadePoint;
+}
 
 - (id)init {
     NSWindow* window = [NSWindow new];
     self = [super initWithWindow: window];
     if (self) {
         alloc_count(self);
+        if (cascadePoint.x == 0 && cascadePoint.y == 0) {
+            cascadePoint = NSMakePoint(40, 40);
+        }
+        window.restorable = true; // TODO: true for now but should be false
+        // see notes and link in AppDelegate
         window.delegate = self;
-        window.restorable = false; // do not restore on crash
         self.shouldCloseDocument = true;
         self.shouldCascadeWindows = true;
-//        window.backingType =
+        window.backingType = NSBackingStoreBuffered;
         [window setOneShot: true];
         window.releasedWhenClosed = false; // this will crash close window with ARC if true
         window.styleMask = NSTitledWindowMask | NSClosableWindowMask |
@@ -27,7 +33,7 @@
             [window setFrame: NSMakeRect(0, 0, window.minSize.width, window.minSize.height) display: true animate: false];
         }
         [window addObserver:self forKeyPath:@"firstResponder" options: 0 context: null];
-        
+
         [NSNotificationCenter.defaultCenter addObserver:self
                                                selector:@selector(windowDidBecomeKey:)
                                                    name:NSWindowDidBecomeKeyNotification
@@ -36,6 +42,7 @@
                                                selector:@selector(windowDidResignKey:)
                                                    name:NSWindowDidResignKeyNotification
                                                  object:null];
+        cascadePoint = [window cascadeTopLeftFromPoint: cascadePoint]; // TODO: ??? may be it is in a wrong place. windowDidLoad is suggested place but it is not called for nib-less windows
     }
     return self;
 }

@@ -1,3 +1,8 @@
+#import "ZGItemProtocol.h"
+
+@interface ZGGroupItem : NSObject<ZGItemProtocol>
+
+@end
 
 @interface ZGDocument : NSDocument<NSToolbarDelegate> {
     

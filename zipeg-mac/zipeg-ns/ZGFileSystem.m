@@ -55,13 +55,14 @@ static NSMutableArray *leafNode;
         BOOL isDir, valid;
         valid = [fileManager fileExistsAtPath:fullPath isDirectory:&isDir];
         if (valid && isDir) {
+            trace(@"fullPath %@", fullPath);
             NSArray *array = [fileManager contentsOfDirectoryAtPath:fullPath error:nil];
-            NSUInteger numChildren, i;
-            numChildren = [array count];
+            NSUInteger numChildren = [array count];
             _children = [[NSMutableArray alloc] initWithCapacity:numChildren];
-            for (i = 0; i < numChildren; i++) {
-                NSObject<ZGItemProtocol> *newChild = [[ZGFileSystemItem alloc] initWithPath:[array objectAtIndex:i] parent:self];
-                [_children addObject:newChild];
+            for (int i = 0; i < numChildren; i++) {
+                NSObject<ZGItemProtocol> *newChild = [[ZGFileSystemItem alloc] initWithPath: array[i] parent:self];
+                trace(@"  %@", array[i]);
+                [_children addObject:(ZGFileSystemItem*)newChild];
             }
         } else {
             _children = leafNode;
@@ -78,13 +79,20 @@ static NSMutableArray *leafNode;
     } else {
         NSFileManager *fileManager = [NSFileManager defaultManager];
         _folderChildren = [NSMutableArray new];
-        for (NSObject<ZGItemProtocol>* child in _children) {
-            NSString *fullPath = [self fullPath];
-            BOOL isDir, valid;
-            valid = [fileManager fileExistsAtPath:fullPath isDirectory:&isDir];
-            if (valid && isDir) {
-                [_folderChildren addObject:child];
+        if (_children == null) {
+            _children = self.children;
+        }
+        if (_children != leafNode) {
+            for (NSObject<ZGItemProtocol>* child in _children) {
+                NSString *fullPath = [self fullPath];
+                BOOL isDir, valid;
+                valid = [fileManager fileExistsAtPath:fullPath isDirectory:&isDir];
+                if (valid && isDir) {
+                    [_folderChildren addObject:(ZGFileSystemItem*)child];
+                }
             }
+        } else {
+            _folderChildren = leafNode;
         }
         return _folderChildren;
     }
@@ -95,7 +103,6 @@ static NSMutableArray *leafNode;
 static ZGFileSystemItem *g_root;
 
 @implementation ZGFileSystem {
-    ZGFileSystemItem *rootItem;
 }
 
 + (void)initialize {

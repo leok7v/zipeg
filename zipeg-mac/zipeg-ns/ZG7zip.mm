@@ -17,7 +17,6 @@ struct D;
 @interface ZG7zip() {
     NSString* _filterText;
     NSString* _archiveFilePath;
-    ZG7zipItem *_tree;
     ZG7zipItem *_root;
     D* d;
     P7Z* a;
@@ -208,8 +207,6 @@ struct D : P7Z::Delegate {
     if (self != null) {
         alloc_count(self);
         _root = [[ZG7zipItem alloc] initWith:self name:@"" index:-1 isLeaf:false];
-        _tree = [[ZG7zipItem alloc] initWith:self name:@"" index:-1 isLeaf:false];
-        [_root.children addObject:_tree];
         d = new D(self);
         if (d) {
             a = new P7Z(d);
@@ -290,12 +287,13 @@ static bool ignore(const NSString* pathname) {
         // NSArray* components = [pathname pathComponents]; might be faster
         for (;;) {
             NSString* parentComponents =  [pathname stringByDeletingLastPathComponent];
-            if (item.parent) {
+            if (item.parent != null) {
                 break;
             }
             if ([parentComponents length] == 0) {
-                item.parent = _tree;
-                //trace(@"0x%016llX.parent:=0x%016llX", (unsigned long long)item, (unsigned long long)_tree);
+                item.parent = _root;
+                trace(@"0x%016llX.parent:=0x%016llX (root) %@ -> %@",
+                      (unsigned long long)item, (unsigned long long)_root, _root.name, item.name);
                 break;
             }
             ZG7zipItem* p = _items[parentComponents];
@@ -311,7 +309,8 @@ static bool ignore(const NSString* pathname) {
                 _items[parentComponents] = p;
             }
             item.parent = p;
-            //trace(@"0x%016llX.parent:=0x%016llX", (unsigned long long)item, (unsigned long long)_tree);
+            trace(@"0x%016llX.parent:=0x%016llX %@ -> %@",
+                  (unsigned long long)item, (unsigned long long)p, p.name, item.name);
             if (p->_index >= 0 && (item->_index < 0 || [_isFolders isSet:item->_index])) {
                 [_isLeafFolders setBit:p->_index to:false];
             }
@@ -344,7 +343,7 @@ static bool ignore(const NSString* pathname) {
         }
         [item.children sortUsingComparator: c];
     }
-    [_tree.children sortUsingComparator: c];
+    [_root.children sortUsingComparator: c];
     return true;
 }
 
@@ -538,7 +537,7 @@ static CFStringEncoding CHARDET_ENCODING_to_CFStringEncoding(const char* encodin
         _op = op;
         b = a->open([_archiveFilePath UTF8String]) && a->getNumberOfItems() > 0 && a->getNumberOfProperties() > 0;
         if (b) {
-            _tree.name = [[_archiveFilePath lastPathComponent] stringByDeletingPathExtension];
+            _root.name = [[_archiveFilePath lastPathComponent] stringByDeletingPathExtension];
             items = a->getNumberOfItems();
             properties = a->getNumberOfProperties();
             _isFilteredOut = [ZGBitset bitsetWithCapacity:items];

@@ -15,8 +15,11 @@
 #import "ZGToolbarDelegate.h"
 #import "ZGApplication.h"
 
+static const int highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
+
 @interface ZGDocument() {
-    NSObject<ZGItemFactory>* archive;
+    NSObject<ZGItemFactory>* _archive;
+    NSObject<ZGItemProtocol>* _root;
     NSWindow* __weak _window;
 }
 
@@ -49,6 +52,29 @@
 
 - (void) searchFieldAction: (id)sender;
 - (void) openArchiveForOperation: (NSOperation*) op;
+
+@end
+
+@implementation ZGGroupItem {
+    NSObject<ZGItemProtocol>* __weak _parent;
+    NSMutableArray* _children;
+    NSMutableArray* _folderChildren;
+    NSString* _name;
+}
+@synthesize name = _name;
+@synthesize children = _children;
+@synthesize folderChildren = _folderChildren;
+@synthesize parent = _parent;
+
+- (id) initWithRoot: (NSObject<ZGItemProtocol>*) root {
+    self = [super init];
+    if (self != null) {
+        _parent = null;
+        _children = _folderChildren = [NSMutableArray arrayWithObject:root];
+        _name = root.name;
+    }
+    return self;
+}
 
 @end
 
@@ -136,19 +162,17 @@
 }
 
 - (void) reloadOutlineView {
-    if (_outlineView != null && archive != null) {
-        _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: archive.root];
+    if (_outlineView != null && _archive != null) {
+        _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: _root];
         _outlineView.dataSource = _outlineViewDataSource;
         [_outlineView reloadData];
-[_outlineView expandItem:null expandChildren:true]; // TODO: this is just temporary expand all, remove me
-        
         NSIndexSet* is = [NSIndexSet indexSetWithIndex:0];
         [_outlineView selectRowIndexes:is byExtendingSelection:false];
         _tableViewDatatSource = [[ZGTableViewDataSource alloc] initWithDocument: self];
         _tableView.dataSource = _tableViewDatatSource;
         [_tableView reloadData];
         dispatch_async(dispatch_get_current_queue(), ^{
-            [_outlineViewDelegate expandOne:_outlineView];
+            [_outlineViewDelegate expandOne:_outlineView]; // TODO: expandOne is not enough. expandToFirstFileChild
             [self sizeOutlineViewToContents];
             [_tableViewDelegate sizeTableViewToContents: _tableView];
         });
@@ -176,13 +200,26 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     return sv;
 }
 
-/* this is not needed because NSController.m window.setRestorable = false
-- (void) restoreDocumentWindowWithIdentifier: (NSString*) id state: (NSCoder*) state
-                           completionHandler: (void(^)(NSWindow*, NSError*)) completionHandler {
-    trace(@"%@ %@", id, state);
-    [super restoreDocumentWindowWithIdentifier: id state: state completionHandler: completionHandler];
+static NSOutlineView* createOutlineView(NSRect r) {
+    NSOutlineView* ov = [[NSOutlineView alloc] initWithFrame: r];
+    ov.focusRingType = NSFocusRingTypeNone;
+    ov.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    ov.allowsEmptySelection = false;
+    ov.selectionHighlightStyle = highlightStyle;
+    ov.indentationMarkerFollowsCell = true;
+    ov.indentationPerLevel = 16;
+    ov.headerView = [[ZGOutlineHeaderView alloc] initWithFrame: r];
+    NSTableColumn* tc = [NSTableColumn new];
+    [ov addTableColumn: tc];
+    ov.outlineTableColumn = tc;
+    tc.dataCell = [ZGImageAndTextCell new];
+    tc.minWidth = 92;
+    tc.maxWidth = 3000;
+    tc.editable = true;
+    assert(ov.outlineTableColumn == tc);
+    assert(ov.tableColumns[0] == tc);
+    return ov;
 }
-*/
 
 - (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
     // this is called after readFromURL
@@ -195,13 +232,16 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     bounds = _contentView.frame;
     bounds.origin.y += 30;
     bounds.size.height -= 60;
+ 
     NSRect tbounds = bounds;
     tbounds.size.width /= 2;
     tbounds.origin.x = 0;
     tbounds.origin.y = 0;
-    _outlineView = [[NSOutlineView alloc] initWithFrame: tbounds];
-    _outlineView.focusRingType = NSFocusRingTypeNone;
+    _outlineView = createOutlineView(tbounds);
+    assert(_outlineView != null);
+
     _tableView = [[NSTableView alloc] initWithFrame: tbounds];
+    assert(_tableView != null);
     _tableView.focusRingType = NSFocusRingTypeNone;
     _splitView = createSplitView(bounds,
                                  createScrollView(tbounds, _outlineView),
@@ -212,9 +252,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     
     assert(_contentView != null);
     assert(controller.window.contentView == _contentView);
-    assert(_tableView != null);
     assert(_splitView != null);
-    assert(_outlineView != null);
 
     _toolbar = [ZGToolbar new];
     assert(_toolbar != null);
@@ -226,16 +264,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     //  assert(_levelIndicator != null);
     
     NSTableColumn* tableColumn = [NSTableColumn new];
-    [_outlineView addTableColumn: tableColumn];
-    _outlineView.outlineTableColumn = tableColumn;
-    tableColumn.dataCell = [ZGImageAndTextCell new];
-    tableColumn.minWidth = 92;
-    tableColumn.maxWidth = 3000;
-    tableColumn.editable = true;
-    assert(_outlineView.outlineTableColumn == tableColumn);
-    assert(_outlineView.tableColumns[0] == tableColumn);
 
-    tableColumn = [NSTableColumn new];
     [_tableView addTableColumn: tableColumn];
     tableColumn.dataCell = [ZGImageAndTextCell new];
     tableColumn.minWidth = 92;
@@ -259,15 +288,6 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     }
     
     _contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    _outlineView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    _outlineView.allowsEmptySelection = false;
-    _outlineView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleSourceList;
-
-    // Xcode:
-    // unfocused: Gradient 0.96 0.96 0.96 -> 0.91, 0.91, 0.91
-    // focused: Gradient 0.91 0.92 0.94 -> 0.85 0.87 0.90
-//  _outlineView.backgroundColor = [NSColor colorWithCalibratedRed:0.88 green:0.89 blue:0.92 alpha:1];
-//  _outlineView.menu = _tableRowContextMenu;
 
     _tableView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _tableView.allowsColumnReordering = true;
@@ -307,7 +327,6 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     _levelIndicator.maxValue = 10000;
     _levelIndicator.intValue = 5000;
 
-    _outlineView.headerView = [[ZGOutlineHeaderView alloc] initWithFrame:_outlineView.frame];
     
     NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
     clipView.postsFrameChangedNotifications = true;
@@ -336,32 +355,9 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
 
 
 - (void) windowDidBecomeKey {
-    // unfocused: Gradient 0.96 0.96 0.96 -> 0.91, 0.91, 0.91
-    // focused: Gradient 0.91 0.92 0.94 -> 0.85 0.87 0.90
-/*
-    NSColor* c = [[NSColor windowBackgroundColor] colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
-//  c = [NSColor redColor];
-    NSColor* gb = [NSColor colorWithCalibratedRed: 0 green: 0 blue: 1 alpha:1];
-    c = [c blendedColorWithFraction: 0.25 ofColor: gb];
-c = [[NSColor windowBackgroundColor] colorUsingColorSpace: [NSColorSpace sRGBColorSpace]];
-    float r = c.redComponent;
-    float g = c.greenComponent;
-    float b = c.blueComponent;
-    float a = c.alphaComponent;
-    trace(@"%f %f %f %f", r, g, b, a);
-//    c = [NSColor colorWithCalibratedRed: r green: g blue: b alpha: a];
-    _outlineView.backgroundColor = c; // [NSColor colorWithCalibratedRed:0.88 green:0.89 blue:0.92 alpha:1];
-    _outlineView.needsDisplay = true;
-*/
 }
 
 - (void) windowDidResignKey {
-/*
-    // unfocused: Gradient 0.96 0.96 0.96 -> 0.91, 0.91, 0.91
-    // focused: Gradient 0.91 0.92 0.94 -> 0.85 0.87 0.90
-    _outlineView.backgroundColor = [NSColor windowBackgroundColor];
-    _outlineView.needsDisplay = true;
-*/ 
 }
 
 - (void) firstResponderChanged {
@@ -447,9 +443,10 @@ c = [[NSColor windowBackgroundColor] colorUsingColorSpace: [NSColorSpace sRGBCol
     [tc removeObserver:self forKeyPath:@"width"];
     [_operationQueue cancelAllOperations];
     [_operationQueue waitUntilAllOperationsAreFinished];
-    if (archive != null) {
-        [archive close];
-        archive = null;
+    if (_archive != null) {
+        [_archive close];
+        _archive = null;
+        _root = null;
     }
     [super close];
 }
@@ -505,14 +502,13 @@ c = [[NSColor windowBackgroundColor] colorUsingColorSpace: [NSColorSpace sRGBCol
 }
 
 - (BOOL) isEntireFileLoaded {
-    return archive != null;
+    return _archive != null;
 }
 
 - (void) openArchiveForOperation: (NSOperation*) op {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
     NSObject<ZGItemFactory>* __block a = [ZG7zip new];
-    // a = [ZGFileSystem new];
     NSError* __block error;
     BOOL b = [a readFromURL: _url ofType: _typeName encoding: _encoding
                    document: self operation: (NSOperation*) op error: &error];
@@ -523,7 +519,13 @@ c = [[NSColor windowBackgroundColor] colorUsingColorSpace: [NSColorSpace sRGBCol
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
         if (a != null) {
-            archive = a;
+            _archive = a;
+            // archive = [ZGFileSystem new];
+            if (highlightStyle != NSTableViewSelectionHighlightStyleSourceList) {
+                _root = _archive.root;
+            } else {
+                _root = [[ZGGroupItem alloc] initWithRoot: _archive.root];
+            }
             [self reloadOutlineView];
             _heroView.hidden = true;
             _splitView.hidden = false;
@@ -602,7 +604,7 @@ c = [[NSColor windowBackgroundColor] colorUsingColorSpace: [NSColorSpace sRGBCol
 }
 
 - (void) searchFieldAction: (id) sender {
-    if (!archive) {
+    if (_archive == null) {
         return;
     }
     NSString* s = [_searchField stringValue];
@@ -610,7 +612,7 @@ c = [[NSColor windowBackgroundColor] colorUsingColorSpace: [NSColorSpace sRGBCol
     if (!_searchTextColor) {
         _searchTextColor = [_searchField textColor];
     }
-    if ([archive setFilter:s]) {
+    if ([_archive setFilter: s]) {
         [_outlineView reloadData];
         [_outlineView expandItem:null expandChildren:true]; // expand all
         [self sizeOutlineViewToContents];

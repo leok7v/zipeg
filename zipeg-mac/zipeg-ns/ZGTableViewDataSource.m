@@ -46,13 +46,14 @@
 }
 
 - (NSMutableArray*) children {
-    NSObject<ZGItemProtocol>* i = [self selectedItem];
+    NSObject<ZGItemProtocol>* i = self.selectedItem;
     return i == null ? null : (_sorted != null) ? _sorted : i.children;
 }
 
 - (NSInteger) numberOfRowsInTableView: (NSTableView*) tableView {
-    NSMutableArray* c = [self children];
-    assert(c != null);
+    NSMutableArray* c = self.children;
+// TODO: uncomment assert below
+    //    assert(c != null);
     return c != null ? c.count : 0;
 }
 

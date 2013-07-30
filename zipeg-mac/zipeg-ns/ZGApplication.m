@@ -14,20 +14,21 @@
     NSUInteger flags = e.modifierFlags & NSDeviceIndependentModifierFlagsMask;
     if( flags == NSControlKeyMask && e.type == NSKeyDown &&
        [e.charactersIgnoringModifiers isEqualToString:@"z"]) {
-        trace_allocs();
-        trace(@"");
         NSDocumentController* dc = NSDocumentController.sharedDocumentController;
         NSArray* docs = dc.documents;
         if (docs != null && docs.count > 0) {
             for (int i = 0; i < docs.count; i++) {
                 ZGDocument* doc = (ZGDocument*)docs[i];
                 if (doc.window != null) {
-                    trace(@"%@", doc.displayName);
+                    NSLog(@"%@", doc.displayName);
                     dumpViews(doc.window.contentView);
-                    trace(@"");
+                    NSLog(@"");
                 }
             }
         }
+        NSLog(@"");
+        trace_allocs();
+        NSLog(@"");
     }
     [super sendEvent: e];
 }

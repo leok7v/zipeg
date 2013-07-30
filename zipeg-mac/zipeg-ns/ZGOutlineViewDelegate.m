@@ -59,15 +59,39 @@
 
 - (void) outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell*)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
     if ([cell isKindOfClass:[ZGImageAndTextCell class]] && [item conformsToProtocol:@protocol(ZGItemProtocol)]) {
-        NSObject<ZGItemProtocol>* fi = (NSObject<ZGItemProtocol>*)item;
+        NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
         ZGImageAndTextCell* it = (ZGImageAndTextCell*)cell;
-        //trace(@"cell=0x%016llX", (uint64_t)(__bridge void*)cell);
-        NSImage* image = fi.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
-        // [it setRepresentedObject:item];
-        it.image = image;
-        it.stringValue = fi.name;
+        NSImage* image = i.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
+        [it setRepresentedObject: item];
+        trace(@"cell=%@ for %@ %@", cell, i, i.name);
+        if (![it isKindOfClass: ZGGroupItem.class]) {
+            it.image = image;
+        }
+        it.stringValue = i.name;
     }
 }
+
+- (BOOL)outlineView:(NSOutlineView *)outlineView shouldSelectItem:(id)item {
+    // don't allow special group nodes (Devices and Places) to be selected
+    return ![item isKindOfClass: ZGGroupItem.class];
+}
+
+- (NSCell*) outlineView: (NSOutlineView*) outlineView dataCellForTableColumn: (NSTableColumn*) tableColumn
+                   item: (id) item {
+    NSCell *returnCell = [tableColumn dataCell];
+/*
+    if ([[tableColumn identifier] isEqualToString:COLUMNID_NAME])
+    {
+        // we are being asked for the cell for the single and only column
+        BaseNode *node = [item representedObject];
+        if ([self isSeparator:node])
+            returnCell = separatorCell;
+    }
+*/
+    return returnCell;
+}
+
+
 
 -(void) outlineViewItemDidExpand:(NSNotification *)notification {
     // NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)[notification.userInfo objectForKey:@"NSObject"];
@@ -82,19 +106,21 @@
 -(void) outlineViewItemWillCollapse:(NSNotification *)notification {
 }
 
+-(BOOL)outlineView:(NSOutlineView *)outlineView shouldShowOutlineCellForItem:(id)item {
+    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
+    return i.parent != null;
+}
+
+- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item {
+    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
+    trace(@"isGroupItem %@=%@", i.name, [item isKindOfClass: ZGGroupItem.class] ? @"true" : @"false");
+    return [item isKindOfClass: ZGGroupItem.class];
+}
+
 -(void) outlineViewItemDidCollapse:(NSNotification *)notification {
     // NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)[notification.userInfo objectForKey:@"NSObject"];
     NSOutlineView* v = (NSOutlineView*)notification.object;
     [self sizeOutlineViewToContents: v];
-}
-
-- (NSCell *) outlineView:(NSOutlineView *)outlineView dataCellForTableColumn:(NSTableColumn *)tableColumn item:(id)item {
-    NSCell *returnCell = [tableColumn dataCell];
-    return returnCell;
-}
-
-- (BOOL) outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item {
-    return NO; // controls special gradient header for the group
 }
 
 - (BOOL) outlineView:(NSOutlineView *)v shouldEditTableColumn:(NSTableColumn *)tableColumn item:(id)item {
