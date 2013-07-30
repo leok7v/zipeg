@@ -55,7 +55,11 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
 
 @end
 
-@implementation ZGGroupItem {
+@interface ZGSectionItem : NSObject<ZGItemProtocol>
+
+@end
+
+@implementation ZGSectionItem {
     NSObject<ZGItemProtocol>* __weak _parent;
     NSMutableArray* _children;
     NSMutableArray* _folderChildren;
@@ -175,6 +179,11 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
             [_outlineViewDelegate expandOne:_outlineView]; // TODO: expandOne is not enough. expandToFirstFileChild
             [self sizeOutlineViewToContents];
             [_tableViewDelegate sizeTableViewToContents: _tableView];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (_root.children != null && _root.children.count > 0) {
+                    [_outlineView selectRowIndexes: [NSIndexSet indexSetWithIndex: 1] byExtendingSelection: false];
+                }
+            });
         });
     }
 }
@@ -208,7 +217,7 @@ static NSOutlineView* createOutlineView(NSRect r) {
     ov.selectionHighlightStyle = highlightStyle;
     ov.indentationMarkerFollowsCell = true;
     ov.indentationPerLevel = 16;
-    ov.headerView = [[ZGOutlineHeaderView alloc] initWithFrame: r];
+    ov.headerView = null; // xxx [[ZGOutlineHeaderView alloc] initWithFrame: r];
     NSTableColumn* tc = [NSTableColumn new];
     [ov addTableColumn: tc];
     ov.outlineTableColumn = tc;
@@ -310,9 +319,10 @@ static NSOutlineView* createOutlineView(NSRect r) {
     // TODO: for now:
     [_tableView registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
 
+    
     _outlineViewDelegate = [[ZGOutlineViewDelegate alloc] initWithDocument: self];;
     _outlineView.delegate = _outlineViewDelegate;
-
+    
     _tableViewDelegate = [[ZGTableViewDelegate alloc] initWithDocument: self];
     _tableView.delegate = _tableViewDelegate;
 
@@ -524,7 +534,7 @@ static NSOutlineView* createOutlineView(NSRect r) {
             if (highlightStyle != NSTableViewSelectionHighlightStyleSourceList) {
                 _root = _archive.root;
             } else {
-                _root = [[ZGGroupItem alloc] initWithRoot: _archive.root];
+                _root = [[ZGSectionItem alloc] initWithRoot: _archive.root];
             }
             [self reloadOutlineView];
             _heroView.hidden = true;

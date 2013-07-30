@@ -1,8 +1,8 @@
+#import "ZGTableViewDelegate.h"
 #import "ZGUtils.h"
 #import "ZGImages.h"
 #import "ZGDocument.h"
 #import "ZGItemProtocol.h"
-#import "ZGTableViewDelegate.h"
 #import "ZGOutlineViewDelegate.h"
 #import "ZGOutlineViewDataSource.h"
 #import "ZGImageAndTextCell.h"
@@ -37,6 +37,7 @@
 @interface ZGOutlineViewDelegate () {
     bool _queued;
     ZGDocument* __weak _document;
+    ZGSectionCell* _sectionCell;
 }
 @end
 
@@ -46,6 +47,7 @@
     self = [super init];
     if (self) {
         alloc_count(self);
+        _sectionCell = [ZGSectionCell new];
         _document = doc;
     }
     return self;
@@ -64,34 +66,27 @@
         NSImage* image = i.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
         [it setRepresentedObject: item];
         trace(@"cell=%@ for %@ %@", cell, i, i.name);
-        if (![it isKindOfClass: ZGGroupItem.class]) {
-            it.image = image;
-        }
+        it.image = image;
         it.stringValue = i.name;
     }
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView shouldSelectItem:(id)item {
     // don't allow special group nodes (Devices and Places) to be selected
-    return ![item isKindOfClass: ZGGroupItem.class];
+    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
+    trace(@"%@ = %d", i.name, i != null && i.parent != null);
+    return i != null && i.parent != null; // xxx
 }
 
-- (NSCell*) outlineView: (NSOutlineView*) outlineView dataCellForTableColumn: (NSTableColumn*) tableColumn
+- (NSCell*) outlineView: (NSOutlineView*) ov dataCellForTableColumn: (NSTableColumn*) tc
                    item: (id) item {
-    NSCell *returnCell = [tableColumn dataCell];
-/*
-    if ([[tableColumn identifier] isEqualToString:COLUMNID_NAME])
-    {
-        // we are being asked for the cell for the single and only column
-        BaseNode *node = [item representedObject];
-        if ([self isSeparator:node])
-            returnCell = separatorCell;
+    NSCell *returnCell = [tc dataCell];
+    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
+    if (i.parent == null) {
+        returnCell = _sectionCell; // xxx
     }
-*/
     return returnCell;
 }
-
-
 
 -(void) outlineViewItemDidExpand:(NSNotification *)notification {
     // NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)[notification.userInfo objectForKey:@"NSObject"];
@@ -107,14 +102,14 @@
 }
 
 -(BOOL)outlineView:(NSOutlineView *)outlineView shouldShowOutlineCellForItem:(id)item {
-    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
-    return i.parent != null;
+//  NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
+    return true;
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item {
     NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
-    trace(@"isGroupItem %@=%@", i.name, [item isKindOfClass: ZGGroupItem.class] ? @"true" : @"false");
-    return [item isKindOfClass: ZGGroupItem.class];
+    trace(@"isGroupItem %@=%@", i.name, i.parent == null ? @"true" : @"false");
+    return i.parent == null;
 }
 
 -(void) outlineViewItemDidCollapse:(NSNotification *)notification {
