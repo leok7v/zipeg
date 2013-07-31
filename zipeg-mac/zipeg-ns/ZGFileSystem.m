@@ -111,7 +111,7 @@ static ZGFileSystemItem *g_root;
 
 + (void)initialize {
     assert(self == [ZGFileSystem class]);
-    g_root = [[ZGFileSystemItem alloc] initWithPath:@"/" parent:nil];
+    g_root = [[ZGFileSystemItem alloc] initWithPath: @"/" parent: null];
 }
 
 
@@ -130,8 +130,8 @@ static ZGFileSystemItem *g_root;
     return true;
 }
 
-- (BOOL) setFilter:(NSString*)filterText {
-    return false; // not implemented
+- (void) setFilter: (NSString*) filterText operation: (NSOperation*) op done: (void(^)(BOOL)) block {
+    // not implemented
 }
 
 - (void) close {

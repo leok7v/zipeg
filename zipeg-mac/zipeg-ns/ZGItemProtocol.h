@@ -14,6 +14,7 @@
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
             document: (ZGDocument*) doc
            operation: (NSOperation*) op error:(NSError**) err;
-- (BOOL) setFilter:(NSString*)filterText;
+// setFilter is called on background thread. block must be called back on the main thread
+- (void) setFilter: (NSString*) filterText operation: (NSOperation*) op done: (void(^)(BOOL)) block;
 - (void) close;
 @end

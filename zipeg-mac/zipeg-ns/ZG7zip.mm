@@ -346,13 +346,29 @@ static bool ignore(const NSString* pathname) {
 // http://regexkit.sourceforge.net/RegexKitLite/#ICUSyntax_ICURegularExpressionSyntax
 static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 
-- (BOOL) setFilter: (NSString*) filterText {
-    if (filterText == _filterText || (filterText && [filterText isEqualToString:_filterText])) {
-        return false;
+- (void) setFilter: (NSString*) filterText operation: (NSOperation*) op done: (void(^)(BOOL)) block {
+    assert(![NSThread isMainThread]);
+    trace("filterText=%@ _filterText=%@", filterText, _filterText);
+    bool e0 =  filterText == null ||  filterText.length == 0;
+    bool e1 = _filterText == null || _filterText.length == 0;
+    if (e0 && e1) {
+        return;
     }
+    bool e = (e0 && [_filterText isEqualToString: filterText]) ||
+             (e1 && [filterText isEqualToString: _filterText]) ||
+             [filterText isEqualToString: _filterText];
+    trace("filterText=%@ _filterText=%@ filterText isEqualToString:_filterText=%d",
+          filterText, _filterText, e);
+    if (e) {
+        return;
+    }
+    BOOL __block b = false;
+    int in = items;
+    ZGBitset* isFilteredOut = null;
     if (!filterText || filterText.length == 0) {
         _filterText = null;
         [_isFilteredOut clear];
+        b = true;
     } else {
         timestamp("setFilter");
         // making sure search strings like "foo*bar.txt" will work:
@@ -377,33 +393,51 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
             opts |= NSRegularExpressionSearch;
         }
         _filterText = filterText;
-        [_isFilteredOut fill];
-        int in = items;
-        for (int i = 0; i < items; i++) {
-            const NSString* pathname = _paths[i];
-            ZG7zipItem* it = _items[pathname];
-            if ([it.name rangeOfString:_filterText options:opts].location != NSNotFound) {
-                while (it) {
-                    if (it->_index >= 0) {
-                        if (![_isFilteredOut isSet:it->_index]) {
-                            break;
-                        } else {
-                            [_isFilteredOut setBit:it->_index to:false];
-                            in--;
+        isFilteredOut = [ZGBitset bitsetWithCapacity: items];
+        b = isFilteredOut != null;
+        [isFilteredOut fill];
+        for (int i = 0; b && i < items; i++) {
+            if (op.isCancelled) {
+                b = false;
+            } else {
+                const NSString* pathname = _paths[i];
+                ZG7zipItem* it = _items[pathname];
+                if ([it.name rangeOfString:_filterText options:opts].location != NSNotFound) {
+                    while (it) {
+                        if (it->_index >= 0) {
+                            if (![isFilteredOut isSet:it->_index]) {
+                                break;
+                            } else {
+                                [isFilteredOut setBit:it->_index to:false];
+                                in--;
+                            }
                         }
+                        it = (ZG7zipItem*)it.parent;
                     }
-                    it = (ZG7zipItem*)it.parent;
                 }
             }
         }
         timestamp("setFilter");
-        if (in == items) {
-            _filterText = null;
-            [_isFilteredOut clear];
-            return false;
-        }
     }
-    return true;
+    if (b) {
+        trace("search done");
+        dispatch_async(dispatch_get_main_queue(), ^{
+            assert([NSThread isMainThread]);
+            bool found = true;
+            if (in == items) {
+                _filterText = null;
+                [_isFilteredOut clear];
+                found = false; // not found
+            } else {
+                _filterText = filterText;
+                _isFilteredOut = isFilteredOut;
+            }
+            trace("block(%d)", found);
+            block(found);
+        });
+    } else {
+        trace("search cancelled");
+    }
 }
 
 - (BOOL) isFiltered {

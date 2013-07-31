@@ -50,8 +50,8 @@
 @property NSTextField* password_input;
 @property dispatch_semaphore_t password_semaphore;
 
-- (void) searchFieldAction: (id)sender;
 - (void) openArchiveForOperation: (NSOperation*) op;
+- (void) searchArchiveWithString: (NSString*) s forOperation: (NSOperation*) op done: (void(^)(BOOL)) block;
 
 @end
 
@@ -81,13 +81,10 @@
 
 @end
 
-
 @interface OpenArchiveOperation : NSOperation {
-    ZGDocument* _document;
+    ZGDocument* __weak _document;
 }
-
 - (id)initWithDocument: (ZGDocument*) document;
-
 @end
 
 @implementation OpenArchiveOperation
@@ -99,8 +96,31 @@
 }
 
 - (void)main {
-    // Call on the document to do the actual work
     [_document openArchiveForOperation: self];
+}
+
+@end
+
+@interface SearchArchiveOperation : NSOperation {
+    ZGDocument* __weak _document;
+    NSString* _search;
+    void (^_block)(BOOL b);
+}
+- (id)initWithDocument: (ZGDocument*) document searchString: (NSString*) s done: (void(^)(BOOL)) block;
+@end
+
+@implementation SearchArchiveOperation
+
+- (id) initWithDocument: (ZGDocument*) doc searchString: (NSString*) s done: (void(^)(BOOL)) block {
+    self = [super init];
+    _document = doc;
+    _search = [s copy];
+    _block = block;
+    return self;
+}
+
+- (void)main {
+    [_document searchArchiveWithString: _search forOperation: self done: _block];
 }
 
 @end
@@ -114,7 +134,7 @@
         _operationQueue = [NSOperationQueue new];
         _operationQueue.maxConcurrentOperationCount = 1; // TODO: can it be 2?
         _encoding = (CFStringEncoding)-1;
-        _highlightStyle = NSTableViewSelectionHighlightStyleRegular;
+        _highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
 
     }
     return self;
@@ -132,7 +152,7 @@
     if (_highlightStyle != hs) {
         _highlightStyle = hs;
         _outlineView.selectionHighlightStyle =  _highlightStyle;
-        [self reloadOutlineView];
+        [self reloadData];
     }
 }
 
@@ -144,7 +164,7 @@
     [self setupDocumentWindow: wc];
 }
 
-- (void) reloadOutlineView {
+- (void) reloadData {
     if (_outlineView != null && _archive != null) {
         if (_highlightStyle != NSTableViewSelectionHighlightStyleSourceList) {
             _root = _archive.root;
@@ -203,7 +223,9 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     ov.selectionHighlightStyle = hs;
     ov.indentationMarkerFollowsCell = true;
     ov.indentationPerLevel = 16;
-    ov.headerView = null; // xxx [[ZGOutlineHeaderView alloc] initWithFrame: r];
+//  ov.headerView = [[ZGOutlineHeaderView alloc] initWithFrame: r];
+    ov.headerView = null;
+//  ov.columnAutoresizingStyle = NSTableViewLastColumnOnlyAutoresizingStyle;
     NSTableColumn* tc = [NSTableColumn new];
     [ov addTableColumn: tc];
     ov.outlineTableColumn = tc;
@@ -211,59 +233,11 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     tc.minWidth = 92;
     tc.maxWidth = 3000;
     tc.editable = true;
+//  tc.resizingMask = NSTableColumnAutoresizingMask;
     assert(ov.outlineTableColumn == tc);
     assert(ov.tableColumns[0] == tc);
     return ov;
 }
-
-/*
-static NSToolbar* createToolbar(NSRect frame) {
-    
-    NSToolbar* tb = [ZGToolbar new];
-    assert(_toolbar != null);
-    _toolbarDelegate = [[ZGToolbarDelegate alloc] initWithDocument: self];
-    assert(_toolbarDelegate != null);
-    _toolbar.delegate = _toolbarDelegate; // weak reference
-    _window.toolbar = _toolbar;
-
-    
-    NSRect bf = frame;
-    bf.origin.x = 2;
-    bf.origin.y = 2;
-    bf.size.width = 32 * 3 + 4;
-    NSSegmentedControl  *sc = [[NSSegmentedControl alloc] initWithFrame:bf];
-    sc.segmentCount = 3;
-    [sc setWidth:32 forSegment:0];
-    [sc setWidth:32 forSegment:1];
-    [sc setWidth:32 forSegment:2];
-    [sc setLabel:@"" forSegment:0];
-    [sc setLabel:@"" forSegment:1];
-    [sc setLabel:@"" forSegment:2];
-    
-    NSImage* image = [NSImage imageNamed:@"expand.png"];
-    image.size = NSMakeSize(16, 16);
-    [sc setImage:image forSegment:0];
-    image = [NSImage imageNamed:@"collapse.png"];
-    image.size = NSMakeSize(16, 16);
-    [sc setImage:image forSegment:1];
-    image = [NSImage imageNamed:@"search.png"];
-    image.size = NSMakeSize(16, 16);
-    [sc setImage:image forSegment:2];
-    sc.segmentStyle = NSSegmentStyleTexturedSquare;
-    
-    sc.target = self;
-    sc.action = @selector(segmentAction:);
-    
-    NSRect sf = frame;
-    sf.origin.x += bf.origin.x + bf.size.width;
-    sf.size.width -= bf.origin.x + bf.size.width;
-    NSSearchField *search = [[NSSearchField alloc] initWithFrame: sf];
-    search.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin;
-    
-    self.subviews = @[sc, search];
-
-}
-*/
 
 - (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
     // this is called after readFromURL
@@ -566,7 +540,7 @@ static NSToolbar* createToolbar(NSRect frame) {
         if (a != null) {
             _archive = a;
             // archive = [ZGFileSystem new];
-            [self reloadOutlineView];
+            [self reloadData];
             _heroView.hidden = true;
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
@@ -643,24 +617,31 @@ static NSToolbar* createToolbar(NSRect frame) {
     return true; // TODO: cancel button
 }
 
-- (void) searchFieldAction: (id) sender {
+
+- (void) search: (NSString*) s {
+    assert([NSThread isMainThread]);
     if (_archive == null) {
         return;
     }
-    NSString* s = [_searchField stringValue];
-    // trace(@"%@", s);
-    if (!_searchTextColor) {
+    if (_searchTextColor == null) {
         _searchTextColor = [_searchField textColor];
     }
-    if ([_archive setFilter: s]) {
-        [_outlineView reloadData];
-        [_outlineView expandItem:null expandChildren:true]; // expand all
-        [self sizeOutlineViewToContents];
-        _searchField.textColor = _searchTextColor;
-    } else {
-        _searchField.textColor = NSColor.redColor;
-    }
+    ZGDocument* __block doc = self;
+    SearchArchiveOperation* op = [[SearchArchiveOperation alloc]
+                                  initWithDocument: self searchString: s
+        done: (^(BOOL found){
+            assert([NSThread isMainThread]);
+            [doc reloadData];
+            _searchField.textColor = found ? _searchTextColor : NSColor.redColor;
+        })];
+    [_operationQueue addOperation: op];
 }
+
+- (void) searchArchiveWithString: (NSString*) s forOperation: (NSOperation*) op done: (void(^)(BOOL)) block {
+    assert(![NSThread isMainThread]);
+    [_archive setFilter: s operation: op done: block];
+}
+
 
 @end
 
