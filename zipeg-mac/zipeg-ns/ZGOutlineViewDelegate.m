@@ -1,38 +1,12 @@
 #import "ZGTableViewDelegate.h"
-#import "ZGUtils.h"
+#import "ZGItemProtocol.h"
 #import "ZGImages.h"
 #import "ZGDocument.h"
 #import "ZGItemProtocol.h"
 #import "ZGOutlineViewDelegate.h"
 #import "ZGOutlineViewDataSource.h"
 #import "ZGImageAndTextCell.h"
-#import "ZGItemProtocol.h"
 
-@implementation NSOutlineView(SelectItem)
-
-- (void)expandParentsOfItem: (NSObject<ZGItemProtocol>*) item {
-    while (item != nil) {
-        NSObject<ZGItemProtocol>* parent = item.parent;
-        if (parent != null) {
-            [self expandItem: parent expandChildren: false];
-        }
-        item = parent;
-    }
-}
-
-- (void) selectItem: (id) item {
-    NSInteger itemIndex = [self rowForItem: item];
-    if (itemIndex < 0) {
-        [self expandParentsOfItem: item];
-        itemIndex = [self rowForItem: item];
-        if (itemIndex < 0) {
-            return;
-        }
-    }
-    [self selectRowIndexes: [NSIndexSet indexSetWithIndex: itemIndex] byExtendingSelection: false];
-}
-
-@end
 
 @interface ZGOutlineViewDelegate () {
     bool _queued;
@@ -54,62 +28,66 @@
 }
 
 - (void) dealloc {
-    trace(@"%@", self);
+    // trace(@"%@", self);
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
-- (void) outlineView:(NSOutlineView *)outlineView willDisplayCell:(NSCell*)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item {
-    if ([cell isKindOfClass:[ZGImageAndTextCell class]] && [item conformsToProtocol:@protocol(ZGItemProtocol)]) {
-        NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
-        ZGImageAndTextCell* it = (ZGImageAndTextCell*)cell;
-        NSImage* image = i.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
-        [it setRepresentedObject: item];
-        trace(@"cell=%@ for %@ %@", cell, i, i.name);
-        it.image = image;
-        it.stringValue = i.name;
+- (void) outlineView:(NSOutlineView *) v willDisplayCell:(NSCell*) c forTableColumn:(NSTableColumn *) tc item:(id) i {
+    if ([c isKindOfClass:[ZGImageAndTextCell class]] && [i conformsToProtocol:@protocol(ZGItemProtocol)]) {
+        NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
+        ZGImageAndTextCell* itc = (ZGImageAndTextCell*)c;
+        NSImage* image = it.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
+        if ([self outlineView: v isGroupItem: i]) {
+            image = ZGImages.shared.appImage;
+        } else { // TODO: ask ZGImages to retrieve system icon
+            image = it.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
+        }
+        [itc setRepresentedObject: i];
+        // trace(@"cell=%@ for %@ %@", c, it, it.name);
+        itc.image = image;
+        itc.stringValue = it.name;
     }
 }
 
-- (BOOL)outlineView:(NSOutlineView *)outlineView shouldSelectItem:(id)item {
-    // don't allow special group nodes (Devices and Places) to be selected
-    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
-    trace(@"%@ = %d", i.name, i != null && i.parent != null);
-    return i != null && i.parent != null; // xxx
+- (BOOL)outlineView:(NSOutlineView *) v shouldSelectItem: (id) item {
+    // don't allow special group nodes to be selected
+    // NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
+    // trace(@"%@ = %d", i.name, ![self outlineView: v isGroupItem: item]);
+    return ![self outlineView:v isGroupItem:item];
 }
 
-- (NSCell*) outlineView: (NSOutlineView*) ov dataCellForTableColumn: (NSTableColumn*) tc
-                   item: (id) item {
-    NSCell *returnCell = [tc dataCell];
-    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
-    if (i.parent == null) {
-        returnCell = _sectionCell; // xxx
+- (NSCell*) outlineView: (NSOutlineView*) v dataCellForTableColumn: (NSTableColumn*) tc item: (id) i {
+    NSCell* c = [tc dataCell];
+    // NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)item;
+    if ([self outlineView: v isGroupItem: i]) {
+        c = _sectionCell;
     }
-    return returnCell;
+    return c;
 }
 
--(void) outlineViewItemDidExpand:(NSNotification *)notification {
-    // NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)[notification.userInfo objectForKey:@"NSObject"];
-    NSOutlineView* v = (NSOutlineView*)notification.object;
+-(void) outlineViewItemDidExpand: (NSNotification*) n {
+    // NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)[n.userInfo objectForKey:@"NSObject"];
+    NSOutlineView* v = (NSOutlineView*)n.object;
     // trace("outlineViewItemDidExpand rows=%ld", v.numberOfRows);
     [self sizeOutlineViewToContents: v];
 }
 
--(void) outlineViewItemWillExpand:(NSNotification *)notification {
+-(void) outlineViewItemWillExpand: (NSNotification*) n {
 }
 
--(void) outlineViewItemWillCollapse:(NSNotification *)notification {
+-(void) outlineViewItemWillCollapse: (NSNotification*) n {
 }
 
--(BOOL)outlineView:(NSOutlineView *)outlineView shouldShowOutlineCellForItem:(id)item {
-//  NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
+-(BOOL)outlineView: (NSOutlineView*) outlineView shouldShowOutlineCellForItem: (id) i {
+//  NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
     return true;
 }
 
-- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item {
-    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
-    trace(@"isGroupItem %@=%@", i.name, i.parent == null ? @"true" : @"false");
-    return i.parent == null;
+- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)i {
+    NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
+    // trace(@"isGroupItem %@=%@ %d", it.name, it.parent == null ? @"true" : @"false", it.isGroup);
+    return it.isGroup;
 }
 
 -(void) outlineViewItemDidCollapse:(NSNotification *)notification {
@@ -159,7 +137,7 @@
             _queued = false;
         });
     } else {
-//      trace("sizeOutlineViewToContents skipped");
+        // trace("sizeOutlineViewToContents skipped");
     }
 }
 

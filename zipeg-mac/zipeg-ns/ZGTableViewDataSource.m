@@ -23,7 +23,7 @@
 
 - (void)dealloc {
     dealloc_count(self);
-    trace(@"");
+    // trace(@"");
 }
 
 - (NSObject<ZGItemProtocol>*) selectedItem {

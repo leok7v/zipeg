@@ -3,6 +3,7 @@
 @interface ZGImages () {
     NSImage* _dirImage;
     NSImage* _docImage;
+    NSImage* _appImage; // Zipeg.icns
 }
 @end
 
@@ -29,8 +30,15 @@ static ZGImages* _shared;
         _dirImage.size = NSMakeSize(kIconImageSize, kIconImageSize);
         _docImage = [NSWorkspace.sharedWorkspace iconForFileType:NSFileTypeForHFSTypeCode(kGenericDocumentIcon)];
         _docImage.size = NSMakeSize(kIconImageSize, kIconImageSize);
-        return self;
+        // http://stackoverflow.com/questions/1359060/how-can-i-load-an-nsimage-representation-of-the-icon-for-my-application
+        // Note -[NSApplication applicationIconImage]; that fails to return a pasted custom icon.
+        // NSString* appPath = [base::mac::MainBundle() bundlePath];
+        // NSImage* appIcon = [[NSWorkspace sharedWorkspace] iconForFile:appPath];
+        // but actually I alway want app icon here:
+        _appImage = [NSApp applicationIconImage];
+        _appImage.size = NSMakeSize(kIconImageSize, kIconImageSize);
     }
+    return self;
 }
 
 @end

@@ -96,8 +96,8 @@
           keyPath, action, o, newKey, oldKey, indexes, prio);
 */
     if ([keyPath isEqualToString:@"firstResponder"]) {
-        NSResponder* fr = [self.window firstResponder];
-        trace(@"first responder changed to %@", fr);
+        // NSResponder* fr = [self.window firstResponder];
+        // trace(@"first responder changed to %@", fr);
         assert([self.document isKindOfClass: ZGDocument.class]);
         ZGDocument* d = self.document;
         [d firstResponderChanged];

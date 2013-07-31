@@ -22,31 +22,31 @@
 }
 
 - (void)dealloc {
-    trace(@"");
+    // trace(@"");
     dealloc_count(self);
 }
 
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {
     NSObject<ZGItemProtocol>* i = item == null ? _root : item;
-    trace("%@ %@.folderChildren=%ld parent=%@", item, i.name, i.folderChildren.count, i.parent == null ? @"null" : i.parent.name);
+    // trace("%@ %@.folderChildren=%ld parent=%@", item, i.name, i.folderChildren.count, i.parent == null ? @"null" : i.parent.name);
     return i.folderChildren.count;
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isItemExpandable:(id)item {
     NSObject<ZGItemProtocol>* i = item == null ? _root : item;
-    trace("%@.isItemExpandable=%@", i.name, i.folderChildren != null ? @"true" : @"false");
+    // trace("%@.isItemExpandable=%@", i.name, i.folderChildren != null ? @"true" : @"false");
     return i.folderChildren != null;
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item {
     NSObject<ZGItemProtocol>* i = item == null ? _root : item;
-    trace("%@[%ld]=%@", i.name, index, ((NSObject<ZGItemProtocol>*)i.folderChildren[index]).name);
+    // trace("%@[%ld]=%@", i.name, index, ((NSObject<ZGItemProtocol>*)i.folderChildren[index]).name);
     return i.folderChildren[index];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item {
     NSObject<ZGItemProtocol>* i = item == null ? _root : item;
-    trace(@"objectValueForTableColumn %@=%@", item, i.name);
+    // trace(@"objectValueForTableColumn %@=%@", item, i.name);
     return i.name;
 }
 

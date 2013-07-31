@@ -1,5 +1,4 @@
 #import "ZGBitset.h"
-#import "ZGUtils.h"
 
 #define N ((int)sizeof(UInt64)*8)
 

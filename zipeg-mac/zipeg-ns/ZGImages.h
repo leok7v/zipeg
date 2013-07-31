@@ -5,5 +5,6 @@
 + (ZGImages*) shared;
 @property (readonly, nonatomic) NSImage* docImage;
 @property (readonly, nonatomic) NSImage* dirImage;
+@property (readonly, nonatomic) NSImage* appImage;
 
 @end

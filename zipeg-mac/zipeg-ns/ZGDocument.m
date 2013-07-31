@@ -1,6 +1,6 @@
 #import "ZGDocument.h"
+#import "ZGGenericItem.h"
 #import "ZG7zip.h"
-#import "ZGUtils.h"
 #import "ZGFileSystem.h"
 #import "ZGHeroView.h"
 #import "ZGImageAndTextCell.h"
@@ -15,7 +15,7 @@
 #import "ZGToolbarDelegate.h"
 #import "ZGApplication.h"
 
-static const int highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
+static const int highlightStyle = NSTableViewSelectionHighlightStyleRegular; // NSTableViewSelectionHighlightStyleSourceList;
 
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* _archive;
@@ -52,33 +52,6 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
 
 - (void) searchFieldAction: (id)sender;
 - (void) openArchiveForOperation: (NSOperation*) op;
-
-@end
-
-@interface ZGSectionItem : NSObject<ZGItemProtocol>
-
-@end
-
-@implementation ZGSectionItem {
-    NSObject<ZGItemProtocol>* __weak _parent;
-    NSMutableArray* _children;
-    NSMutableArray* _folderChildren;
-    NSString* _name;
-}
-@synthesize name = _name;
-@synthesize children = _children;
-@synthesize folderChildren = _folderChildren;
-@synthesize parent = _parent;
-
-- (id) initWithRoot: (NSObject<ZGItemProtocol>*) root {
-    self = [super init];
-    if (self != null) {
-        _parent = null;
-        _children = _folderChildren = [NSMutableArray arrayWithObject:root];
-        _name = root.name;
-    }
-    return self;
-}
 
 @end
 
@@ -146,7 +119,7 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
 }
 
 - (void) dealloc {
-    trace(@"%@", self);
+    // trace(@"%@", self);
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
     [ZGApplication deferedTraceAllocs];
@@ -168,6 +141,7 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
 - (void) reloadOutlineView {
     if (_outlineView != null && _archive != null) {
         _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: _root];
+        // trace("_root=%@", _root);
         _outlineView.dataSource = _outlineViewDataSource;
         [_outlineView reloadData];
         NSIndexSet* is = [NSIndexSet indexSetWithIndex:0];
@@ -185,6 +159,7 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
                 }
             });
         });
+        [_toolbar validateVisibleItems];
     }
 }
 
@@ -213,7 +188,7 @@ static NSOutlineView* createOutlineView(NSRect r) {
     NSOutlineView* ov = [[NSOutlineView alloc] initWithFrame: r];
     ov.focusRingType = NSFocusRingTypeNone;
     ov.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    ov.allowsEmptySelection = false;
+    ov.allowsEmptySelection = true; // because of the sections (groups) collapse in Outline View
     ov.selectionHighlightStyle = highlightStyle;
     ov.indentationMarkerFollowsCell = true;
     ov.indentationPerLevel = 16;
@@ -229,6 +204,55 @@ static NSOutlineView* createOutlineView(NSRect r) {
     assert(ov.tableColumns[0] == tc);
     return ov;
 }
+
+/*
+static NSToolbar* createToolbar(NSRect frame) {
+    
+    NSToolbar* tb = [ZGToolbar new];
+    assert(_toolbar != null);
+    _toolbarDelegate = [[ZGToolbarDelegate alloc] initWithDocument: self];
+    assert(_toolbarDelegate != null);
+    _toolbar.delegate = _toolbarDelegate; // weak reference
+    _window.toolbar = _toolbar;
+
+    
+    NSRect bf = frame;
+    bf.origin.x = 2;
+    bf.origin.y = 2;
+    bf.size.width = 32 * 3 + 4;
+    NSSegmentedControl  *sc = [[NSSegmentedControl alloc] initWithFrame:bf];
+    sc.segmentCount = 3;
+    [sc setWidth:32 forSegment:0];
+    [sc setWidth:32 forSegment:1];
+    [sc setWidth:32 forSegment:2];
+    [sc setLabel:@"" forSegment:0];
+    [sc setLabel:@"" forSegment:1];
+    [sc setLabel:@"" forSegment:2];
+    
+    NSImage* image = [NSImage imageNamed:@"expand.png"];
+    image.size = NSMakeSize(16, 16);
+    [sc setImage:image forSegment:0];
+    image = [NSImage imageNamed:@"collapse.png"];
+    image.size = NSMakeSize(16, 16);
+    [sc setImage:image forSegment:1];
+    image = [NSImage imageNamed:@"search.png"];
+    image.size = NSMakeSize(16, 16);
+    [sc setImage:image forSegment:2];
+    sc.segmentStyle = NSSegmentStyleTexturedSquare;
+    
+    sc.target = self;
+    sc.action = @selector(segmentAction:);
+    
+    NSRect sf = frame;
+    sf.origin.x += bf.origin.x + bf.size.width;
+    sf.size.width -= bf.origin.x + bf.size.width;
+    NSSearchField *search = [[NSSearchField alloc] initWithFrame: sf];
+    search.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin;
+    
+    self.subviews = @[sc, search];
+
+}
+*/
 
 - (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
     // this is called after readFromURL
@@ -326,7 +350,7 @@ static NSOutlineView* createOutlineView(NSRect r) {
     _tableViewDelegate = [[ZGTableViewDelegate alloc] initWithDocument: self];
     _tableView.delegate = _tableViewDelegate;
 
-    [self reloadOutlineView];
+//  [self reloadOutlineView];
     
     // trace(@"0x%016llx 0x%016llx", (UInt64)(id)_outlineView, (UInt64)(id)(_outlineView.dataSource));
     _splitViewDelegate = [[ZGSplitViewDelegate alloc] initWithDocument: self];
@@ -372,7 +396,7 @@ static NSOutlineView* createOutlineView(NSRect r) {
 
 - (void) firstResponderChanged {
     NSResponder* fr = [[self.windowControllers[0] window] firstResponder];
-    trace(@"first responder changed to %@", fr);
+    // trace(@"first responder changed to %@", fr);
     if (fr == _tableView) {
         [_tableViewDelegate tableViewBecameFirstResponder: _tableView];
     }
@@ -442,9 +466,9 @@ static NSOutlineView* createOutlineView(NSRect r) {
         [_window orderOut:null]; // ???
         // TODO: cannot do it here because other documents can still be working.... [NSApp terminate:nil];
     } else {
-        trace(@"Quit - canceled");
+        // trace(@"Quit - canceled");
     }
-    trace(@"");
+    // trace(@"");
 }
 
 - (void)close {
@@ -534,7 +558,7 @@ static NSOutlineView* createOutlineView(NSRect r) {
             if (highlightStyle != NSTableViewSelectionHighlightStyleSourceList) {
                 _root = _archive.root;
             } else {
-                _root = [[ZGSectionItem alloc] initWithRoot: _archive.root];
+                _root = [[ZGGenericItem alloc] initWithChild: a.root];
             }
             [self reloadOutlineView];
             _heroView.hidden = true;

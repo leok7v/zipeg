@@ -16,8 +16,14 @@
 
 @implementation ZGToolbarDelegate
 
-static NSString*	SaveDocToolbarItemIdentifier 	= @"SaveDocumentItemId";
-static NSString*	SearchDocToolbarItemIdentifier 	= @"SearchDocumentItemId";
+static NSString* SaveId   = @"SaveId";
+static NSString* SearchId = @"SearchId";
+static NSString* ViewsId  = @"ViewsId";
+
+
++ (void) intialize {
+    [ZGToolbarDelegate exposeBinding: @"enableTBI"];
+}
 
 - (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
@@ -71,12 +77,26 @@ static NSString*	SearchDocToolbarItemIdentifier 	= @"SearchDocumentItemId";
     }
 }
 
+static void addControl(NSSegmentedControl* segmControl, int ix, NSString* imageName, NSString* tooltip) {
+    NSSegmentedCell* segmCell = [segmControl cell];
+    segmCell.trackingMode = NSSegmentSwitchTrackingMomentary;
+    NSImage* image = [NSImage imageNamed: imageName];
+    assert(image != null); 
+    image.size = NSMakeSize(16, 16);
+    [segmControl setWidth: image.size.width + 16 forSegment: ix];
+    [segmControl setImage: image forSegment: ix];
+    [segmCell    setToolTip: tooltip forSegment: ix];
+    [segmCell    setLabel:@"" forSegment: ix]; // otherwise it will show up inline after image
+    segmControl.segmentStyle = NSSegmentStyleTexturedRounded;
+    [segmCell setEnabled: true];
+}
+
 - (NSToolbarItem*) toolbar: (NSToolbar*) toolbar itemForItemIdentifier: (NSString*) itemIdent willBeInsertedIntoToolbar:(BOOL) willBeInserted {
     // Required delegate method:  Given an item identifier, this method returns an item
     // The toolbar will use this method to obtain toolbar items that can be displayed in the customization sheet, or in the toolbar itself
     NSToolbarItem *toolbarItem = null;
     
-    if ([itemIdent isEqual: SaveDocToolbarItemIdentifier]) {
+    if ([itemIdent isEqual: SaveId]) {
         toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier: itemIdent];
 	
         // Set the text label to be displayed in the toolbar and customization palette
@@ -90,7 +110,7 @@ static NSString*	SearchDocToolbarItemIdentifier 	= @"SearchDocumentItemId";
 	// Tell the item what message to send when it is clicked
 	[toolbarItem setTarget: self];
 	[toolbarItem setAction: @selector(saveDocument:)];
-    } else if([itemIdent isEqual: SearchDocToolbarItemIdentifier]) {
+    } else if([itemIdent isEqual: SearchId]) {
         // NSToolbarItem doens't normally autovalidate items that hold custom views, but we want this guy to be disabled when there is no text to search.
         toolbarItem = [[ZGValidatedViewToolbarItem alloc] initWithItemIdentifier: itemIdent];
         
@@ -125,6 +145,53 @@ static NSString*	SearchDocToolbarItemIdentifier 	= @"SearchDocumentItemId";
         
         // Please note, from a user experience perspective, you wouldn't set up your search field and menuFormRep like we do here.  This is simply an example which shows you all of the features you could use.
 	[toolbarItem setMenuFormRepresentation: menuFormRep];
+    } else if ([itemIdent isEqual: ViewsId]) {
+        
+        
+        toolbarItem = [[ZGValidatedViewToolbarItem alloc] initWithItemIdentifier: itemIdent];
+	// Set up the standard properties
+	[toolbarItem setLabel: @"Views"];
+	[toolbarItem setPaletteLabel: @"Views"];
+	[toolbarItem setToolTip: @"Show items in different views"]; // TODO: better description
+        // see: https://github.com/cocos2d/CocosBuilder/blob/master/CocosBuilder/ccBuilder/MainToolbarDelegate.m
+
+        
+        
+        NSSegmentedControl* segmControl = [[NSSegmentedControl alloc] initWithFrame: NSMakeRect(0, 0, 80, 32)];
+        segmControl.segmentCount = 2;
+        addControl(segmControl, 0, @"expand.png", @"Expand All");
+        addControl(segmControl, 1, @"collapse.png", @"Collapse All");
+/*
+        NSSegmentedCell* segmCell = [segmControl cell];
+        segmCell.trackingMode = NSSegmentSwitchTrackingMomentary;
+        segmControl.segmentCount = 2;
+        NSImage* image = [NSImage imageNamed:@"expand.png"];
+        image.size = NSMakeSize(16, 16);
+        [segmControl setWidth: image.size.width forSegment: 0];
+        [segmControl setImage: image forSegment:0];
+        [segmCell setToolTip:@"Expand All" forSegment: 0];
+        segmControl.segmentStyle = NSSegmentStyleTexturedRounded;
+*/ 
+        
+/*
+        // Add menu to a segment button
+        NSMenu* menu = [[NSMenu alloc] initWithTitle:@"User PlugIns"];
+        for (NSString* s in @[@"Item 1", @"Item 2"])
+        {
+            NSMenuItem* item = [[NSMenuItem alloc] initWithTitle:s action:@selector(selectedItem:) keyEquivalent:@""];
+            item.target = self;
+            [menu addItem:item];
+        }
+        [segmControl setMenu:menu forSegment:0];
+*/
+//      [toolbarItem bind:@"enabled" toObject:self withKeyPath:@"enableTBI" options: null];
+        [segmControl sizeToFit];
+        [segmControl setAction: @selector(segControlClicked:)];
+        [segmControl setTarget: self];
+        [segmControl setEnabled: true];
+        
+        [toolbarItem setView:segmControl];
+        [toolbarItem setEnabled:true];
     } else {
 	// itemIdent refered to a toolbar item that is not provide or supported by us or cocoa
 	// Returning null will inform the toolbar this kind of item is not supported
@@ -133,23 +200,42 @@ static NSString*	SearchDocToolbarItemIdentifier 	= @"SearchDocumentItemId";
     return toolbarItem;
 }
 
+- (void) saveDocument: (id) sender {
+    trace(@"saveDocument %@", sender);
+}
+
+- (void) selectedItem: (id) sender {
+    NSString* objType = [sender title];
+    trace(@"selectedItem %@", objType);
+}
+
+- (void) segControlClicked: (id) sender {
+    int clickedSegment = (int)[sender selectedSegment];
+    int clickedSegmentTag = (int)[[sender cell] tagForSegment:clickedSegment];
+    trace(@"selectedItem %@ %d %d", sender, clickedSegment, clickedSegmentTag);
+}
+
 - (NSArray*) toolbarDefaultItemIdentifiers: (NSToolbar*) toolbar {
     // Required delegate method:  Returns the ordered list of items to be shown in the toolbar by default
     // If during the toolbar's initialization, no overriding values are found in the user defaults, or if the
     // user chooses to revert to the default items this set will be used
-    return @[SaveDocToolbarItemIdentifier,
+    return @[SaveId,
+             NSToolbarSeparatorItemIdentifier,
+             ViewsId,
              NSToolbarSeparatorItemIdentifier,
              NSToolbarFlexibleSpaceItemIdentifier,
              NSToolbarSpaceItemIdentifier,
-             SearchDocToolbarItemIdentifier];
+             SearchId];
 }
 
 - (NSArray*) toolbarAllowedItemIdentifiers: (NSToolbar*) toolbar {
     // Required delegate method:  Returns the list of all allowed items by identifier.  By default, the toolbar
     // does not assume any items are allowed, even the separator.  So, every allowed item must be explicitly listed
     // The set of allowed items is used to construct the customization palette
-    return @[SearchDocToolbarItemIdentifier,
-             SaveDocToolbarItemIdentifier,
+    return @[SearchId,
+             SaveId,
+             NSToolbarSeparatorItemIdentifier,
+             ViewsId,
              NSToolbarCustomizeToolbarItemIdentifier,
              NSToolbarFlexibleSpaceItemIdentifier,
              NSToolbarSpaceItemIdentifier,
@@ -163,13 +249,10 @@ static NSString*	SearchDocToolbarItemIdentifier 	= @"SearchDocumentItemId";
     // to do it.  The notification object is the toolbar to which the item is being added.  The item being
     // added is found by referencing the @"item" key in the userInfo
     NSToolbarItem *addedItem = [[notif userInfo] objectForKey: @"item"];
-    if([[addedItem itemIdentifier] isEqual: SearchDocToolbarItemIdentifier]) {
+    if([[addedItem itemIdentifier] isEqual: SearchId]) {
 	_activeSearchItem = addedItem;
 	[_activeSearchItem setTarget: self];
 	[_activeSearchItem setAction: @selector(searchUsingToolbarSearchField:)];
-    } else if ([[addedItem itemIdentifier] isEqual: NSToolbarPrintItemIdentifier]) {
-	[addedItem setToolTip: @"Print Your Document"];
-	[addedItem setTarget: self];
     }
 }
 
@@ -188,12 +271,14 @@ static NSString*	SearchDocToolbarItemIdentifier 	= @"SearchDocumentItemId";
     // Optional method:  This message is sent to us since we are the target of some toolbar item actions
     // (for example:  of the save items action)
     BOOL enable = false;
-    if ([[toolbarItem itemIdentifier] isEqual: SaveDocToolbarItemIdentifier]) {
+    if ([[toolbarItem itemIdentifier] isEqual: SaveId]) {
 	// We will return true (ie  the button is enabled) only when the document is dirty and needs saving
-	enable = _document.isDocumentEdited;
+	enable = true; // _document.isDocumentEdited;
     } else if ([[toolbarItem itemIdentifier] isEqual: NSToolbarPrintItemIdentifier]) {
 	enable = true;
-    } else if ([[toolbarItem itemIdentifier] isEqual: SearchDocToolbarItemIdentifier]) {
+    } else if ([[toolbarItem itemIdentifier] isEqual: SearchId]) {
+	enable = _document.isEntireFileLoaded;
+    } else if ([[toolbarItem itemIdentifier] isEqual: ViewsId]) {
 	enable = _document.isEntireFileLoaded;
     }
     return enable;

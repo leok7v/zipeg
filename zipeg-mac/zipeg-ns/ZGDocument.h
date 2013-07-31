@@ -1,12 +1,9 @@
-#import "ZGItemProtocol.h"
-
-
 @interface ZGDocument : NSDocument<NSToolbarDelegate> {
     
 }
 @property NSOutlineView* outlineView;
 @property NSTableView *tableView;
-@property (nonatomic, readonly) NSWindow* window;
+@property (nonatomic, readonly, weak) NSWindow* window;
 
 - (void) firstResponderChanged;
 - (BOOL) documentCanClose;

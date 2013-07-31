@@ -2,6 +2,8 @@
 
 static NSMutableArray *leafNode;
 
+static ZGFileSystemItem *g_root;
+
 @implementation ZGFileSystemItem {
     NSMutableArray *_children;
     NSMutableArray *_folderChildren;
@@ -98,9 +100,11 @@ static NSMutableArray *leafNode;
     }
 }
 
-@end
+- (BOOL) isGroup {
+    return self == g_root;
+}
 
-static ZGFileSystemItem *g_root;
+@end
 
 @implementation ZGFileSystem {
 }

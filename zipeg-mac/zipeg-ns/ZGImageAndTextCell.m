@@ -1,11 +1,13 @@
 #import "ZGImageAndTextCell.h"
 #import "ZGDocument.h"
 #import "ZGItemProtocol.h"
+#import "ZGImages.h"
 
 #define kImageOriginXOffset  7
-#define kImageOriginYOffset  2
+#define kImageOriginYOffset  0
 
 #define kTextOriginXOffset   8
+#define kTextOriginYOffset   0
 
 @interface ZGImageAndTextCell () {
 }
@@ -15,18 +17,24 @@
 @implementation ZGImageAndTextCell
 
 - (id) init {
-    self = [super init];
+    self = [self initSuper];
     if (self) { // we want a smaller font
         self.font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize];
+        self.usesSingleLineMode = true;
+        self.editable = true; // to make expand on ENTER work
+        self.scrollable = true;
     }
-    self.usesSingleLineMode = true;
-    self.editable = true; // to make expand on ENTER work 
-    self.scrollable = true;
     return self;
 }
 
+- (id) initSuper {
+    self = [super init];
+    return self;
+}
+
+
 - (void) dealloc {
-//    trace(@"");
+    // trace(@"");
 }
 
 - (id) copyWithZone: (NSZone *)zone {
@@ -35,65 +43,69 @@
     return cell;
 }
 
-- (NSRect) titleRectForBounds: (NSRect) cellRect {
-    NSSize imageSize;
-    NSRect imageFrame;
+- (NSRect) titleRectForBounds: (NSRect) bounds {
+    int imageOriginYOffset = kImageOriginYOffset + 2 * [self.controlView isKindOfClass:NSOutlineView.class];
     NSSize titleSize = [[self attributedStringValue] size];
-    cellRect.size.width = MAX(cellRect.size.width, titleSize.width + kImageOriginXOffset + kTextOriginXOffset);
-    imageSize = [self.image size];
-    NSDivideRect(cellRect, &imageFrame, &cellRect, kImageOriginXOffset + imageSize.width, NSMinXEdge);
-    imageFrame.origin.x += kImageOriginXOffset;
-    imageFrame.origin.y -= kImageOriginYOffset;
-    imageFrame.size = imageSize;
-    imageFrame.origin.y += ceil((cellRect.size.height - imageFrame.size.height) / 2);
-    NSRect newFrame = cellRect;
-    newFrame.origin.x += kTextOriginXOffset;
-    return newFrame;
+    bounds.size.width = MAX(bounds.size.width, titleSize.width + kImageOriginXOffset + kTextOriginXOffset);
+    NSSize isz = [self.image size];
+    NSRect ifr;
+    NSDivideRect(bounds, &ifr, &bounds, kImageOriginXOffset + isz.width, NSMinXEdge);
+    ifr.origin.x += kImageOriginXOffset;
+    ifr.origin.y -= imageOriginYOffset;
+    ifr.size = isz;
+    ifr.origin.y += ceil((bounds.size.height - ifr.size.height) / 2);
+    NSRect frame = bounds;
+    frame.origin.x += kTextOriginXOffset;
+    return frame;
 }
 
-- (void)editWithFrame:(NSRect)aRect inView:(NSView*)controlView editor:(NSText*)textObj delegate:(id)anObject event:(NSEvent*)theEvent {
-    NSRect textFrame = [self titleRectForBounds:aRect];
-    [super editWithFrame:textFrame inView:controlView editor:textObj delegate:anObject event:theEvent];
+- (void)editWithFrame: (NSRect) f inView: (NSView*) view editor: (NSText*) ed delegate: (id) d event: (NSEvent*) e {
+    NSRect textFrame = [self titleRectForBounds: f];
+    [super editWithFrame: textFrame inView: view editor: ed delegate: d event: e];
 }
 
-- (void)selectWithFrame:(NSRect)aRect inView:(NSView *)controlView editor:(NSText *)textObj delegate:(id)anObject start:(NSInteger)selStart length:(NSInteger)selLength {
-    NSRect textFrame = [self titleRectForBounds:aRect];
-    [super selectWithFrame:textFrame inView:controlView editor:textObj delegate:anObject start:selStart length:selLength];
+- (void)selectWithFrame: (NSRect) f inView: (NSView*) v editor: (NSText*) ed delegate: (id) d start: (NSInteger) s length:(NSInteger) len {
+    NSRect b = [self titleRectForBounds:f];
+    [super selectWithFrame: b inView: v editor: ed delegate: d start: s length: len];
 }
 
-- (void)drawWithFrame: (NSRect) cellFrame inView:(NSView *)controlView {
-    trace(@"drawWithFrame %@", self.stringValue);
+- (void)drawWithFrame: (NSRect) f inView: (NSView *) v {
+    [NSGraphicsContext saveGraphicsState];
+    bool ov = [v isKindOfClass:NSOutlineView.class];
+    int imageOriginYOffset = kImageOriginYOffset + 2 * ov;
+    int textOriginYOffset = kTextOriginYOffset + 1 * ov;
+    // trace(@"drawWithFrame %@", self.stringValue);
     assert(self.image != nil);
     if (self.image == null) {
-        trace(@"drawWithFrame %@ no image", self.stringValue);
+        // trace(@"drawWithFrame %@ no image", self.stringValue);
     }
-    NSRect newCellFrame = cellFrame;
     if (self.image) {
-        NSSize imageSize;
-        NSRect imageFrame;
-        imageSize = [self.image size];
-        NSDivideRect(newCellFrame, &imageFrame, &newCellFrame, imageSize.width, NSMinXEdge);
+        NSSize isz = [self.image size];
+        NSRect ifr;
+        NSDivideRect(f, &ifr, &f, isz.width, NSMinXEdge);
         if ([self drawsBackground]) {
             [[self backgroundColor] set];
-            NSRectFill(imageFrame);
+            NSRectFill(ifr);
         }
-        imageFrame.origin.x += kImageOriginXOffset;
-        imageFrame.origin.y += kImageOriginYOffset;
-        imageFrame.size = imageSize;
-        [self.image drawInRect:imageFrame fromRect:NSZeroRect operation:NSCompositeSourceOver
+        ifr.origin.x += kImageOriginXOffset;
+        ifr.origin.y += imageOriginYOffset;
+        ifr.size = isz;
+        [self.image drawInRect:ifr fromRect:NSZeroRect operation:NSCompositeSourceOver
                       fraction:1.0 respectFlipped:YES hints:nil];
     }
-    newCellFrame.origin.x += kTextOriginXOffset;
-    //trace(@"%@ cellFrame=%@ newCellFrame=%@", [self stringValue], NSStringFromRect(cellFrame), NSStringFromRect(newCellFrame));
-    [super drawWithFrame:newCellFrame inView:controlView];
+    f.origin.x += kTextOriginXOffset;
+    f.origin.y += textOriginYOffset;
+    // trace(@"%@ cellFrame=%@ newCellFrame=%@", [self stringValue], NSStringFromRect(cellFrame), NSStringFromRect(newCellFrame));
+    [super drawWithFrame:f inView:v];
+    [NSGraphicsContext restoreGraphicsState];
 }
 
 - (NSSize)cellSize {
-    NSSize cellSize = [super cellSize];
-    NSSize titleSize = [[self attributedStringValue] size];
-    cellSize.width = MAX(cellSize.width, titleSize.width + kTextOriginXOffset);
-    cellSize.width += [self.image size].width + kImageOriginXOffset;
-    return cellSize;
+    NSSize cs = [super cellSize];
+    NSSize ts = [[self attributedStringValue] size];
+    cs.width = MAX(cs.width, ts.width + kTextOriginXOffset);
+    cs.width += [self.image size].width + kImageOriginXOffset;
+    return cs;
 }
 
 @end
@@ -102,6 +114,10 @@
 
 - (id) init {
     self = [super init];
+    if (self != null) {
+        self.textColor = [NSColor disabledControlTextColor];
+        self.font = [NSFont systemFontOfSize: NSFont.systemFontSize];
+    }
     return self;
 }
 
@@ -114,23 +130,10 @@
     return cell;
 }
 
-- (NSRect) titleRectForBounds: (NSRect) cellRect {
-    return NSZeroRect;
-}
-
-- (void)editWithFrame:(NSRect)aRect inView:(NSView*)controlView editor:(NSText*)textObj delegate:(id)anObject event:(NSEvent*)theEvent {
-}
-
-- (void)selectWithFrame:(NSRect)aRect inView:(NSView *)controlView editor:(NSText *)textObj delegate:(id)anObject start:(NSInteger)selStart length:(NSInteger)selLength {
-}
-
-- (void)drawWithFrame: (NSRect) cellFrame inView:(NSView *)controlView {
-    // TODO: draw archive name here in grey bold or something like this
-    return;
-}
-
-- (NSSize)cellSize {
-    return NSZeroSize;
+- (void)drawWithFrame: (NSRect) f inView:(NSView *) v {
+    f.origin.x -= kTextOriginXOffset + 1;
+    f.origin.y -= 2;
+    [super drawWithFrame: f inView: v];
 }
 
 @end

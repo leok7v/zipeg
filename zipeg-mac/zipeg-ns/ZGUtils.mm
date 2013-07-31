@@ -1,4 +1,3 @@
-#import "ZGUtils.h"
 #include "p7z.hpp"
 #include "HashMapS2L.hpp"
 #include "NanoTime.hpp"
@@ -63,6 +62,93 @@ static void _dumpViews(NSView* v, int level) {
 FOUNDATION_EXPORT void dumpViews(NSView* v) {
     _dumpViews(v, 0);
 }
+
+
+@implementation NSString(ZGExtensions)
+
+- (int) indexOf: (NSString*) s {
+    NSRange r = [self rangeOfString: s];
+    return r.length > 0 ? (int)r.location : -1;
+}
+
+- (int) indexOfIgnoreCase: (NSString*) s {
+    NSRange r = [self rangeOfString: s options: NSCaseInsensitiveSearch];
+    return r.length > 0 ? (int)r.location : -1;
+}
+
+- (int) lastIndexOf: (NSString*) s {
+    NSRange r = [self rangeOfString: s options: NSBackwardsSearch];
+    return r.length > 0 ? (int)r.location : -1;
+}
+
+- (int) lastIndexOfIgnoreCase: (NSString*) s {
+    NSRange r = [self rangeOfString: s options: NSCaseInsensitiveSearch|NSBackwardsSearch];
+    return r.length > 0 ? (int)r.location : -1;
+}
+
+- (int) endsWith: (NSString*) s {
+    return [self lastIndexOf: s] == self.length - s.length;
+}
+
+- (int) endsWithIgnoreCase: (NSString*) s {
+    return [self lastIndexOfIgnoreCase: s] == self.length - s.length;
+}
+
+- (int) startsWith: (NSString*) s {
+    return [self indexOf: s] == 0;
+}
+
+- (int) startsWithIgnoreCase: (NSString*) s {
+    return [self indexOfIgnoreCase: s] == 0;
+}
+
+- (BOOL) contains: (NSString*) s {
+    return [self indexOf: s] >= 0;
+}
+
+- (BOOL) containsIgnoreCase: (NSString*) s {
+    return [self indexOfIgnoreCase: s] >= 0;
+}
+
+- (NSString*) substringFrom: (int) from to: (int) to {
+    if (to == from) {
+        return @"";
+    } else if (from < to) {
+        NSRange r = NSMakeRange(from, to - from);
+        return [self substringWithRange: r];
+    } else {
+        @throw NSRangeException;
+    }
+}
+
+@end
+
+@implementation NSOutlineView(SelectItem)
+
+- (void)expandParentsOfItem: (id) i {
+    while (i != nil) {
+        id parent = [self parentForItem: i];
+        if (parent != null) {
+            [self expandItem: parent expandChildren: false];
+        }
+        i = parent;
+    }
+}
+
+- (void) selectItem: (id) item {
+    NSInteger itemIndex = [self rowForItem: item];
+    if (itemIndex < 0) {
+        [self expandParentsOfItem: item];
+        itemIndex = [self rowForItem: item];
+        if (itemIndex < 0) {
+            return;
+        }
+    }
+    [self selectRowIndexes: [NSIndexSet indexSetWithIndex: itemIndex] byExtendingSelection: false];
+}
+
+@end
+
 
 @implementation ZGUtils
 

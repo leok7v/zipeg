@@ -1,12 +1,4 @@
-#import "ZGDocument.h"
-
-
-@interface NSOutlineView(SelectItem)
-
-- (void)expandParentsOfItem: (NSObject<ZGItemProtocol>*) item;
-- (void) selectItem: (id) item;
-
-@end
+#import "ZGItemProtocol.h"
 
 @interface ZGTableViewDelegate : NSObject<NSTableViewDelegate>
 

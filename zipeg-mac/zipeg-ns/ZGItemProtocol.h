@@ -5,6 +5,7 @@
 @property (nonatomic, readonly) NSMutableArray *children; // nil for leaf
 @property (nonatomic, readonly) NSMutableArray *folderChildren; // nil for leaf
 @property (weak) NSObject<ZGItemProtocol> *parent;
+@property (nonatomic, readonly) BOOL isGroup;
 @end
 
 

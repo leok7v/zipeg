@@ -1,5 +1,4 @@
 #import "ZG7zip.h"
-#import "ZGUtils.h"
 #import "ZGNumber.h"
 #import "ZGErrors.h"
 #import "ZGDate.h"
@@ -17,7 +16,7 @@ struct D;
 @interface ZG7zip() {
     NSString* _filterText;
     NSString* _archiveFilePath;
-    ZG7zipItem *_root;
+    NSObject<ZGItemProtocol> *_root;
     D* d;
     P7Z* a;
     NSString* _error;
@@ -173,6 +172,10 @@ static NSMutableArray* filterOut(ZG7zip* a, NSMutableArray* childs) {
     return filterOut(_archive, _folderChildren);
 }
 
+- (BOOL) isGroup {
+    return self == _archive.root;
+}
+
 @end
 
 struct D : P7Z::Delegate {
@@ -217,20 +220,15 @@ struct D : P7Z::Delegate {
 }
 
 - (void) dealloc {
-    trace(@"");
-    dealloc_count(self);
+    // trace(@"");
     if (a != null) {
-        a->close();
+        [self close];
     }
-    delete a;
-    delete d;
-    if (_w_password) {
-        delete[] _w_password;
-    }
+    dealloc_count(self);
 }
 
 - (void) close {
-    trace(@"");
+    // trace(@"");
     if (a != null) {
         a->close();
     }
@@ -292,8 +290,7 @@ static bool ignore(const NSString* pathname) {
             }
             if ([parentComponents length] == 0) {
                 item.parent = _root;
-                trace(@"0x%016llX.parent:=0x%016llX (root) %@ -> %@",
-                      (unsigned long long)item, (unsigned long long)_root, _root.name, item.name);
+                // trace(@"0x%016llX.parent:=0x%016llX (root) %@ -> %@", (unsigned long long)item, (unsigned long long)_root, _root.name, item.name);
                 break;
             }
             ZG7zipItem* p = _items[parentComponents];
@@ -309,8 +306,7 @@ static bool ignore(const NSString* pathname) {
                 _items[parentComponents] = p;
             }
             item.parent = p;
-            trace(@"0x%016llX.parent:=0x%016llX %@ -> %@",
-                  (unsigned long long)item, (unsigned long long)p, p.name, item.name);
+            // trace(@"0x%016llX.parent:=0x%016llX %@ -> %@", (unsigned long long)item, (unsigned long long)p, p.name, item.name);
             if (p->_index >= 0 && (item->_index < 0 || [_isFolders isSet:item->_index])) {
                 [_isLeafFolders setBit:p->_index to:false];
             }
@@ -504,6 +500,21 @@ static CFStringEncoding CHARDET_ENCODING_to_CFStringEncoding(const char* encodin
     return CHARDET_ENCODING_to_CFStringEncoding(encoding);
 }
 
+static NSString* starifyMultipartRAR(NSString* s) {
+    if ([s endsWithIgnoreCase:@".rar"]) {
+        int i = [s lastIndexOfIgnoreCase:@".part"];
+        if (i > 0 && isdigit([s characterAtIndex: i + 5])) {
+            int j = i + 6; // no need to check s.length because s ends with ".rar"
+            while (isdigit([s characterAtIndex: j])) {
+                j++;
+            }
+            if ([s characterAtIndex: j] == '.' && j == s.length - 4) {
+                s = [[s substringFrom: 0 to: i + 5] stringByAppendingString: @"*.rar"];
+            }
+        }
+    }
+    return s;
+}
 
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
             document: (ZGDocument*) doc
@@ -537,7 +548,7 @@ static CFStringEncoding CHARDET_ENCODING_to_CFStringEncoding(const char* encodin
         _op = op;
         b = a->open([_archiveFilePath UTF8String]) && a->getNumberOfItems() > 0 && a->getNumberOfProperties() > 0;
         if (b) {
-            _root.name = [[_archiveFilePath lastPathComponent] stringByDeletingPathExtension];
+            _root.name = starifyMultipartRAR([_archiveFilePath lastPathComponent]);
             items = a->getNumberOfItems();
             properties = a->getNumberOfProperties();
             _isFilteredOut = [ZGBitset bitsetWithCapacity:items];

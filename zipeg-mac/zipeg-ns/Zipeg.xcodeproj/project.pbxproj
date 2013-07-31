@@ -81,6 +81,7 @@
 		B3BF7D2D1792462500A3E5EF /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7D2C1792462500A3E5EF /* main.mm */; };
 		B3D1BE5F1797366E007BE5E7 /* MacMem.c in Sources */ = {isa = PBXBuildFile; fileRef = B3D1BE5E1797366E007BE5E7 /* MacMem.c */; };
 		B3E1F0BD17A1E22A003D3E68 /* ZGTableViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E1F0BC17A1E22A003D3E68 /* ZGTableViewDataSource.m */; };
+		B3E87DA917A922CE00B246B8 /* ZGGenericItem.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E87DA817A922CE00B246B8 /* ZGGenericItem.m */; };
 		B3F7414C17A1F923009A8ECF /* ZGTableViewDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B3F7414B17A1F923009A8ECF /* ZGTableViewDelegate.m */; };
 		B3F7414F17A21B79009A8ECF /* ZGImages.m in Sources */ = {isa = PBXBuildFile; fileRef = B3F7414E17A21B79009A8ECF /* ZGImages.m */; };
 		B3FC1D9917A0929000BE0ED3 /* ZGHeroView.m in Sources */ = {isa = PBXBuildFile; fileRef = B3FC1D9817A0929000BE0ED3 /* ZGHeroView.m */; };
@@ -261,6 +262,8 @@
 		B3D1BE5E1797366E007BE5E7 /* MacMem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MacMem.c; sourceTree = SOURCE_ROOT; };
 		B3E1F0BB17A1E22A003D3E68 /* ZGTableViewDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGTableViewDataSource.h; sourceTree = "<group>"; };
 		B3E1F0BC17A1E22A003D3E68 /* ZGTableViewDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGTableViewDataSource.m; sourceTree = "<group>"; };
+		B3E87DA717A922CE00B246B8 /* ZGGenericItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGGenericItem.h; sourceTree = "<group>"; };
+		B3E87DA817A922CE00B246B8 /* ZGGenericItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGGenericItem.m; sourceTree = "<group>"; };
 		B3F7414A17A1F923009A8ECF /* ZGTableViewDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGTableViewDelegate.h; sourceTree = "<group>"; };
 		B3F7414B17A1F923009A8ECF /* ZGTableViewDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGTableViewDelegate.m; sourceTree = "<group>"; };
 		B3F7414D17A21B79009A8ECF /* ZGImages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGImages.h; sourceTree = "<group>"; };
@@ -315,6 +318,8 @@
 				B3D1BE5D17973662007BE5E7 /* MacMem.h */,
 				B3D1BE5E1797366E007BE5E7 /* MacMem.c */,
 				B32FF53117933C6B0083146C /* ZGItemProtocol.h */,
+				B3E87DA717A922CE00B246B8 /* ZGGenericItem.h */,
+				B3E87DA817A922CE00B246B8 /* ZGGenericItem.m */,
 				B3BAB36C17936C9B006C4E75 /* ZG7zip.h */,
 				B3BAB36D17936C9C006C4E75 /* ZG7zip.mm */,
 				B37E555917928BF300E54693 /* ZGFileSystem.h */,
@@ -327,6 +332,8 @@
 				B322F07A17A6136B00715C6D /* ZGToolbar.m */,
 				B322F07C17A613A500715C6D /* ZGToolbarDelegate.h */,
 				B322F07D17A613A500715C6D /* ZGToolbarDelegate.m */,
+				B37E554D1792857400E54693 /* ZGImageAndTextCell.h */,
+				B37E554E1792857400E54693 /* ZGImageAndTextCell.m */,
 				B37E555C1793019400E54693 /* ZGOutlineViewDataSource.h */,
 				B37E555D1793019400E54693 /* ZGOutlineViewDataSource.m */,
 				B37E55501792864200E54693 /* ZGOutlineViewDelegate.h */,
@@ -337,8 +344,6 @@
 				B3F7414B17A1F923009A8ECF /* ZGTableViewDelegate.m */,
 				B37E55521792864200E54693 /* ZGSplitViewDelegate.h */,
 				B37E55531792864200E54693 /* ZGSplitViewDelegate.m */,
-				B37E554D1792857400E54693 /* ZGImageAndTextCell.h */,
-				B37E554E1792857400E54693 /* ZGImageAndTextCell.m */,
 				B34FEB6C1792443D005D798B /* ZGDocument.h */,
 				B34FEB6D1792443D005D798B /* ZGDocument.m */,
 				B30A704F17A4B3D200059168 /* ZGWindowController.h */,
@@ -669,6 +674,7 @@
 				B30A705117A4B3D200059168 /* ZGWindowController.m in Sources */,
 				B322F07B17A6136B00715C6D /* ZGToolbar.m in Sources */,
 				B322F07E17A613A500715C6D /* ZGToolbarDelegate.m in Sources */,
+				B3E87DA917A922CE00B246B8 /* ZGGenericItem.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
