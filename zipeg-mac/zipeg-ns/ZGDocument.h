@@ -5,6 +5,7 @@
 @property NSTableView *tableView;
 @property (nonatomic, readonly, weak) NSWindow* window;
 
+- (void) setViewStyle: (int) s;
 - (void) firstResponderChanged;
 - (BOOL) documentCanClose;
 - (void) sizeOutlineViewToContents;

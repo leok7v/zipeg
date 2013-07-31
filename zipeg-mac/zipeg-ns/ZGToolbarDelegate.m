@@ -83,12 +83,11 @@ static void addControl(NSSegmentedControl* segmControl, int ix, NSString* imageN
     NSImage* image = [NSImage imageNamed: imageName];
     assert(image != null); 
     image.size = NSMakeSize(16, 16);
-    [segmControl setWidth: image.size.width + 16 forSegment: ix];
+    [segmControl setWidth: image.size.width + 8 forSegment: ix];
     [segmControl setImage: image forSegment: ix];
     [segmCell    setToolTip: tooltip forSegment: ix];
     [segmCell    setLabel:@"" forSegment: ix]; // otherwise it will show up inline after image
     segmControl.segmentStyle = NSSegmentStyleTexturedRounded;
-    [segmCell setEnabled: true];
 }
 
 - (NSToolbarItem*) toolbar: (NSToolbar*) toolbar itemForItemIdentifier: (NSString*) itemIdent willBeInsertedIntoToolbar:(BOOL) willBeInserted {
@@ -146,52 +145,24 @@ static void addControl(NSSegmentedControl* segmControl, int ix, NSString* imageN
         // Please note, from a user experience perspective, you wouldn't set up your search field and menuFormRep like we do here.  This is simply an example which shows you all of the features you could use.
 	[toolbarItem setMenuFormRepresentation: menuFormRep];
     } else if ([itemIdent isEqual: ViewsId]) {
-        
-        
         toolbarItem = [[ZGValidatedViewToolbarItem alloc] initWithItemIdentifier: itemIdent];
 	// Set up the standard properties
-	[toolbarItem setLabel: @"Views"];
-	[toolbarItem setPaletteLabel: @"Views"];
+	[toolbarItem setLabel: @"View Style"];
+	[toolbarItem setPaletteLabel: @"View Style"];
 	[toolbarItem setToolTip: @"Show items in different views"]; // TODO: better description
         // see: https://github.com/cocos2d/CocosBuilder/blob/master/CocosBuilder/ccBuilder/MainToolbarDelegate.m
-
         
+        NSSegmentedControl* sc = [[NSSegmentedControl alloc] initWithFrame: NSMakeRect(0, 0, 80, 20)];
+        sc.segmentCount = 2;
+        sc.segmentStyle = NSSegmentStyleTexturedSquare;
+        addControl(sc, 0, @"folders-blue.png", @"Modern");
+        addControl(sc, 1, @"folders-white.png", @"Legacy");
+        [sc sizeToFit];
+        [sc setAction: @selector(viewStyleClicked:)];
+        [sc setTarget: self];
+        [sc setEnabled: true];
         
-        NSSegmentedControl* segmControl = [[NSSegmentedControl alloc] initWithFrame: NSMakeRect(0, 0, 80, 32)];
-        segmControl.segmentCount = 2;
-        addControl(segmControl, 0, @"expand.png", @"Expand All");
-        addControl(segmControl, 1, @"collapse.png", @"Collapse All");
-/*
-        NSSegmentedCell* segmCell = [segmControl cell];
-        segmCell.trackingMode = NSSegmentSwitchTrackingMomentary;
-        segmControl.segmentCount = 2;
-        NSImage* image = [NSImage imageNamed:@"expand.png"];
-        image.size = NSMakeSize(16, 16);
-        [segmControl setWidth: image.size.width forSegment: 0];
-        [segmControl setImage: image forSegment:0];
-        [segmCell setToolTip:@"Expand All" forSegment: 0];
-        segmControl.segmentStyle = NSSegmentStyleTexturedRounded;
-*/ 
-        
-/*
-        // Add menu to a segment button
-        NSMenu* menu = [[NSMenu alloc] initWithTitle:@"User PlugIns"];
-        for (NSString* s in @[@"Item 1", @"Item 2"])
-        {
-            NSMenuItem* item = [[NSMenuItem alloc] initWithTitle:s action:@selector(selectedItem:) keyEquivalent:@""];
-            item.target = self;
-            [menu addItem:item];
-        }
-        [segmControl setMenu:menu forSegment:0];
-*/
-//      [toolbarItem bind:@"enabled" toObject:self withKeyPath:@"enableTBI" options: null];
-        [segmControl sizeToFit];
-        [segmControl setAction: @selector(segControlClicked:)];
-        [segmControl setTarget: self];
-        [segmControl setEnabled: true];
-        
-        [toolbarItem setView:segmControl];
-        [toolbarItem setEnabled:true];
+        [toolbarItem setView:sc];
     } else {
 	// itemIdent refered to a toolbar item that is not provide or supported by us or cocoa
 	// Returning null will inform the toolbar this kind of item is not supported
@@ -204,14 +175,10 @@ static void addControl(NSSegmentedControl* segmControl, int ix, NSString* imageN
     trace(@"saveDocument %@", sender);
 }
 
-- (void) selectedItem: (id) sender {
-    NSString* objType = [sender title];
-    trace(@"selectedItem %@", objType);
-}
-
-- (void) segControlClicked: (id) sender {
+- (void) viewStyleClicked: (id) sender {
     int clickedSegment = (int)[sender selectedSegment];
     int clickedSegmentTag = (int)[[sender cell] tagForSegment:clickedSegment];
+    _document.viewStyle = clickedSegment;
     trace(@"selectedItem %@ %d %d", sender, clickedSegment, clickedSegmentTag);
 }
 

@@ -15,12 +15,12 @@
 #import "ZGToolbarDelegate.h"
 #import "ZGApplication.h"
 
-static const int highlightStyle = NSTableViewSelectionHighlightStyleRegular; // NSTableViewSelectionHighlightStyleSourceList;
 
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* _archive;
     NSObject<ZGItemProtocol>* _root;
     NSWindow* __weak _window;
+    NSTableViewSelectionHighlightStyle _highlightStyle;
 }
 
 @property NSSearchField* searchField;
@@ -114,6 +114,8 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleRegular; // 
         _operationQueue = [NSOperationQueue new];
         _operationQueue.maxConcurrentOperationCount = 1; // TODO: can it be 2?
         _encoding = (CFStringEncoding)-1;
+        _highlightStyle = NSTableViewSelectionHighlightStyleRegular;
+
     }
     return self;
 }
@@ -125,6 +127,15 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleRegular; // 
     [ZGApplication deferedTraceAllocs];
 }
 
+- (void) setViewStyle: (int) s {
+    int hs  = s == 0? NSTableViewSelectionHighlightStyleSourceList : NSTableViewSelectionHighlightStyleRegular;
+    if (_highlightStyle != hs) {
+        _highlightStyle = hs;
+        _outlineView.selectionHighlightStyle =  _highlightStyle;
+        [self reloadOutlineView];
+    }
+}
+
 - (void)makeWindowControllers {
     ZGWindowController* wc = [ZGWindowController new];
     [self addWindowController: wc];
@@ -133,13 +144,13 @@ static const int highlightStyle = NSTableViewSelectionHighlightStyleRegular; // 
     [self setupDocumentWindow: wc];
 }
 
-- (NSString*) windowNibName {
-    assert(false);
-    @throw @"ZGDocument should remain nib-less";
-}
-
 - (void) reloadOutlineView {
     if (_outlineView != null && _archive != null) {
+        if (_highlightStyle != NSTableViewSelectionHighlightStyleSourceList) {
+            _root = _archive.root;
+        } else {
+            _root = [[ZGGenericItem alloc] initWithChild: _archive.root];
+        }
         _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: _root];
         // trace("_root=%@", _root);
         _outlineView.dataSource = _outlineViewDataSource;
@@ -184,12 +195,12 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     return sv;
 }
 
-static NSOutlineView* createOutlineView(NSRect r) {
+static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightStyle hs) {
     NSOutlineView* ov = [[NSOutlineView alloc] initWithFrame: r];
     ov.focusRingType = NSFocusRingTypeNone;
     ov.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     ov.allowsEmptySelection = true; // because of the sections (groups) collapse in Outline View
-    ov.selectionHighlightStyle = highlightStyle;
+    ov.selectionHighlightStyle = hs;
     ov.indentationMarkerFollowsCell = true;
     ov.indentationPerLevel = 16;
     ov.headerView = null; // xxx [[ZGOutlineHeaderView alloc] initWithFrame: r];
@@ -270,7 +281,7 @@ static NSToolbar* createToolbar(NSRect frame) {
     tbounds.size.width /= 2;
     tbounds.origin.x = 0;
     tbounds.origin.y = 0;
-    _outlineView = createOutlineView(tbounds);
+    _outlineView = createOutlineView(tbounds, _highlightStyle);
     assert(_outlineView != null);
 
     _tableView = [[NSTableView alloc] initWithFrame: tbounds];
@@ -555,11 +566,6 @@ static NSToolbar* createToolbar(NSRect frame) {
         if (a != null) {
             _archive = a;
             // archive = [ZGFileSystem new];
-            if (highlightStyle != NSTableViewSelectionHighlightStyleSourceList) {
-                _root = _archive.root;
-            } else {
-                _root = [[ZGGenericItem alloc] initWithChild: a.root];
-            }
             [self reloadOutlineView];
             _heroView.hidden = true;
             _splitView.hidden = false;
