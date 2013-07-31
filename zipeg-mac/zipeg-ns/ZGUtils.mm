@@ -2,6 +2,7 @@
 #include "HashMapS2L.hpp"
 #include "NanoTime.hpp"
 #import "MacMem.h"
+#import "ZGItemProtocol.h"
 
 FOUNDATION_EXPORT uint64_t timestamp(const char* label) {
     return NanoTime::timestamp(label);
@@ -125,9 +126,12 @@ FOUNDATION_EXPORT void dumpViews(NSView* v) {
 
 @implementation NSOutlineView(SelectItem)
 
-- (void)expandParentsOfItem: (id) i {
+- (void)expandParentsOfItem: (id) item {
+    // NOTE: [self parentForItem: item] always returns null
+    // (I guess for the absence of the method in DataSource)
+    NSObject<ZGItemProtocol>* i = item;
     while (i != nil) {
-        id parent = [self parentForItem: i];
+        NSObject<ZGItemProtocol>* parent = i.parent;
         if (parent != null) {
             [self expandItem: parent expandChildren: false];
         }
