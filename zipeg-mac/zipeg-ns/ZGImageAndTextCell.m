@@ -17,8 +17,9 @@
 @implementation ZGImageAndTextCell
 
 - (id) init {
-    self = [self initSuper];
+    self = [super init];
     if (self) { // we want a smaller font
+        alloc_count(self);
         self.font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize];
         self.usesSingleLineMode = true;
         self.editable = true; // to make expand on ENTER work
@@ -27,14 +28,10 @@
     return self;
 }
 
-- (id) initSuper {
-    self = [super init];
-    return self;
-}
-
 
 - (void) dealloc {
-    // trace(@"");
+    trace(@"");
+    dealloc_count(self);
 }
 
 - (id) copyWithZone: (NSZone *)zone {
@@ -44,16 +41,10 @@
 }
 
 - (NSRect) titleRectForBounds: (NSRect) bounds {
-    int imageOriginYOffset = kImageOriginYOffset + 2 * [self.controlView isKindOfClass:NSOutlineView.class];
     NSSize titleSize = [[self attributedStringValue] size];
     bounds.size.width = MAX(bounds.size.width, titleSize.width + kImageOriginXOffset + kTextOriginXOffset);
-    NSSize isz = [self.image size];
     NSRect ifr;
-    NSDivideRect(bounds, &ifr, &bounds, kImageOriginXOffset + isz.width, NSMinXEdge);
-    ifr.origin.x += kImageOriginXOffset;
-    ifr.origin.y -= imageOriginYOffset;
-    ifr.size = isz;
-    ifr.origin.y += ceil((bounds.size.height - ifr.size.height) / 2);
+    NSDivideRect(bounds, &ifr, &bounds, kImageOriginXOffset + self.image.size.width, NSMinXEdge);
     NSRect frame = bounds;
     frame.origin.x += kTextOriginXOffset;
     return frame;
@@ -72,9 +63,8 @@
 - (void)drawWithFrame: (NSRect) f inView: (NSView *) v {
     [NSGraphicsContext saveGraphicsState];
     bool ov = [v isKindOfClass:NSOutlineView.class];
-    int imageOriginYOffset = kImageOriginYOffset + 2 * ov;
-    int textOriginYOffset = kTextOriginYOffset + 1 * ov;
-    // trace(@"drawWithFrame %@", self.stringValue);
+    int imageOriginYOffset = kImageOriginYOffset + 1 * ov;
+    int textOriginYOffset = kTextOriginYOffset + 0 * ov;
     assert(self.image != nil);
     if (self.image == null) {
         // trace(@"drawWithFrame %@ no image", self.stringValue);
@@ -90,13 +80,14 @@
         ifr.origin.x += kImageOriginXOffset;
         ifr.origin.y += imageOriginYOffset;
         ifr.size = isz;
-        [self.image drawInRect:ifr fromRect:NSZeroRect operation:NSCompositeSourceOver
-                      fraction:1.0 respectFlipped:YES hints:nil];
+        [self.image drawInRect:ifr fromRect:NSZeroRect operation: NSCompositeSourceOver
+                      fraction:1.0 respectFlipped: true hints: null];
     }
     f.origin.x += kTextOriginXOffset;
     f.origin.y += textOriginYOffset;
     // trace(@"%@ cellFrame=%@ newCellFrame=%@", [self stringValue], NSStringFromRect(cellFrame), NSStringFromRect(newCellFrame));
-    [super drawWithFrame:f inView:v];
+    trace(@"background color = %@", self.backgroundColor);
+    [super drawWithFrame: f inView: v];
     [NSGraphicsContext restoreGraphicsState];
 }
 
@@ -115,6 +106,7 @@
 - (id) init {
     self = [super init];
     if (self != null) {
+        alloc_count(self);
         self.textColor = [NSColor disabledControlTextColor];
         self.font = [NSFont systemFontOfSize: NSFont.systemFontSize];
     }
@@ -122,7 +114,8 @@
 }
 
 - (void) dealloc {
-    // trace(@"");
+    trace(@"");
+    dealloc_count(self);
 }
 
 - (id) copyWithZone: (NSZone *)zone {

@@ -34,6 +34,7 @@
 }
 
 - (void) terminate: (id) sender {
+    trace_allocs();
     [super terminate: sender];
 }
 

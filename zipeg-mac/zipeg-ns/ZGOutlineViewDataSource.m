@@ -22,7 +22,7 @@
 }
 
 - (void)dealloc {
-    // trace(@"");
+    trace(@"");
     dealloc_count(self);
 }
 

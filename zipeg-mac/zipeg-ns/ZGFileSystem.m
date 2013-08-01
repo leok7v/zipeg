@@ -125,8 +125,10 @@ static ZGFileSystemItem *g_root;
 
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
             document: (ZGDocument*) doc
-           operation: (NSOperation*) op error:(NSError**) err {
+           operation: (NSOperation*) op error:(NSError**) err
+                done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) done {
     trace(@"ZGFileSystem is using shared instance of root object");
+    done(self, null);
     return true;
 }
 
@@ -136,6 +138,14 @@ static ZGFileSystemItem *g_root;
 
 - (void) close {
     // not implemented
+}
+
+- (int) numberOfItems {
+    return -1;
+}
+
+- (int) numberOfFolders {
+    return -1;
 }
 
 @end

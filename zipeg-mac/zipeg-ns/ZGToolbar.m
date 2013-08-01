@@ -16,7 +16,9 @@
         alloc_count(self);
         self.allowsUserCustomization = true;
         self.autosavesConfiguration = true;
-        self.displayMode = NSToolbarDisplayModeIconOnly;
+        self.sizeMode = NSToolbarSizeModeSmall;
+        self.showsBaselineSeparator = true;
+        self.displayMode = NSToolbarDisplayModeIconAndLabel; // NSToolbarDisplayModeIconOnly;
     }
     return self;
 }

@@ -32,7 +32,7 @@
 }
 
 - (void) dealloc {
-    // trace(@"%@", self);
+    trace(@"%@", self);
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
 }

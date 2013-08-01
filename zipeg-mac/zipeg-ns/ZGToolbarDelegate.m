@@ -18,11 +18,6 @@ static NSString* SaveId   = @"SaveId";
 static NSString* SearchId = @"SearchId";
 static NSString* ViewsId  = @"ViewsId";
 
-
-+ (void) intialize {
-    [ZGToolbarDelegate exposeBinding: @"enableTBI"];
-}
-
 - (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
     if (self != null) {

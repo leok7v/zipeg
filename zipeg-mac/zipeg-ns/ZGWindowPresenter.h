@@ -26,10 +26,10 @@
 @interface ZGWindowPresenter : NSObject {
 }
 
-@property NSWindow* window;
+@property (weak) NSWindow* window;
 
 +(ZGWindowPresenter*)windowPresenterFor: (NSWindow*) window;
-- (void) presentSheetWithSheet: (id) s delegate:(id) d didEndSelector: (SEL) sel contextInfo: (void*) ctx;
+- (void) presentSheetWithSheet: (id) s done: (void(^)(int returnCode)) block;
 
 - (void)dismissSheet: (id) s;
 

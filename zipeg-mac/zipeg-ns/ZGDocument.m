@@ -20,6 +20,7 @@
     NSObject<ZGItemFactory>* _archive;
     NSObject<ZGItemProtocol>* _root;
     NSWindow* __weak _window;
+    NSColor* _sourceListBackgroundColor; // strong
     NSTableViewSelectionHighlightStyle _highlightStyle;
 }
 
@@ -45,10 +46,6 @@
 @property NSError* error;
 @property ZGHeroView* heroView;
 @property ZGWindowPresenter* windowPresenter;
-
-@property NSString* password;
-@property NSTextField* password_input;
-@property dispatch_semaphore_t password_semaphore;
 
 - (void) openArchiveForOperation: (NSOperation*) op;
 - (void) searchArchiveWithString: (NSString*) s forOperation: (NSOperation*) op done: (void(^)(BOOL)) block;
@@ -160,6 +157,7 @@
 }
 
 - (void) dealloc {
+    trace(@"");
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
     [ZGApplication deferedTraceAllocs];
@@ -170,7 +168,12 @@
     if (_highlightStyle != hs) {
         _highlightStyle = hs;
         _outlineView.selectionHighlightStyle =  _highlightStyle;
+        [_outlineView deselectAll: null];
         [self reloadData];
+        void* v = (__bridge void *)(_outlineView.backgroundColor);
+        trace(@"_outlineView.background = %@ 0x%016llX", _outlineView.backgroundColor, (UInt64)v);
+        _outlineView.backgroundColor = _sourceListBackgroundColor;
+        _outlineView.backgroundColor = [NSColor sourceListBackgroundColor];
     }
 }
 
@@ -192,23 +195,25 @@
         }
         _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: _root];
         // trace("_root=%@", _root);
-        _outlineView.dataSource = _outlineViewDataSource;
-        [_outlineView reloadData];
-        NSIndexSet* is = [NSIndexSet indexSetWithIndex:0];
-        [_outlineView selectRowIndexes:is byExtendingSelection:false];
+        if (_archive.numberOfFolders > 0) {
+            _outlineView.dataSource = _outlineViewDataSource;
+            [_outlineView reloadData];
+        } else {
+            if (_splitView.subviews.count > 1) {
+                _outlineView.hidden = true;
+                [_outlineView removeFromSuperview];
+                _splitView.subviews = @[_splitView.subviews[1]];
+            }
+        }
         _tableViewDatatSource = [[ZGTableViewDataSource alloc] initWithDocument: self];
         _tableView.dataSource = _tableViewDatatSource;
         [_tableView reloadData];
         dispatch_async(dispatch_get_current_queue(), ^{
-            [_outlineViewDelegate expandAll: _outlineView]; // TODO: expandOne is not enough. expandToFirstFileChild
-            // [_outlineViewDelegate expandOne: _outlineView]; // TODO: expandOne is not enough. expandToFirstFileChild
-            [self sizeOutlineViewToContents];
+            [_outlineViewDelegate expandAll: _outlineView];
+            if (_archive.numberOfFolders > 0) {
+                [self sizeOutlineViewToContents];
+            }
             [_tableViewDelegate sizeTableViewToContents: _tableView];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (_root.children != null && _root.children.count > 0) {
-                    [_outlineView selectRowIndexes: [NSIndexSet indexSetWithIndex: 1] byExtendingSelection: false];
-                }
-            });
         });
         [_toolbar validateVisibleItems];
     }
@@ -249,7 +254,9 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     NSTableColumn* tc = [NSTableColumn new];
     [ov addTableColumn: tc];
     ov.outlineTableColumn = tc;
-    tc.dataCell = [ZGImageAndTextCell new];
+    ZGImageAndTextCell* c = [ZGImageAndTextCell new];
+    tc.dataCell = c;
+    c.backgroundColor = [NSColor sourceListBackgroundColor];
     tc.minWidth = 92;
     tc.maxWidth = 3000;
     tc.editable = true;
@@ -276,6 +283,12 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     tbounds.origin.x = 0;
     tbounds.origin.y = 0;
     _outlineView = createOutlineView(tbounds, _highlightStyle);
+    _outlineView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleSourceList;
+    _sourceListBackgroundColor = _outlineView.backgroundColor;
+    trace(@"_outlineView.background = %@", _outlineView.backgroundColor);
+    _outlineView.selectionHighlightStyle = _highlightStyle;
+    trace(@"_outlineView.background = %@", _outlineView.backgroundColor);
+    
     assert(_outlineView != null);
 
     _tableView = [[NSTableView alloc] initWithFrame: tbounds];
@@ -550,7 +563,10 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     NSObject<ZGItemFactory>* __block a = [ZG7zip new];
     NSError* __block error;
     BOOL b = [a readFromURL: _url ofType: _typeName encoding: _encoding
-                   document: self operation: (NSOperation*) op error: &error];
+                   document: self operation: (NSOperation*) op error: &error
+                       done: ^(NSObject<ZGItemFactory>* a, NSError* error) {
+                       }
+             ];
     if (!b) {
         a = null;
     }
@@ -569,24 +585,21 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
             NSAlert* alert = [NSAlert alertWithError: error];
             NSWindowController* wc = doc.windowControllers[0];
             assert(wc.window == doc.windowPresenter.window);
-            [doc.windowPresenter presentSheetWithSheet:alert delegate:self
-                                        didEndSelector:@selector(didEndOpenError:returnCode:contextInfo:)
-                                           contextInfo: null];
+            [doc.windowPresenter presentSheetWithSheet:alert
+                                                  done: ^(int rc) {
+                                                      [_window orderOut: self];
+                                                      [_window performClose:self];
+                                                  }];
         } else {
             // error == null - aborted by user
         }
     });
 }
 
-- (void) didEndOpenError: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) ctx {
-    [_window orderOut: null];
-}
-
 - (NSString*) askForPasswordFromBackgroundThread {
     assert(![NSThread isMainThread]);
-    ZGDocument* __block doc = self;
-    assert(_password_semaphore == null);
-    _password_semaphore = dispatch_semaphore_create(0);
+    dispatch_semaphore_t password_semaphore = dispatch_semaphore_create(0);
+    NSString* __block password;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
         NSString* prompt = [NSString stringWithFormat:@"Please enter archive password for archive\n«%@»",
@@ -598,31 +611,31 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
                                        alternateButton: @"Cancel"
                                            otherButton: null
                              informativeTextWithFormat: @"%@", info];
-        assert(doc.password_input == null);
-        doc.password_input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 300, 24)];
-        doc.password_input.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin | NSViewMinXMargin;
-        [doc.password_input.cell setUsesSingleLineMode: true];
-        doc.password_input.stringValue = @"";
-        [alert setAccessoryView:doc.password_input];
-        [doc.windowPresenter presentSheetWithSheet: alert delegate: self
-                                    didEndSelector: @selector(didEndPasswordInput:returnCode:contextInfo:)
-                                       contextInfo: null];
+        NSTextField* password_input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 300, 24)];
+        password_input.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin | NSViewMinXMargin;
+        NSCell* cell = password_input.cell;
+        cell.usesSingleLineMode = true;
+        password_input.stringValue = @"";
+        [alert setAccessoryView:password_input];
+        [self.windowPresenter presentSheetWithSheet: alert
+                                              done: ^(int rc) {
+                                                  if (rc == NSAlertDefaultReturn) {
+                                                      [password_input validateEditing];
+                                                      password = password_input.stringValue;
+                                                  } else {
+                                                      password = @"";
+                                                  }
+                                                  [alert setAccessoryView: null];
+                                                  dispatch_semaphore_signal(password_semaphore);
+                                              }];
     });
-    dispatch_semaphore_wait(_password_semaphore, DISPATCH_TIME_FOREVER);
-    dispatch_release(_password_semaphore);
-    _password_semaphore = null;
-    return _password;
+    dispatch_semaphore_wait(password_semaphore, DISPATCH_TIME_FOREVER);
+    dispatch_release(password_semaphore);
+    password_semaphore = null;
+    return password;
 }
 
 - (void) didEndPasswordInput: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) ctx {
-    if (rc == NSAlertDefaultReturn) {
-        [_password_input validateEditing];
-        _password = _password_input.stringValue;
-    } else {
-        _password = @"";
-    }
-    _password_input = null;
-    dispatch_semaphore_signal(_password_semaphore);
 }
 
 - (BOOL) progress:(long long)pos ofTotal:(long long)total {

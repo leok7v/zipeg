@@ -1,9 +1,12 @@
+#import "ZGItemProtocol.h"
+
 @interface ZGDocument : NSDocument<NSToolbarDelegate> {
     
 }
 @property NSOutlineView* outlineView;
 @property NSTableView *tableView;
 @property (nonatomic, readonly, weak) NSWindow* window;
+@property (nonatomic, readonly) NSObject<ZGItemProtocol>* root;
 
 - (void) setViewStyle: (int) s;
 - (void) search: (NSString*) s;

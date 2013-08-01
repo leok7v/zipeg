@@ -26,9 +26,7 @@
 @interface ZGWindowPresenter() {
     NSWindow *sheetWindow;
     NSView *blankingView;
-    id delegate;
-    SEL selector;
-    void* context;
+    void(^done)(int returnCode);
 }
 
 @end
@@ -41,17 +39,13 @@
     return it;
 }
 
-- (void) presentSheetWithSheet: (id) s delegate:(id) d didEndSelector:(SEL) sel contextInfo: (void*) ctx {
+- (void) presentSheetWithSheet: (id) s done: (void(^)(int returnCode)) block {
     if (sheetWindow) {
         [self dismissSheet: sheetWindow];
     }
     assert(s != null);
-    assert(d != null);
-    assert(sel != null);
+    done = block;
     sheetWindow = s;
-    delegate = d;
-    selector = sel;
-    context = ctx;
     CATransition *animation = [CATransition animation];
     animation.type = kCATransitionFade;
     NSView* cv = _window.contentView;
@@ -83,13 +77,13 @@
         NSAlert* a = (NSAlert*)sheetWindow;
         [a beginSheetModalForWindow:_window modalDelegate: self
          didEndSelector: @selector(didEndPresentedAlert:returnCode:contextInfo:)
-         contextInfo: context];
+         contextInfo: null];
     }
     else {
         [NSApplication.sharedApplication
          beginSheet:sheetWindow modalForWindow:_window modalDelegate:self
          didEndSelector: @selector(didEndPresentedAlert:returnCode:contextInfo:)
-         contextInfo: context];
+         contextInfo: null];
     }
     [_window makeKeyAndOrderFront:_window.windowController]; // window.moveToFront
     //trace(@"%@", NSStringFromRect([blankingView bounds]));
@@ -111,22 +105,15 @@
     [blankingView removeFromSuperview];
 }
 
-- (void) didEndPresentedAlert: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) ctx {
+- (void) didEndPresentedAlert: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) c {
     [self dismissSheet: a];
-    if (delegate != null && selector != null) {
-        NSMethodSignature* signature = [delegate methodSignatureForSelector: selector];
-        NSInvocation* invocation = [NSInvocation invocationWithMethodSignature: signature];
-        NSUInteger argumentCount = signature.numberOfArguments - 2;
-        assert(argumentCount == 3);
-        invocation.target = delegate;
-        invocation.selector = selector;
-        [invocation setArgument: &a atIndex:2];
-        [invocation setArgument: &rc atIndex:3];
-        [invocation setArgument: &ctx atIndex:4];
-        [invocation invoke];
+    if (done != null) {
+        dispatch_async(dispatch_get_main_queue(), ^() {
+            void(^d)(int rc) = done;
+            done = null;
+            d((int)rc);
+        });
     }
-    delegate = null;
-    selector = null;
 }
 
 @end

@@ -52,6 +52,10 @@
     dealloc_count(self);
 }
 
+- (NSRect) window:(NSWindow *) window willPositionSheet: (NSWindow*) sheet usingRect: (NSRect) rect {
+    trace(@"willPositionSheet %@ window.frame=%@" , NSStringFromRect(rect), NSStringFromRect(window.frame));
+    return rect;
+}
 
 - (void) windowDidBecomeKey: (NSNotification *) notification  {
     ZGDocument* d = self.document;
@@ -72,6 +76,8 @@
 
 - (void)windowWillClose:(NSNotification *)notification {
     [self.window removeObserver:self forKeyPath:@"firstResponder"];
+    NSView* cv = self.window.contentView;
+    cv.subviews = @[];
 //  [self setDocument:null];
 }
 

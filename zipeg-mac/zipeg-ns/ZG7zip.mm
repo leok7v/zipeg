@@ -33,6 +33,7 @@ struct D;
     ZGDocument* __weak document;
     int pathIndex; // in pnames
     int items;
+    int folders;
     int properties;
 }
 
@@ -248,6 +249,7 @@ static bool ignore(const NSString* pathname) {
 }
 
 - (BOOL) buildTree {
+    folders = 0;
     for (int i = 0; i < items; i++) {
         const NSString* pathname = _paths[i];
         if (ignore(pathname)) {
@@ -269,6 +271,7 @@ static bool ignore(const NSString* pathname) {
             if (isFolder) {
                 [_isFolders setBit:i to:true];
                 [_isLeafFolders setBit:i to:true];
+                folders++;
             }
             _items[pathname] = item;
         } else {
@@ -299,11 +302,12 @@ static bool ignore(const NSString* pathname) {
             if (p == null) {
                 trace(@"creating synthetic parent for %@", parentComponents);
                 NSString* last = [parentComponents lastPathComponent];
-                p = [[ZG7zipItem alloc] initWith:self name:last index:-1 isLeaf:false];
+                p = [[ZG7zipItem alloc] initWith: self name: last index: -1 isLeaf: false];
                 if (p == null) {
                     return false;
                 }
                 _items[parentComponents] = p;
+                folders++;
             }
             item.parent = p;
             // trace(@"0x%016llX.parent:=0x%016llX %@ -> %@", (unsigned long long)item, (unsigned long long)p, p.name, item.name);
@@ -460,6 +464,14 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
     return index < 0 || [_isFolders isSet:index];
 }
 
+- (int) numberOfItems {
+    return items;
+}
+
+- (int) numberOfFolders {
+    return folders;
+}
+
 static struct { const char* name; CFStringEncoding enc; } kEncodingsMap [] = {
     // CHARDET_ENCODING_X_ISO_10646_UCS_4 should not ever happen...
     {CHARDET_ENCODING_ISO_2022_JP,      kCFStringEncodingISO_2022_JP_3},
@@ -552,7 +564,8 @@ static NSString* starifyMultipartRAR(NSString* s) {
 
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
             document: (ZGDocument*) doc
-           operation: (NSOperation*) op error:(NSError**) err {
+           operation: (NSOperation*) op error:(NSError**) err
+                done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) done {
     // This method must be called on the background thread
     assert(![NSThread isMainThread]);
     assert(err != null);
@@ -624,6 +637,7 @@ static NSString* starifyMultipartRAR(NSString* s) {
         }
     } @finally {
         _op = null; // we must release the opearation here
+        done(self, *err);
     }
     return b;
 }

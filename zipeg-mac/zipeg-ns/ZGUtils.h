@@ -31,6 +31,10 @@ FOUNDATION_EXPORT void dumpViews(NSView* v);
 - (void) selectItem: (id) i;
 @end
 
+@interface NSColor(ZGExtensions)
++ (NSColor*) sourceListBackgroundColor;
+@end
+
 @interface ZGUtils : NSObject
 
 @end

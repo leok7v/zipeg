@@ -23,13 +23,18 @@
 }
 
 - (void)dealloc {
+    trace(@"");
     dealloc_count(self);
-    // trace(@"");
 }
 
 - (NSObject<ZGItemProtocol>*) selectedItem {
-    ZGOutlineViewDelegate* d = _document.outlineView.delegate;
-    NSObject<ZGItemProtocol>* it = [d selectedItem];
+    NSObject<ZGItemProtocol>* it = null;
+    if (_document.outlineView.isHidden) {
+        it = _document.root;
+    } else {
+        ZGOutlineViewDelegate* d = _document.outlineView.delegate;
+        it = [d selectedItem];
+    }
     if (it == null) {
         _item = null;
         _sorted = null;

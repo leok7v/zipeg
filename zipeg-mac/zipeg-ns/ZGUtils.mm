@@ -124,7 +124,7 @@ FOUNDATION_EXPORT void dumpViews(NSView* v) {
 
 @end
 
-@implementation NSOutlineView(SelectItem)
+@implementation NSOutlineView(ZGExtensions)
 
 - (void)expandParentsOfItem: (id) item {
     // NOTE: [self parentForItem: item] always returns null
@@ -149,6 +149,26 @@ FOUNDATION_EXPORT void dumpViews(NSView* v) {
         }
     }
     [self selectRowIndexes: [NSIndexSet indexSetWithIndex: itemIndex] byExtendingSelection: false];
+}
+
+@end
+
+@implementation NSColor(ZGExtensions)
+
++ (NSColor*) sourceListBackgroundColor {
+    static NSColor* sourceListBackgroundColor = null;
+    if (sourceListBackgroundColor == null) {
+        sourceListBackgroundColor =
+        [NSColor colorWithCatalogName:@"System" colorName:@"_sourceListBackgroundColor"];
+        if (sourceListBackgroundColor == null) {
+            sourceListBackgroundColor =
+            [NSColor colorWithCalibratedRed:0.905882
+                                      green:0.929412
+                                       blue:0.964706 alpha:1.0];
+            
+        }
+    }
+    return sourceListBackgroundColor;
 }
 
 @end
