@@ -127,21 +127,39 @@
 
 @implementation ZGDocument
 
+// See:
+// http://stackoverflow.com/questions/16347569/why-arent-the-init-and-windowcontrollerdidloadnib-method-called-when-a-autosav
+// and
+// http://developer.apple.com/library/mac/#documentation/DataManagement/Conceptual/DocBasedAppProgrammingGuideForOSX/StandardBehaviors/StandardBehaviors.html#//apple_ref/doc/uid/TP40011179-CH5-SW8
+
 - (id) init {
-    self = [super init];
+    self = [[super init] ctor];
+    return self;
+}
+
+- (void) restoreStateWithCoder: (NSCoder*) state {
+    [super restoreStateWithCoder: state];
+}
+
+- (id) ctor {
     if (self != null) {
         alloc_count(self);
+        self.hasUndoManager = false;
         _operationQueue = [NSOperationQueue new];
         _operationQueue.maxConcurrentOperationCount = 1; // TODO: can it be 2?
         _encoding = (CFStringEncoding)-1;
-        _highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
-
+        //      _highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
+        _highlightStyle = NSTableViewSelectionHighlightStyleRegular;
     }
     return self;
 }
 
+- (void)restoreDocumentWindowWithIdentifier: (NSString*) id state: (NSCoder*) state
+            completionHandler: (void (^)(NSWindow*, NSError*)) done {
+    [super restoreDocumentWindowWithIdentifier: id state: state completionHandler: done];
+}
+
 - (void) dealloc {
-    // trace(@"%@", self);
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
     [ZGApplication deferedTraceAllocs];
@@ -157,6 +175,7 @@
 }
 
 - (void)makeWindowControllers {
+    assert(_operationQueue != null);
     ZGWindowController* wc = [ZGWindowController new];
     [self addWindowController: wc];
     // trace("wc.document=%@ %s (self %@)", wc.document, wc.document == self ? "==" : "!=", self);
@@ -181,7 +200,8 @@
         _tableView.dataSource = _tableViewDatatSource;
         [_tableView reloadData];
         dispatch_async(dispatch_get_current_queue(), ^{
-            [_outlineViewDelegate expandOne:_outlineView]; // TODO: expandOne is not enough. expandToFirstFileChild
+            [_outlineViewDelegate expandAll: _outlineView]; // TODO: expandOne is not enough. expandToFirstFileChild
+            // [_outlineViewDelegate expandOne: _outlineView]; // TODO: expandOne is not enough. expandToFirstFileChild
             [self sizeOutlineViewToContents];
             [_tableViewDelegate sizeTableViewToContents: _tableView];
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -628,7 +648,7 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     }
     ZGDocument* __block doc = self;
     SearchArchiveOperation* op = [[SearchArchiveOperation alloc]
-                                  initWithDocument: self searchString: s
+      initWithDocument: self searchString: s
         done: (^(BOOL found){
             assert([NSThread isMainThread]);
             [doc reloadData];
