@@ -180,7 +180,7 @@ static NSToolbarItem* createSegmentedControl(NSString* id, NSString* label, NSSt
     NSSegmentedControl* sc = sender;
     int ss = (int)sc.selectedSegment;
     _document.viewStyle = ss;
-    trace(@"selectedItem %@ %d", sender, ss);
+    // trace(@"selectedItem %@ %d", sender, ss);
 }
 
 - (NSArray*) toolbarDefaultItemIdentifiers: (NSToolbar*) toolbar {

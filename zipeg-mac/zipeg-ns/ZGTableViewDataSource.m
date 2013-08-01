@@ -1,5 +1,6 @@
 #import "ZGDocument.h"
 #import "ZGtableViewDataSource.h"
+#import "ZGOutlineViewDelegate.h"
 #import "ZGImageAndTextCell.h"
 
 
@@ -27,9 +28,8 @@
 }
 
 - (NSObject<ZGItemProtocol>*) selectedItem {
-    id item = [_document.outlineView itemAtRow: _document.outlineView.selectedRow];
-    NSObject<ZGItemProtocol>* it = [item conformsToProtocol: @protocol(ZGItemProtocol)] ?
-                                   (NSObject<ZGItemProtocol>*)item : null;
+    ZGOutlineViewDelegate* d = _document.outlineView.delegate;
+    NSObject<ZGItemProtocol>* it = [d selectedItem];
     if (it == null) {
         _item = null;
         _sorted = null;

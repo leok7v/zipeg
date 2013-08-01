@@ -2,6 +2,8 @@
 
 @interface ZGOutlineViewDataSource : NSObject<NSOutlineViewDataSource>
 
-- (id)initWithDocument: (ZGDocument*) doc andRootItem:(NSObject<ZGItemProtocol>*)rootItem;
+@property (readonly, weak, nonatomic) NSObject<ZGItemProtocol>* __weak root;
+
+- (id)initWithDocument: (ZGDocument*) doc andRootItem: (NSObject<ZGItemProtocol>*) root;
 
 @end
