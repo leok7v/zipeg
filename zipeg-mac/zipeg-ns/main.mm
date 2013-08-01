@@ -1,5 +1,5 @@
 #import <Cocoa/Cocoa.h>
-#import "ZGApplication.h"
+#import "ZGApp.h"
 #import "MacMem.h"
 
 

@@ -13,7 +13,7 @@
 #import "ZGWindowPresenter.h"
 #import "ZGToolbar.h"
 #import "ZGToolbarDelegate.h"
-#import "ZGApplication.h"
+#import "ZGApp.h"
 
 
 @interface ZGDocument() {
@@ -160,7 +160,7 @@
     trace(@"");
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
-    [ZGApplication deferedTraceAllocs];
+    [ZGApp deferedTraceAllocs];
 }
 
 - (void) setViewStyle: (int) s {

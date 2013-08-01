@@ -1,7 +1,7 @@
-#import "ZGApplication.h"
+#import "ZGApp.h"
 #import "ZGDocument.h"
 
-@implementation ZGApplication
+@implementation ZGApp
 
 - (void)run {
     [super run];
@@ -12,7 +12,7 @@
     
     // Ctrl+Z will dump useful stats:
     NSUInteger flags = e.modifierFlags & NSDeviceIndependentModifierFlagsMask;
-    if( flags == NSControlKeyMask && e.type == NSKeyDown &&
+    if (flags == NSControlKeyMask && e.type == NSKeyDown &&
        [e.charactersIgnoringModifiers isEqualToString:@"z"]) {
         NSDocumentController* dc = NSDocumentController.sharedDocumentController;
         NSArray* docs = dc.documents;
@@ -37,7 +37,6 @@
     trace_allocs();
     [super terminate: sender];
 }
-
 
 + (void) deferedTraceAllocs  {
     // somehow, NSToolbar takes a long time to dealloc in ARC; seems like it is sitting on a timer

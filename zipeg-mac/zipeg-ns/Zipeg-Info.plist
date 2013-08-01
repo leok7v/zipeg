@@ -150,7 +150,7 @@
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
-	<string>ZGApplication</string>
+	<string>ZGApp</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
