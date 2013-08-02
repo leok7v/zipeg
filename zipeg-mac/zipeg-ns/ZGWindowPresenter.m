@@ -36,6 +36,8 @@
 + (ZGWindowPresenter*) windowPresenterFor: (NSWindow*) w {
     ZGWindowPresenter* it = [ZGWindowPresenter new];
     it.window = w;
+    NSView* cv = w.contentView;
+    assert(cv.wantsLayer);
     return it;
 }
 
@@ -46,66 +48,64 @@
     assert(s != null);
     done = block;
     sheetWindow = s;
+    
+    NSView* cv = _window.contentView;
+    assert(cv.wantsLayer); // should be set at least one dispatch cycle in advance
+
     CATransition *animation = [CATransition animation];
     animation.type = kCATransitionFade;
-    NSView* cv = _window.contentView;
-    cv.wantsLayer = true;
-    [cv.layer addAnimation:animation forKey:@"layerAnimation"];
+    animation.speed = 0.75; // slightly slower
+    animation.removedOnCompletion = true;
+    [cv.layer addAnimation: animation forKey:@"layerAnimation"];
     
-    //trace(@"%@", NSStringFromRect(cv.bounds));
-    if (blankingView != null) {
-        blankingView.frame = cv.bounds;
-    } else {
-        blankingView = [[NSView alloc] initWithFrame:cv.bounds];
-        CIFilter *exposureFilter = [CIFilter filterWithName:@"CIExposureAdjust"];
-        [exposureFilter setDefaults];
-        [exposureFilter setValue:@-1.25 forKey:@"inputEV"];
-        CIFilter *saturationFilter = [CIFilter filterWithName:@"CIColorControls"];
-        [saturationFilter setDefaults];
-        [saturationFilter setValue:@0.35 forKey:@"inputSaturation"];
-        CIFilter *gloomFilter = [CIFilter filterWithName:@"CIGloom"];
-        [gloomFilter setDefaults];
-        [gloomFilter setValue:@0.75 forKey:@"inputIntensity"];
-        blankingView.wantsLayer = true;
-        blankingView.layer.backgroundFilters = @[exposureFilter, saturationFilter, gloomFilter];
-        //trace(@"%@", blankingView.layer);
-        //trace(@"%@", blankingView.layer.backgroundFilters);
-    }
-    [cv addSubview:blankingView positioned:NSWindowAbove relativeTo: null];
-    
+    assert(blankingView == null);
+    blankingView = [[NSView alloc] initWithFrame: cv.bounds];
+    [cv addSubview:blankingView];
+    CIFilter *exposureFilter = [CIFilter filterWithName:@"CIExposureAdjust"];
+    [exposureFilter setDefaults];
+    [exposureFilter setValue:@-1.25 forKey:@"inputEV"];
+    CIFilter *saturationFilter = [CIFilter filterWithName:@"CIColorControls"];
+    [saturationFilter setDefaults];
+    [saturationFilter setValue:@0.35 forKey:@"inputSaturation"];
+    CIFilter *gloomFilter = [CIFilter filterWithName:@"CIGloom"];
+    [gloomFilter setDefaults];
+    [gloomFilter setValue:@0.75 forKey:@"inputIntensity"];
+    blankingView.layer.backgroundFilters = @[exposureFilter, saturationFilter, gloomFilter];
     if ([sheetWindow isKindOfClass:[NSAlert class]]) {
         NSAlert* a = (NSAlert*)sheetWindow;
-        [a beginSheetModalForWindow:_window modalDelegate: self
-         didEndSelector: @selector(didEndPresentedAlert:returnCode:contextInfo:)
-         contextInfo: null];
+        [a beginSheetModalForWindow: _window modalDelegate: self
+                     didEndSelector: @selector(didEndPresentedAlert:returnCode:contextInfo:)
+                        contextInfo: null];
+    } else {
+        [NSApp beginSheet: sheetWindow modalForWindow: _window modalDelegate: self
+           didEndSelector: @selector(didEndPresentedAlert:returnCode:contextInfo:)
+              contextInfo: null];
     }
-    else {
-        [NSApplication.sharedApplication
-         beginSheet:sheetWindow modalForWindow:_window modalDelegate:self
-         didEndSelector: @selector(didEndPresentedAlert:returnCode:contextInfo:)
-         contextInfo: null];
-    }
-    [_window makeKeyAndOrderFront:_window.windowController]; // window.moveToFront
-    //trace(@"%@", NSStringFromRect([blankingView bounds]));
+    [_window makeKeyAndOrderFront: _window.windowController]; // window.moveToFront
 }
 
 - (void) dismissSheet:(id) s {
+    CATransition *animation = [CATransition animation];
+    animation.delegate = self;
+    animation.type = kCATransitionFade;
+    animation.speed = 0.75;
+    animation.removedOnCompletion = true;
+    NSView* cv = _window.contentView;
+    timestamp("animation");
+    [cv.layer addAnimation: animation forKey:@"layerAnimation"];
+    [blankingView removeFromSuperview];
+    blankingView = null;
     if ([s isKindOfClass:[NSWindow class]]) {
-        [NSApplication.sharedApplication endSheet:s];
-        [s orderOut:null];
+        [NSApp endSheet: s];
+        [s orderOut: null];
     }
     if (![s isEqual:sheetWindow]) {
         return;
     }
     sheetWindow = null;
-    CATransition *animation = [CATransition animation];
-    animation.type = kCATransitionFade;
-    NSView* cv = _window.contentView;
-    [cv.layer addAnimation:animation forKey:@"layerAnimation"];
-    [blankingView removeFromSuperview];
 }
 
-- (void) didEndPresentedAlert: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) c {
+- (void) didEndPresentedAlert: (NSAlert*) a returnCode: (NSInteger) rc contextInfo: (void*) c {
     [self dismissSheet: a];
     if (done != null) {
         dispatch_async(dispatch_get_main_queue(), ^() {
