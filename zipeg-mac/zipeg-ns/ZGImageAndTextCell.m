@@ -86,7 +86,7 @@
     f.origin.x += kTextOriginXOffset;
     f.origin.y += textOriginYOffset;
     // trace(@"%@ cellFrame=%@ newCellFrame=%@", [self stringValue], NSStringFromRect(cellFrame), NSStringFromRect(newCellFrame));
-    trace(@"background color = %@", self.backgroundColor);
+    // trace(@"background color = %@", self.backgroundColor);
     [super drawWithFrame: f inView: v];
     [NSGraphicsContext restoreGraphicsState];
 }

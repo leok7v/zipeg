@@ -572,6 +572,7 @@ static NSString* starifyMultipartRAR(NSString* s) {
     assert(doc != null);
     assert(op != null);
     document = doc;
+    [self password];
     // trace(@"absoluteURL=%@ type=%@ enc=%ld", url, type, enc);
     if (self == null || a == null || d == null) {
         *err = ZGOutOfMemoryError();

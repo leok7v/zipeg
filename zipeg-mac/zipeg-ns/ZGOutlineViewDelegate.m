@@ -88,7 +88,7 @@
 
 -(void) postDelayed: (NSNotification*) n {
     int __block counter = _expandCounter;
-    ZGOutlineViewDelegate* __weak __block this = self;
+    ZGOutlineViewDelegate* __weak __block this = self; // TODO: not portable to 10.6
     _delayedExpand= ^{
         [this areWeThereYet: counter notification: n];
     };
@@ -233,8 +233,9 @@
 - (void) sizeOutlineViewToContents:(NSOutlineView*) outlineView {
     if (!_queued) {
         _queued = true;
+        ZGOutlineViewDelegate* __weak __block this = self; // TODO: not portable to 10.6
         dispatch_async(dispatch_get_current_queue(), ^{
-            [self _sizeOutlineViewToContents:outlineView];
+            [this _sizeOutlineViewToContents:outlineView];
             _queued = false;
         });
     } else {

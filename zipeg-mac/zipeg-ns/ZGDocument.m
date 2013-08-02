@@ -195,7 +195,7 @@
         _outlineView.selectionHighlightStyle =  _highlightStyle;
         [_outlineView deselectAll: null];
         [self reloadData];
-        void* v = (__bridge void *)(_outlineView.backgroundColor);
+        // void* v = (__bridge void *)(_outlineView.backgroundColor);
         // trace(@"_outlineView.background = %@ 0x%016llX", _outlineView.backgroundColor, (UInt64)v);
         _outlineView.backgroundColor = _sourceListBackgroundColor;
         _outlineView.backgroundColor = [NSColor sourceListBackgroundColor];
