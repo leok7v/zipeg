@@ -421,17 +421,33 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
                                            selector: @selector(windowWillClose:)
                                                name: NSWindowWillCloseNotification
                                              object: _window];
-    
-    
+    // TODO: useless remove me
+    [NSNotificationCenter.defaultCenter addObserver: self
+                                           selector: @selector(windowDidUpdateFirstTime:)
+                                               name: NSWindowDidUpdateNotification
+                                             object: _window];
     
     _windowPresenter = [ZGWindowPresenter windowPresenterFor: controller.window];
     
+    [_contentView addSubview: _heroView];
+//  dumpViews(_contentView);
+}
+
+- (void) windowDidUpdateFirstTime: (NSNotification*) n {
+    [NSNotificationCenter.defaultCenter removeObserver: self name: NSWindowDidUpdateNotification object: _window];
+    [NSNotificationCenter.defaultCenter addObserver: self
+                                           selector: @selector(windowDidUpdate:)
+                                               name: NSWindowDidUpdateNotification
+                                             object: _window];
     if (_url != null) {
         OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument:self];
         [_operationQueue addOperation:operation];
     }
-    [_contentView addSubview: _heroView];
-//  dumpViews(_contentView);
+    [self windowDidUpdate: n];
+}
+
+- (void) windowDidUpdate: (NSNotification*) n {
+    
 }
 
 - (void) resetViews: (NSView*) v {
@@ -458,6 +474,8 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
 
 - (void) windowWillClose: (NSNotification*) n {
     [self resetViews: _window.contentView];
+    self.window.toolbar.delegate = null;
+    self.window.toolbar = null;
     dumpAllViews();
     [_splitView removeFromSuperview];
     _splitView.subviews = @[];
@@ -671,6 +689,12 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
         cell.usesSingleLineMode = true;
         password_input.stringValue = @"";
         [alert setAccessoryView:password_input];
+        dumpAllViews();
+/*
+        [alert beginSheetModalForWindow: _window modalDelegate: self
+                     didEndSelector: @selector(didEndPresentedAlert:returnCode:contextInfo:)
+                        contextInfo: null];
+*/
         [self.windowPresenter presentSheetWithSheet: alert
                                               done: ^(int rc) {
                                                   if (rc == NSAlertDefaultReturn) {
@@ -687,6 +711,10 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     dispatch_release(password_semaphore);
     password_semaphore = null;
     return password;
+}
+
+- (void) didEndPresentedAlert: (NSAlert*) a returnCode: (NSInteger) rc contextInfo: (void*) c {
+// ignore for now...
 }
 
 - (void) didEndPasswordInput: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) ctx {
