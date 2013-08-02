@@ -25,7 +25,7 @@
 }
 
 @property NSSearchField* searchField;
-@property NSView* contentView;
+@property (weak) NSView* contentView;
 @property ZGToolbar* toolbar;
 @property ZGToolbarDelegate* toolbarDelegate;
 @property NSSplitView* splitView;
@@ -129,18 +129,42 @@
 // and
 // http://developer.apple.com/library/mac/#documentation/DataManagement/Conceptual/DocBasedAppProgrammingGuideForOSX/StandardBehaviors/StandardBehaviors.html#//apple_ref/doc/uid/TP40011179-CH5-SW8
 
++ (BOOL) canConcurrentlyReadDocumentsOfType: (NSString*) typeName {
+    return false; // otherwise all -init will be called in concurently on session restore
+}
+
 - (id) init {
+    trace(@"_operationQueue=%@ %@", _operationQueue, [NSThread currentThread]);
     self = [[super init] ctor];
+    trace(@"_operationQueue=%@ %@", _operationQueue, [NSThread currentThread]);
     return self;
 }
 
+- (id)initWithType:(NSString *)typeName error:(NSError **)outError {
+    return [super initWithType: typeName error: outError];
+}
+
+- (id) initForURL: (NSURL*) absoluteDocumentURL withContentsOfURL: (NSURL*) absoluteDocumentContentsURL
+           ofType: (NSString*) typeName error: (NSError**) outError {
+    return [super initForURL:absoluteDocumentURL withContentsOfURL:absoluteDocumentContentsURL
+                      ofType:typeName error: outError];
+}
+
+- (id)initWithContentsOfURL: (NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
+    return [super initWithContentsOfURL: absoluteURL ofType: typeName error: outError];
+}
+
+
+
 - (void) restoreStateWithCoder: (NSCoder*) state {
     [super restoreStateWithCoder: state];
+    trace(@"_operationQueue=%@ %@", _operationQueue, [NSThread currentThread]);
 }
 
 - (id) ctor {
     if (self != null) {
         alloc_count(self);
+        trace_allocs();
         self.hasUndoManager = false;
         _operationQueue = [NSOperationQueue new];
         _operationQueue.maxConcurrentOperationCount = 1; // TODO: can it be 2?
@@ -158,6 +182,7 @@
 
 - (void) dealloc {
     trace(@"");
+    trace_allocs();
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
     [ZGApp deferedTraceAllocs];
@@ -171,7 +196,7 @@
         [_outlineView deselectAll: null];
         [self reloadData];
         void* v = (__bridge void *)(_outlineView.backgroundColor);
-        trace(@"_outlineView.background = %@ 0x%016llX", _outlineView.backgroundColor, (UInt64)v);
+        // trace(@"_outlineView.background = %@ 0x%016llX", _outlineView.backgroundColor, (UInt64)v);
         _outlineView.backgroundColor = _sourceListBackgroundColor;
         _outlineView.backgroundColor = [NSColor sourceListBackgroundColor];
     }
@@ -273,7 +298,7 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     _window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
     [self setWindow: _window]; // weak
     NSRect bounds = [_window.contentView bounds];
-    _contentView = [[NSView alloc] initWithFrame: [_window.contentView bounds]];
+    _contentView = _window.contentView;
     bounds = _contentView.frame;
     bounds.origin.y += 30;
     bounds.size.height -= 60;
@@ -285,9 +310,9 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     _outlineView = createOutlineView(tbounds, _highlightStyle);
     _outlineView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleSourceList;
     _sourceListBackgroundColor = _outlineView.backgroundColor;
-    trace(@"_outlineView.background = %@", _outlineView.backgroundColor);
+//  trace(@"_outlineView.background = %@", _outlineView.backgroundColor);
     _outlineView.selectionHighlightStyle = _highlightStyle;
-    trace(@"_outlineView.background = %@", _outlineView.backgroundColor);
+//  trace(@"_outlineView.background = %@", _outlineView.backgroundColor);
     
     assert(_outlineView != null);
 
@@ -449,10 +474,6 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
 + (BOOL)autosavesInPlace {
     // this is for autosaving documents like text files... see NSDocumentController -setAutosavingDelay:
     return false;
-}
-
-+ (BOOL)canConcurrentlyReadDocumentsOfType:(NSString *)typeName {
-    return true;
 }
 
 - (BOOL)hasUnautosavedChanges {
