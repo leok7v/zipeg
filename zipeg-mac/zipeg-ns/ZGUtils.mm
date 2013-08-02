@@ -13,38 +13,44 @@ FOUNDATION_EXPORT uint64_t timestamp(const char* label) {
 static HashMapS2L map(500, NOT_A_VALUE);
 
 FOUNDATION_EXPORT uint64_t alloc_count(id i) {
-    NSObject* o = (NSObject*)i;
-    const char* cn = [NSStringFromClass([o class]) cStringUsingEncoding:NSUTF8StringEncoding];
-    uint64_t v = map.get(cn);
-    if (v == NOT_A_VALUE) {
-        v = 0;
+    @synchronized (ZGUtils.class) {
+        NSObject* o = (NSObject*)i;
+        const char* cn = [NSStringFromClass([o class]) cStringUsingEncoding:NSUTF8StringEncoding];
+        uint64_t v = map.get(cn);
+        if (v == NOT_A_VALUE) {
+            v = 0;
+        }
+        map.put(cn, ++v);
+        return v;
     }
-    map.put(cn, ++v);
-    return v;
 }
 
 FOUNDATION_EXPORT uint64_t dealloc_count(id i) {
-    NSObject* o = (NSObject*)i;
-    const char* cn = [NSStringFromClass([o class]) cStringUsingEncoding:NSUTF8StringEncoding];
-    uint64_t v = map.get(cn);
-    assert(v != NOT_A_VALUE); // dealloc before alloc?!
-    assert(v > 0); // too many deallocs
-    map.put(cn, --v);
-    return v;
+    @synchronized (ZGUtils.class) {
+        NSObject* o = (NSObject*)i;
+        const char* cn = [NSStringFromClass([o class]) cStringUsingEncoding:NSUTF8StringEncoding];
+        uint64_t v = map.get(cn);
+        assert(v != NOT_A_VALUE); // dealloc before alloc?!
+        assert(v > 0); // too many deallocs
+        map.put(cn, --v);
+        return v;
+    }
 }
 
 FOUNDATION_EXPORT void trace_allocs() {
-    int n = map.getCapacity();
-    for (int i = 0; i < n; i++) {
-        const char* k = map.keyAt(i);
-        if (k != null) {
-            int64_t v = map.get(k);
-            if (v != NOT_A_VALUE) {
-                NSLog(@"%s %lld", k, v);
+    @synchronized (ZGUtils.class) {
+        int n = map.getCapacity();
+        for (int i = 0; i < n; i++) {
+            const char* k = map.keyAt(i);
+            if (k != null) {
+                int64_t v = map.get(k);
+                if (v != NOT_A_VALUE) {
+                    NSLog(@"%s %lld", k, v);
+                }
             }
         }
+        NSLog(@"%lld bytes in %lld allocs\n", mstat.bytes, mstat.allocs);
     }
-    NSLog(@"%lld bytes in %lld allocs", mstat.bytes, mstat.allocs);
 }
 
 static void _dumpViews(NSView* v, int level) {
