@@ -3,6 +3,7 @@
 #include "NanoTime.hpp"
 #import "MacMem.h"
 #import "ZGItemProtocol.h"
+#import "ZGDocument.h"
 
 FOUNDATION_EXPORT uint64_t timestamp(const char* label) {
     return NanoTime::timestamp(label);
@@ -58,7 +59,14 @@ static void _dumpViews(NSView* v, int level) {
     for (int i = 0; i < level; i++) {
         indent = [indent stringByAppendingString:@"    "];
     }
-    NSLog(@"%@%@ %@", indent, v.class, NSStringFromRect(v.frame));
+    NSString* debugDelegate = @"";
+    if ([v respondsToSelector:@selector(delegate)]) {
+        id delegate = [(id)v delegate];
+        if (delegate != null) {
+            debugDelegate = [delegate debugDescription];
+        }
+    }
+    NSLog(@"%@%@ %@ %@", indent, v.class, NSStringFromRect(v.frame), debugDelegate);
     if (v.subviews != null) {
         for (id s in v.subviews) {
             _dumpViews(s, level + 1);
@@ -68,6 +76,21 @@ static void _dumpViews(NSView* v, int level) {
 
 FOUNDATION_EXPORT void dumpViews(NSView* v) {
     _dumpViews(v, 0);
+}
+
+FOUNDATION_EXPORT void dumpAllViews() {
+    NSDocumentController* dc = NSDocumentController.sharedDocumentController;
+    NSArray* docs = dc.documents;
+    if (docs != null && docs.count > 0) {
+        for (int i = 0; i < docs.count; i++) {
+            ZGDocument* doc = (ZGDocument*)docs[i];
+            if (doc.window != null) {
+                NSLog(@"%@", doc.displayName);
+                dumpViews(doc.window.contentView);
+                NSLog(@"");
+            }
+        }
+    }
 }
 
 
@@ -202,6 +225,7 @@ FOUNDATION_EXPORT void dumpViews(NSView* v) {
     if (done == null) {
         NSLog(@"ZGBlock.cancel: too late, already executing or executed");
     } else {
+        trace("cancelled %@", done);
         _isCanceled = true;
         done = null;
     }

@@ -10,12 +10,12 @@
 
 
 @interface ZGOutlineViewDelegate () {
-    bool _queued;
-    int _nestedCollapse; // only collapse is nested, expand is sequential
-    int _expandCounter;  // onlu collapse is nested, expand is sequential
+    int _nestedCollapse; // only collapse callbacks are nested,
+    int _expandCounter;  // expand callbacks are sequential
     ZGDocument* __weak _document;
     ZGSectionCell* _sectionCell;
     ZGBlock* _delayedExpand;
+    ZGBlock* _delayedSizeToContent;
 }
 @end
 
@@ -33,11 +33,15 @@
 
 - (void) dealloc {
     trace(@"%@", self);
+    [_delayedExpand cancel];
+    [_delayedSizeToContent cancel];
+    _delayedExpand = null;
+    _delayedSizeToContent = null;
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
-- (void) outlineView:(NSOutlineView *) v willDisplayCell:(NSCell*) c forTableColumn:(NSTableColumn *) tc item:(id) i {
+- (void) outlineView: (NSOutlineView *) v willDisplayCell: (NSCell*) c forTableColumn: (NSTableColumn *) tc item: (id) i {
     if ([c isKindOfClass:[ZGImageAndTextCell class]] && [i conformsToProtocol:@protocol(ZGItemProtocol)]) {
         NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
         ZGImageAndTextCell* itc = (ZGImageAndTextCell*)c;
@@ -80,7 +84,7 @@
 
 -(void) sizeToContentByNotification: (NSNotification*) n {
     NSOutlineView* v = (NSOutlineView*)n.object;
-    [self sizeOutlineViewToContents: v];
+    [self sizeToContent: v];
 //  NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)n.userInfo[@"NSObject"];
 //  trace(@"sizeToContentByNotification %@ %@ %@", v, i, i.name);
 }
@@ -131,7 +135,7 @@
     _nestedCollapse++;
 }
 
--(void) outlineViewItemDidCollapse:(NSNotification *) n {
+-(void) outlineViewItemDidCollapse: (NSNotification *) n {
     _nestedCollapse--;
 //  NSOutlineView* v = (NSOutlineView*)n.object;
 //  NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)n.userInfo[@"NSObject"];
@@ -142,11 +146,11 @@
     }
 }
 
--(BOOL)outlineView: (NSOutlineView*) outlineView shouldShowOutlineCellForItem: (id) i {
+-(BOOL)outlineView: (NSOutlineView*) v shouldShowOutlineCellForItem: (id) i {
     return true;
 }
 
-- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)i {
+- (BOOL)outlineView: (NSOutlineView *) v isGroupItem: (id) i {
     NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
     // trace(@"isGroupItem %@=%@ %d", it.name, it.parent == null ? @"true" : @"false", it.isGroup);
     return it.isGroup;
@@ -167,11 +171,11 @@
     return false;
 }
 
-- (void)expandAll: (NSOutlineView*) outlineView {
-    if (!outlineView.dataSource) {
+- (void) expandAll: (NSOutlineView*) v {
+    if (!v.dataSource) {
         return;
     }
-    ZGOutlineViewDataSource* ds = outlineView.dataSource;
+    ZGOutlineViewDataSource* ds = v.dataSource;
     NSObject<ZGItemProtocol>* r = ds.root;
     if ([r isKindOfClass: ZGGenericItem.class]) {
         r = null;
@@ -183,42 +187,26 @@
         }
         if (r != null) {
             // delegate = null to prevent gazillion of outlineViewItemWillExpand/outlineViewItemDidExpand
-            outlineView.delegate = null;
-            [outlineView expandItem: r expandChildren: true];
-            outlineView.delegate = self;
+            v.delegate = null;
+            [v expandItem: r expandChildren: true];
+            v.delegate = self;
         }
     } else {
         trace(@"root=%@ with %ld childs will be expanded", r.name, r.children.count);
-        outlineView.delegate = null;
+        v.delegate = null;
         NSArray* kids = r.children;
         for (int i = 0; i < kids.count; i++) {
             NSObject<ZGItemProtocol>* c = kids[i];
             trace(@"  %@ with %ld childs", c.name, c.children.count);
             if (c.children != null) {
-                [outlineView expandItem: c expandChildren: true];
+                [v expandItem: c expandChildren: true];
             }
         }
-        outlineView.delegate = self;
+        v.delegate = self;
     }
 }
 
-/*
-- (void)expandOne: (NSOutlineView*) outlineView {
-    if (!outlineView.dataSource) {
-        return;
-    }
-    // TODO: expand deeper into tree all of single parent root items...
-    NSObject<NSOutlineViewDataSource>* ds = outlineView.dataSource;
-    for (int i = 0; i < [ds outlineView: outlineView numberOfChildrenOfItem: null]; i++) {
-        id item = [ds outlineView: outlineView child:i ofItem: null];
-        if ([ds outlineView: outlineView isItemExpandable: item]) {
-            [outlineView expandItem:item expandChildren:false];
-        }
-    }
-}
-*/
-
-- (void)_sizeOutlineViewToContents:(NSOutlineView*) v {
+- (void) _sizeToContent: (NSOutlineView*) v {
     assert(v != null);
     NSSize s = [ZGTableViewDelegate minMaxVisibleColumnContentSize: v columnIndex: 0];
     if (s.width > 0 && s.height > 0) {
@@ -229,16 +217,16 @@
     }
 }
 
-- (void) sizeOutlineViewToContents:(NSOutlineView*) outlineView {
-    if (!_queued) {
-        _queued = true;
-        ZGOutlineViewDelegate* __weak __block this = self; // TODO: not portable to 10.6
-        dispatch_async(dispatch_get_current_queue(), ^{
-            [this _sizeOutlineViewToContents:outlineView];
-            _queued = false;
-        });
+- (void) sizeToContent: (NSOutlineView*) v {
+    if (_delayedSizeToContent == null) {
+        _delayedSizeToContent = [ZGUtils invokeLater:^(){
+            dispatch_async(dispatch_get_current_queue(), ^{
+                [self _sizeToContent: v];     // order of this two lines is irrelevant because they executed
+                _delayedSizeToContent = null; // inside single iteration of one dispatch loop
+            });
+        }];
     } else {
-        // trace("sizeOutlineViewToContents skipped");
+        // trace("sizeToContent skipped");
     }
 }
 

@@ -12,7 +12,7 @@
 - (void) search: (NSString*) s;
 - (void) firstResponderChanged;
 - (BOOL) documentCanClose;
-- (void) sizeOutlineViewToContents;
+- (void) sizeToContent;
 - (NSString*) askForPasswordFromBackgroundThread;
 - (BOOL) progress:(long long)pos ofTotal:(long long)total;
 - (BOOL) progressFile:(long long)fileno ofTotal:(long long)totalNumberOfFiles;

@@ -154,8 +154,6 @@
     return [super initWithContentsOfURL: absoluteURL ofType: typeName error: outError];
 }
 
-
-
 - (void) restoreStateWithCoder: (NSCoder*) state {
     [super restoreStateWithCoder: state];
     trace(@"_operationQueue=%@ %@", _operationQueue, [NSThread currentThread]);
@@ -236,9 +234,9 @@
         dispatch_async(dispatch_get_current_queue(), ^{
             [_outlineViewDelegate expandAll: _outlineView];
             if (_archive.numberOfFolders > 0) {
-                [self sizeOutlineViewToContents];
+                [self sizeToContent];
             }
-            [_tableViewDelegate sizeTableViewToContents: _tableView];
+            [_tableViewDelegate sizeToContent: _tableView];
         });
         [_toolbar validateVisibleItems];
     }
@@ -408,17 +406,23 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
     clipView.postsFrameChangedNotifications = true;
     [NSNotificationCenter.defaultCenter addObserver:self
-                                             selector:@selector(oulineViewContentBoundsDidChange:)
-                                                 name:NSViewBoundsDidChangeNotification
-                                               object:clipView];
+                                           selector: @selector(oulineViewContentBoundsDidChange:)
+                                               name: NSViewBoundsDidChangeNotification
+                                             object: clipView];
     [NSNotificationCenter.defaultCenter addObserver:self
-                                             selector:@selector(oulineViewContentBoundsDidChange:)
-                                                 name:NSViewFrameDidChangeNotification
-                                               object:clipView];
+                                           selector: @selector(oulineViewContentBoundsDidChange:)
+                                               name: NSViewFrameDidChangeNotification
+                                             object: clipView];
     [NSNotificationCenter.defaultCenter addObserver: self
                                            selector: @selector(outlineViewSelectionDidChange:)
-                                               name: @"NSOutlineViewSelectionDidChangeNotification"
+                                               name: NSOutlineViewSelectionDidChangeNotification
                                              object: _outlineView];
+    [NSNotificationCenter.defaultCenter addObserver: self
+                                           selector: @selector(windowWillClose:)
+                                               name: NSWindowWillCloseNotification
+                                             object: _window];
+    
+    
     
     _windowPresenter = [ZGWindowPresenter windowPresenterFor: controller.window];
     
@@ -430,6 +434,34 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
 //  dumpViews(_contentView);
 }
 
+- (void) resetViews: (NSView*) v {
+    id i = v;
+    if ([i respondsToSelector:@selector(setDelegate:)]) {
+        [i setDelegate: null];
+    }
+    if (v.subviews != null) {
+        NSArray* sv = [NSArray arrayWithArray:v.subviews];
+        for (id s in sv) { // to avoid array was mutated while being enumerated
+            [self resetViews: (NSView*) s];
+        }
+    }
+    if ([v.superview isKindOfClass: NSClipView.class] &&
+        [v.superview.superview isKindOfClass: NSScrollView.class]) {
+        // ((NSScrollView*)v.superview.superview).contentView = null; // scrollview does not take null :(
+    } else  if ([v isKindOfClass: NSClipView.class] &&
+                [v.superview isKindOfClass: NSScrollView.class]) {
+        // skip this too
+    } else if (v != _window.contentView) {
+        [v removeFromSuperview];
+    }
+}
+
+- (void) windowWillClose: (NSNotification*) n {
+    [self resetViews: _window.contentView];
+    dumpAllViews();
+    [_splitView removeFromSuperview];
+    _splitView.subviews = @[];
+}
 
 - (void) windowDidBecomeKey {
 }
@@ -458,17 +490,18 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
 }
 
 - (void)oulineViewContentBoundsDidChange:(NSNotification *)notification {
-    [self sizeOutlineViewToContents];
+    [self sizeToContent];
 }
 
-- (void) sizeOutlineViewToContents {
-    [_outlineViewDelegate sizeOutlineViewToContents: _outlineView];
+- (void) sizeToContent {
+    [_outlineViewDelegate sizeToContent: _outlineView];
+    [_tableViewDelegate sizeToContent: _tableView];
 }
 
 - (void) outlineViewSelectionDidChange: (NSNotification *) notification  {
     [_tableView deselectAll: null];
     [_tableView reloadData];
-    [_tableViewDelegate sizeTableViewToContents: _tableView];
+    [_tableViewDelegate sizeToContent: _tableView];
 }
 
 + (BOOL)autosavesInPlace {

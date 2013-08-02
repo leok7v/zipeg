@@ -36,7 +36,7 @@
 }
 
 - (void)splitViewDidResizeSubviews:(NSNotification *)notification {
-    [_document sizeOutlineViewToContents];
+    [_document sizeToContent];
 }
 
 @end

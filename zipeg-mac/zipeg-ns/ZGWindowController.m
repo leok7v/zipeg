@@ -71,7 +71,6 @@
     return [d windowDidResignKey];
 }
 
-
 - (BOOL)windowShouldClose:(id)sender {
     assert([self.document isKindOfClass: ZGDocument.class]);
     ZGDocument* d = self.document;
@@ -80,9 +79,9 @@
 
 - (void)windowWillClose:(NSNotification *)notification {
     [self.window removeObserver:self forKeyPath:@"firstResponder"];
-    NSView* cv = self.window.contentView;
-    cv.subviews = @[];
-//  [self setDocument:null];
+    dumpAllViews();
+    id i = self.window.contentView;
+    NSLog(@"%@", [i performSelector:@selector(_subtreeDescription)]);
 }
 
 

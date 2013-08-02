@@ -31,7 +31,7 @@
 		B32EB9E51798E70E00D8A129 /* size.png in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9D71798E70E00D8A129 /* size.png */; };
 		B32EB9E61798E70E00D8A129 /* status-normal.png in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9D81798E70E00D8A129 /* status-normal.png */; };
 		B32EB9E71798E70E00D8A129 /* status-pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9D91798E70E00D8A129 /* status-pressed.png */; };
-		B3485C6F179F2E6E001B91F5 /* ZGApp.m in Sources */ = {isa = PBXBuildFile; fileRef = B3485C6E179F2E6E001B91F5 /* ZGApp.m */; };
+		B3485C6F179F2E6E001B91F5 /* ZGApp.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3485C6E179F2E6E001B91F5 /* ZGApp.mm */; };
 		B34FEB5B1792443D005D798B /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B34FEB5A1792443D005D798B /* Cocoa.framework */; };
 		B34FEB6E1792443D005D798B /* ZGDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = B34FEB6D1792443D005D798B /* ZGDocument.m */; };
 		B35D1E411794CA3B00A0210F /* ZGErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = B35D1E401794CA3B00A0210F /* ZGErrors.m */; };
@@ -160,7 +160,7 @@
 		B32EB9D91798E70E00D8A129 /* status-pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "status-pressed.png"; path = "Resources/status-pressed.png"; sourceTree = "<group>"; };
 		B32FF53117933C6B0083146C /* ZGItemProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ZGItemProtocol.h; sourceTree = "<group>"; };
 		B3485C6D179F2E6E001B91F5 /* ZGApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGApp.h; sourceTree = "<group>"; };
-		B3485C6E179F2E6E001B91F5 /* ZGApp.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGApp.m; sourceTree = "<group>"; };
+		B3485C6E179F2E6E001B91F5 /* ZGApp.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ZGApp.mm; sourceTree = "<group>"; };
 		B34FEB571792443D005D798B /* Zipeg.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zipeg.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B34FEB5A1792443D005D798B /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		B34FEB5D1792443D005D798B /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -316,7 +316,7 @@
 				B35D1E3F1794CA3B00A0210F /* ZGErrors.h */,
 				B35D1E401794CA3B00A0210F /* ZGErrors.m */,
 				B3485C6D179F2E6E001B91F5 /* ZGApp.h */,
-				B3485C6E179F2E6E001B91F5 /* ZGApp.m */,
+				B3485C6E179F2E6E001B91F5 /* ZGApp.mm */,
 				B37E555617928A3700E54693 /* ZGAppDelegate.h */,
 				B37E555717928A3700E54693 /* ZGAppDelegate.m */,
 				B3D1BE5D17973662007BE5E7 /* MacMem.h */,
@@ -674,7 +674,7 @@
 				B3BECDBC179A149300B07871 /* nsUniversalDetector.cpp in Sources */,
 				B3BECDBD179A149300B07871 /* nsUTF8Prober.cpp in Sources */,
 				B3BECDBE179A149300B07871 /* universalchardet.c in Sources */,
-				B3485C6F179F2E6E001B91F5 /* ZGApp.m in Sources */,
+				B3485C6F179F2E6E001B91F5 /* ZGApp.mm in Sources */,
 				B3FC1D9917A0929000BE0ED3 /* ZGHeroView.m in Sources */,
 				B3E1F0BD17A1E22A003D3E68 /* ZGTableViewDataSource.m in Sources */,
 				B3F7414C17A1F923009A8ECF /* ZGTableViewDelegate.m in Sources */,

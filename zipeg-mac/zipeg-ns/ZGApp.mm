@@ -9,28 +9,22 @@
 
 - (void) sendEvent: (NSEvent*) e  {
     // trace(@"%@", e);
-    
     // Ctrl+Z will dump useful stats:
     NSUInteger flags = e.modifierFlags & NSDeviceIndependentModifierFlagsMask;
     if (flags == NSControlKeyMask && e.type == NSKeyDown &&
        [e.charactersIgnoringModifiers isEqualToString:@"z"]) {
-        NSDocumentController* dc = NSDocumentController.sharedDocumentController;
-        NSArray* docs = dc.documents;
-        if (docs != null && docs.count > 0) {
-            for (int i = 0; i < docs.count; i++) {
-                ZGDocument* doc = (ZGDocument*)docs[i];
-                if (doc.window != null) {
-                    NSLog(@"%@", doc.displayName);
-                    dumpViews(doc.window.contentView);
-                    NSLog(@"");
-                }
-            }
-        }
-        NSLog(@"");
+        dumpAllViews();
+        NSLog(@"\n");
         trace_allocs();
-        NSLog(@"");
+        NSLog(@"\n");
     }
-    [super sendEvent: e];
+    try {
+        [super sendEvent: e];
+    } catch (...) {
+        NSLog(@"EXCEPTION CAUGHT *******************************************");
+        NSLog(@"%@", e);
+        throw;
+    }
 }
 
 - (void) terminate: (id) sender {

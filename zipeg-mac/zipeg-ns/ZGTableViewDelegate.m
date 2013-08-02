@@ -7,8 +7,8 @@
 #import "ZGItemProtocol.h"
 
 @interface ZGTableViewDelegate () {
-    bool _queued;
     ZGDocument* __weak _document;
+    ZGBlock* _delayedSizeToContent;
 }
 
 @end
@@ -26,6 +26,8 @@
 
 - (void) dealloc {
     trace(@"%@", self);
+    [_delayedSizeToContent cancel];
+    _delayedSizeToContent = null;
     dealloc_count(self);
 }
 
@@ -53,7 +55,7 @@
     const int EXTRA = 250; // about 10 milliseconds for 500 rows
     NSInteger rowCount = view.numberOfRows;
     CGFloat maxHeight = view.rowHeight;
-    if (!view.dataSource) {
+    if (view.dataSource == null) {
         return NSMakeSize(-1, -1);
     }
 //  timestamp("minMaxVisibleColumnContentSize");
@@ -110,7 +112,7 @@
     return NSMakeSize(maxWidth, maxHeight);
 }
 
-- (void) _sizeTableViewToContents:(NSTableView*) v {
+- (void) _sizeToContent: (NSTableView*) v {
     assert(v != null);
     int n = (int)v.tableColumns.count;
     for (int i = 0; i < n; i++) {
@@ -124,15 +126,14 @@
     }
 }
 
-- (void) sizeTableViewToContents:(NSTableView*) v {
-    if (!_queued) {
-        _queued = true;
-        dispatch_async(dispatch_get_current_queue(), ^{
-            [self _sizeTableViewToContents: v];
-            _queued = false;
-        });
+- (void) sizeToContent: (NSTableView*) v {
+    if (_delayedSizeToContent == null) {
+        _delayedSizeToContent = [ZGUtils invokeLater:^(){
+            [self _sizeToContent: v];     // order of this two lines is irrelevant because they executed
+            _delayedSizeToContent = null; // inside single iteration of one dispatch loop
+        }];
     } else {
-        //trace("sizeTableViewToContents skipped");
+        // trace("sizeToContent skipped");
     }
 }
 

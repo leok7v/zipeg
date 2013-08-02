@@ -11,6 +11,7 @@ FOUNDATION_EXPORT uint64_t dealloc_count(id i);
 FOUNDATION_EXPORT void trace_allocs();
 
 FOUNDATION_EXPORT void dumpViews(NSView* v);
+FOUNDATION_EXPORT void dumpAllViews();
 
 @interface NSString(ZGExtensions)
 - (int) indexOf: (NSString*) s;
