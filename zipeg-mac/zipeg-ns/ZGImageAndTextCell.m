@@ -30,13 +30,13 @@
 
 
 - (void) dealloc {
-    trace(@"");
     dealloc_count(self);
 }
 
 - (id) copyWithZone: (NSZone *)zone {
     ZGImageAndTextCell *cell = (ZGImageAndTextCell *)[super copyWithZone:zone];
     cell.image = self.image;
+    alloc_count(cell);
     return cell;
 }
 
@@ -114,12 +114,12 @@
 }
 
 - (void) dealloc {
-    trace(@"");
     dealloc_count(self);
 }
 
 - (id) copyWithZone: (NSZone *)zone {
     ZGSectionCell* cell = (ZGSectionCell*) [super copyWithZone: zone];
+    alloc_count(cell);
     return cell;
 }
 

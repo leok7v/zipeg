@@ -15,7 +15,7 @@
     int _expandCounter;  // onlu collapse is nested, expand is sequential
     ZGDocument* __weak _document;
     ZGSectionCell* _sectionCell;
-    void (^_delayedExpand)();
+    ZGBlock* _delayedExpand;
 }
 @end
 
@@ -89,10 +89,9 @@
 -(void) postDelayed: (NSNotification*) n {
     int __block counter = _expandCounter;
     ZGOutlineViewDelegate* __weak __block this = self; // TODO: not portable to 10.6
-    _delayedExpand= ^{
+    _delayedExpand= [ZGUtils invokeLater: ^{
         [this areWeThereYet: counter notification: n];
-    };
-    dispatch_async(dispatch_get_current_queue(), _delayedExpand);
+    }];
 }
 
 -(void) areWeThereYet: (int) counter notification: (NSNotification*) n {

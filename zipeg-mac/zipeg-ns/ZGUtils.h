@@ -35,7 +35,21 @@ FOUNDATION_EXPORT void dumpViews(NSView* v);
 + (NSColor*) sourceListBackgroundColor;
 @end
 
+@interface ZGBlock : NSObject
+
+@property (readonly, nonatomic) BOOL isCanceled;
+@property (readonly, nonatomic) BOOL isDone;
+
+-(void) cancel;
+-(void) invokeNow;
+-(BOOL) isExecuting; // only makes sense called from not main thread
+
+@end
+
 @interface ZGUtils : NSObject
+
+// can be called from any thread, does dispatch_async to main thread
++ (ZGBlock*) invokeLater: (void(^)()) block;
 
 @end
 

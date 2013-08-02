@@ -179,8 +179,62 @@ FOUNDATION_EXPORT void dumpViews(NSView* v) {
 
 @end
 
+@implementation ZGBlock {
+@public
+    void(^done)();
+    BOOL _isCanceled;
+    BOOL _isDone;
+}
+@synthesize isCanceled;
+@synthesize isDone;
+
+- (id) init {
+    self = [super init];
+    alloc_count(self);
+    return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
+}
+
+-(void) cancel {
+    if (done == null) {
+        NSLog(@"ZGBlock.cancel: too late, already executing or executed");
+    } else {
+        _isCanceled = true;
+        done = null;
+    }
+}
+
+-(BOOL) isExecuting {
+    return done == null && !_isDone;
+}
+
+-(void) invokeNow {
+    if (![NSThread isMainThread]) {
+        @throw @"invokeNow can be called only on main thread";
+    } else {
+        
+    }
+}
+
+@end
 
 @implementation ZGUtils
 
++ (ZGBlock*) invokeLater: (void(^)()) b {
+    assert(b != null);
+    ZGBlock* block = [ZGBlock new];
+    block->done = b;
+    dispatch_async(dispatch_get_current_queue(), ^(){
+        if (!block.isCanceled && !block.isDone) {
+            void(^d)() = block->done;
+            block->done = null;
+            d();
+        }
+    });
+    return block;
+}
 
 @end
