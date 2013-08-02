@@ -34,6 +34,7 @@
 }
 
 - (void) terminate: (id) sender {
+    NSLog(@"\nZGApp -terminate\n");
     trace_allocs();
     [super terminate: sender];
 }
