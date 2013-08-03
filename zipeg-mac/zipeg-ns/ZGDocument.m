@@ -232,7 +232,8 @@
         _tableView.dataSource = _tableViewDatatSource;
         [_tableView reloadData];
         dispatch_async(dispatch_get_current_queue(), ^{
-            [_outlineViewDelegate expandAll: _outlineView];
+            [_outlineViewDelegate expandAll];
+            [_outlineViewDelegate selectFirsFile];
             if (_archive.numberOfFolders > 0) {
                 [self sizeToContent];
             }

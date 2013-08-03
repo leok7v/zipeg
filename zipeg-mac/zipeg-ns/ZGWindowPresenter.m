@@ -115,6 +115,7 @@
             done = null;
             d((int)rc);
         });
+// TODO: this fucks up background in outlineView in Regular mode - why?
 //        dispatch_async(dispatch_get_main_queue(), ^() {
 //            void(^d)(int rc) = done;
 //            done = null;

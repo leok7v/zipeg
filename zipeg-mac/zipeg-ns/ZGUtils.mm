@@ -284,26 +284,28 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
     dealloc_count(self);
 }
 
--(id) cancel {
-    if (done == null) {
-        NSLog(@"ZGBlock.cancel: too late, already executing or executed");
-    } else {
-        trace("cancelled %@", done);
-        _isCanceled = true;
+- (id) cancel {
+    _isCanceled = true;
+    if (done != null) {
+        // trace("cancelled %@", self);
         done = null;
     }
-    return null;
+    return null; // always - see usages
 }
 
--(BOOL) isExecuting {
+- (BOOL) isExecuting {
     return done == null && !_isDone;
 }
 
--(void) invokeNow {
+- (void) invokeNow {
     if (![NSThread isMainThread]) {
         @throw @"invokeNow can be called only on main thread";
     } else {
-        
+        void(^d)() = done;
+        if (d != null) {
+            done = null;
+            d();
+        }
     }
 }
 
@@ -318,8 +320,10 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
     dispatch_async(dispatch_get_current_queue(), ^(){
         if (!block.isCanceled && !block.isDone) {
             void(^d)() = block->done;
-            block->done = null;
-            d();
+            if (d != null) {
+                block->done = null;
+                d();
+            }
         }
     });
     return block;

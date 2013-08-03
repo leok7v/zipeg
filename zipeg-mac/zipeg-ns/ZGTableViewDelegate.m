@@ -21,14 +21,11 @@
     if (self != null) {
         alloc_count(self);
         _document = doc;
-//???        [_document.tableView.tableColumns[0] addObserver: self forKeyPath: @"width" options: 0 context: null];
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
             ^(NSNotification* n) {
                 trace(@"");
                 _delayedSizeToContent = [_delayedSizeToContent cancel];
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
-// worked in document - crashes in here
-//???                [_document.tableView.tableColumns[0] removeObserver: self forKeyPath: @"width"];
                 [_document.tableView removeTableColumn: _document.tableView.tableColumns[0]];
             });
     }
@@ -42,20 +39,26 @@
     dealloc_count(self);
 }
 
-/* ??? worked in document
-- (void)observeValueForKeyPath: (NSString*) keyPath ofObject: (id) o change: (NSDictionary*)change context: (void*) context {
-    if ([o isKindOfClass:NSTableColumn.class] && [@"width" isEqualToString: keyPath]) {
-        int c = (int)_document.tableView.headerView.resizedColumn;
-        if (o == _document.tableView.tableColumns[c]) {
-            NSTableColumn* tc = (NSTableColumn*)o;
-            trace(@"User resized table column %@", tc);
-            // TODO: does it affect autosizing? for how long?
-        }
-    }
-}
-*/
 
-- (void)tableView: (NSTableView *) tableView willDisplayCell: (id) cell
+- (void) tableViewColumnDidResize: (NSNotification*) n {
+    // NSTableViewColumnDidResizeNotification  @"NSTableColumn", @"NSOldWidth"
+    // NSTableColumn* tc = (NSTableColumn*)n.userInfo[@"NSTableColumn"];
+    // NSNumber* oldWidth = (NSNumber*)n.userInfo[@"NSOldWidth"];
+    // trace(@"column %@ %d", tc, oldWidth.intValue);
+    // TODO: should it affect autosizing? for how long?
+    // I should keep user preferred size till user double click on column divider
+    // and preferred size is reset back to -1. If preferred size == -1 autosize.
+}
+
+- (void) outlineViewSelectionWillChange {
+    [_delayedSizeToContent cancel];
+}
+
+- (void) outlineViewSelectionDidChange {
+    [_document.tableView reloadData];
+}
+
+- (void) tableView: (NSTableView *) tableView willDisplayCell: (id) cell
    forTableColumn: (NSTableColumn*) column row: (NSInteger) row {
     ZGTableViewDataSource* ds = (ZGTableViewDataSource*) tableView.dataSource;
     NSObject<ZGItemProtocol>* item = [ds itemAtRow: row];

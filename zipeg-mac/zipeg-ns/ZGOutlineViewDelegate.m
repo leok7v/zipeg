@@ -48,6 +48,25 @@
     dealloc_count(self);
 }
 
+- (CGFloat) outlineView: (NSOutlineView*) outlineView heightOfRowByItem: (id) item {
+    return 18;
+}
+
+- (void) outlineViewColumnDidResize:(NSNotification*) n {
+    // NSOutlineViewColumnDidResizeNotification @"NSTableColumn", @"NSOldWidth"
+//  trace(@"%@", n.userInfo);
+}
+
+- (void) outlineViewSelectionIsChanging: (NSNotification *) n {
+    // useless because it is only sent on mouse clicks not even on keyboard up/down
+}
+
+
+- (void)outlineViewSelectionDidChange:(NSNotification *)notification {
+    ZGTableViewDelegate* d = _document.tableView.delegate;
+    [d outlineViewSelectionDidChange];
+}
+
 - (void) outlineView: (NSOutlineView *) v willDisplayCell: (NSCell*) c forTableColumn: (NSTableColumn *) tc item: (id) i {
     if ([c isKindOfClass:[ZGImageAndTextCell class]] && [i conformsToProtocol:@protocol(ZGItemProtocol)]) {
         NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
@@ -65,11 +84,17 @@
     }
 }
 
-- (BOOL)outlineView:(NSOutlineView *) v shouldSelectItem: (id) item {
+- (BOOL) outlineView:(NSOutlineView *) v shouldSelectItem: (id) item {
     // don't allow special group nodes to be selected
     // NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
     // trace(@"%@ = %d", i.name, ![self outlineView: v isGroupItem: item]);
-    return ![self outlineView:v isGroupItem:item];
+    BOOL b = ![self outlineView:v isGroupItem:item];
+    if (b) {
+        ZGTableViewDelegate* d = _document.tableView.delegate;
+        [d outlineViewSelectionWillChange];
+        [_delayedSizeToContent cancel];
+    }
+    return b;
 }
 
 - (NSCell*) outlineView: (NSOutlineView*) v dataCellForTableColumn: (NSTableColumn*) tc item: (id) i {
@@ -178,7 +203,8 @@
     return false;
 }
 
-- (void) expandAll: (NSOutlineView*) v {
+- (void) expandAll {
+    NSOutlineView* v = _document.outlineView;
     if (!v.dataSource) {
         return;
     }
@@ -210,6 +236,32 @@
             }
         }
         v.delegate = self;
+    }
+}
+
+static BOOL hasFileChild(NSObject<ZGItemProtocol>* it) {
+    if (it != null && it.children != null && it.children.count > 0) {
+        for (NSObject<ZGItemProtocol>* c in it.children) {
+            if (c.children == null) { // selected item already has a file child
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+- (void) selectFirsFile {
+    NSOutlineView* v = _document.outlineView;
+    if (hasFileChild(self.selectedItem)) {
+        return; // selected item already has a file child
+    }
+    int rows = (int)v.numberOfRows;
+    for (int i = 0; i < rows; i++) {
+        NSObject<ZGItemProtocol>* it = [v itemAtRow: i];
+        if (hasFileChild(it)) {
+            [v selectItem: it];
+            return;
+        }
     }
 }
 

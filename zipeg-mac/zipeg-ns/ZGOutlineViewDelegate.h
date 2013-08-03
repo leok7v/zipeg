@@ -5,7 +5,8 @@
 
 - (NSObject<ZGItemProtocol>*) selectedItem;
 - (id) initWithDocument: (ZGDocument*) doc;
-- (void) expandAll: (NSOutlineView*) outlineView;
+- (void) expandAll;
+- (void) selectFirsFile;
 - (void) sizeToContent:(NSOutlineView*) outlineView;
 - (void) selectItem: (NSObject<ZGItemProtocol>*) it;
 
