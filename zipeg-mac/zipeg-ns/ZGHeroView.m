@@ -50,6 +50,7 @@
     self = [super initWithFrame:frame];
     // trace(@"initWithFrame %@", NSStringFromRect(self.frame));
     if (self != null) {
+        alloc_count(self);
         _leafs[0] = [NSImage imageNamed:@"leaf-0-64x64.png"];
         _leafs[1] = [NSImage imageNamed:@"leaf-1-64x64.png"];
         _leafs[2] = [NSImage imageNamed:@"leaf-2-64x64.png"];
@@ -70,6 +71,10 @@
         }
     }
     return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
 }
 
 - (void) setFrame:(NSRect)frameRect {

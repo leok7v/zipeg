@@ -56,32 +56,14 @@
     dealloc_count(self);
 }
 
-/*
-- (NSView*) findView: (NSView*) v named: (NSString*) className {
-    if ([className  isEqualToString: NSStringFromClass(v.class)]) {
-        return v;
-    }
-    NSView* r = null;
-    if (v.subviews != null) {
-        for (id s in v.subviews) {
-            r = [self findView: (NSView*) s named: className];
-        }
-    }
-    return r;
-}
-*/
-
 - (NSRect) window:(NSWindow *) window willPositionSheet: (NSWindow*) sheet usingRect: (NSRect) rect {
-    trace(@"willPositionSheet %@ window.frame=%@" , NSStringFromRect(rect), NSStringFromRect(window.frame));
     NSView* cv = (NSView*)window.contentView;
-    NSView* titlebar_with_toolbar = (NSView*)cv.superview;
-    dumpViews(titlebar_with_toolbar);
-//  NSView* tv = [self findView: titlebar_with_toolbar named: @"NSToolbarView"];
-//  NSView* cl = [self findView: titlebar_with_toolbar named: @"NSThemeDocumentButton"];
-    int top    = [window contentBorderThicknessForEdge: CGRectMaxYEdge];
-    int bottom = [window contentBorderThicknessForEdge: CGRectMinYEdge];
-    //      rect.origin.y = tv.frame.origin.y - tv.frame.size.height - cl.frame.size.height - bottom;
-    rect.origin.y = window.frame.size.height - top + 8;
+    NSView* cvs = (NSView*)cv.superview;
+    dumpViews(cvs);
+    NSView* tbv = [cvs findViewByClassName: @"NSToolbarView"];
+    trace(@"willPositionSheet %@ window.frame=%@ toolbar=%@" , NSStringFromRect(rect),
+          NSStringFromRect(window.frame), NSStringFromRect(tbv.frame));
+    rect.origin.y = tbv.frame.origin.y;
     return rect;
 }
 
@@ -103,11 +85,8 @@
 
 - (void)windowWillClose:(NSNotification *)notification {
     [self.window removeObserver:self forKeyPath:@"firstResponder"];
-    dumpAllViews();
-    id i = self.window.contentView;
-    NSLog(@"%@", [i performSelector:@selector(_subtreeDescription)]);
+//  dumpAllViews();
 }
-
 
 - (void)observeValueForKeyPath: (NSString*) keyPath ofObject: (id) o change: (NSDictionary*)change context: (void*) context {
 /*

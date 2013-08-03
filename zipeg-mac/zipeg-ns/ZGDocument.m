@@ -20,15 +20,17 @@
     NSObject<ZGItemFactory>* _archive;
     NSObject<ZGItemProtocol>* _root;
     NSWindow* __weak _window;
+    id _windowWillCloseObserver;
+    id _outlineViewSelectionDidChangeObserver;
+    id _clipViewFrameDidChangeObserver;
+    id _clipViewBoundsDidChangeObserver;
     NSColor* _sourceListBackgroundColor; // strong
     NSTableViewSelectionHighlightStyle _highlightStyle;
 }
 
 @property NSSearchField* searchField;
 @property (weak) NSView* contentView;
-@property ZGToolbar* toolbar;
 @property ZGToolbarDelegate* toolbarDelegate;
-@property NSSplitView* splitView;
 @property NSLevelIndicator* levelIndicator;
 @property NSMenu *tableRowContextMenu;
 
@@ -65,7 +67,7 @@
     return self;
 }
 
-- (void)drawRect:(NSRect)dirtyRect {
+- (void) drawRect: (NSRect) dirtyRect {
 //  trace(@"%@", NSStringFromRect(self.frame));
     NSGradient *g = [[NSGradient alloc] initWithColorsAndLocations:
                      [NSColor colorWithDeviceWhite:1.00 alpha:1], 0.3,
@@ -116,7 +118,7 @@
     return self;
 }
 
-- (void)main {
+- (void) main {
     [_document searchArchiveWithString: _search forOperation: self done: _block];
 }
 
@@ -130,13 +132,11 @@
 // http://developer.apple.com/library/mac/#documentation/DataManagement/Conceptual/DocBasedAppProgrammingGuideForOSX/StandardBehaviors/StandardBehaviors.html#//apple_ref/doc/uid/TP40011179-CH5-SW8
 
 + (BOOL) canConcurrentlyReadDocumentsOfType: (NSString*) typeName {
-    return false; // otherwise all -init will be called in concurently on session restore
+    return false; // otherwise all -init will be called in concurently on multipe threads on session restore
 }
 
 - (id) init {
-    trace(@"_operationQueue=%@ %@", _operationQueue, [NSThread currentThread]);
     self = [[super init] ctor];
-    trace(@"_operationQueue=%@ %@", _operationQueue, [NSThread currentThread]);
     return self;
 }
 
@@ -150,7 +150,7 @@
                       ofType:typeName error: outError];
 }
 
-- (id)initWithContentsOfURL: (NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
+- (id) initWithContentsOfURL: (NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
     return [super initWithContentsOfURL: absoluteURL ofType: typeName error: outError];
 }
 
@@ -200,7 +200,7 @@
     }
 }
 
-- (void)makeWindowControllers {
+- (void) makeWindowControllers {
     assert(_operationQueue != null);
     ZGWindowController* wc = [ZGWindowController new];
     [self addWindowController: wc];
@@ -350,7 +350,6 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
                                                 selector:@selector(localizedCaseInsensitiveCompare:)];
     tableColumn.sortDescriptorPrototype = sd;
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
-    [tableColumn addObserver:self forKeyPath:@"width" options: 0 context: null];
     for (int i = 1; i < 3; i++) {
         tableColumn = [NSTableColumn new];
         [_tableView addTableColumn: tableColumn];
@@ -402,54 +401,29 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     _levelIndicator.maxValue = 10000;
     _levelIndicator.intValue = 5000;
 
-    
     NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
     clipView.postsFrameChangedNotifications = true;
-    [NSNotificationCenter.defaultCenter addObserver:self
-                                           selector: @selector(oulineViewContentBoundsDidChange:)
-                                               name: NSViewBoundsDidChangeNotification
-                                             object: clipView];
-    [NSNotificationCenter.defaultCenter addObserver:self
-                                           selector: @selector(oulineViewContentBoundsDidChange:)
-                                               name: NSViewFrameDidChangeNotification
-                                             object: clipView];
-    [NSNotificationCenter.defaultCenter addObserver: self
-                                           selector: @selector(outlineViewSelectionDidChange:)
-                                               name: NSOutlineViewSelectionDidChangeNotification
-                                             object: _outlineView];
-    [NSNotificationCenter.defaultCenter addObserver: self
-                                           selector: @selector(windowWillClose:)
-                                               name: NSWindowWillCloseNotification
-                                             object: _window];
-    // TODO: useless remove me
-    [NSNotificationCenter.defaultCenter addObserver: self
-                                           selector: @selector(windowDidUpdateFirstTime:)
-                                               name: NSWindowDidUpdateNotification
-                                             object: _window];
-    
+    void (^sizeToContent)(NSNotification*)   = ^(NSNotification* n) { [self sizeToContent]; };
+    _clipViewBoundsDidChangeObserver = addObserver(NSViewBoundsDidChangeNotification, clipView, sizeToContent);
+    _clipViewFrameDidChangeObserver = addObserver(NSViewFrameDidChangeNotification, clipView, sizeToContent);
+    _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _window,
+        ^(NSNotification* n) {
+            trace(@"");
+            _clipViewBoundsDidChangeObserver = removeObserver(_clipViewBoundsDidChangeObserver);
+            _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+            _clipViewBoundsDidChangeObserver = removeObserver(_clipViewBoundsDidChangeObserver);
+            _clipViewFrameDidChangeObserver = removeObserver(_clipViewFrameDidChangeObserver);
+    });
     _windowPresenter = [ZGWindowPresenter windowPresenterFor: controller.window];
-    
     [_contentView addSubview: _heroView];
 //  dumpViews(_contentView);
-}
-
-- (void) windowDidUpdateFirstTime: (NSNotification*) n {
-    [NSNotificationCenter.defaultCenter removeObserver: self name: NSWindowDidUpdateNotification object: _window];
-    [NSNotificationCenter.defaultCenter addObserver: self
-                                           selector: @selector(windowDidUpdate:)
-                                               name: NSWindowDidUpdateNotification
-                                             object: _window];
-    if (_url != null) {
+    if (_url != null) { // ??? delay?
         OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument:self];
         [_operationQueue addOperation:operation];
     }
-    [self windowDidUpdate: n];
 }
 
-- (void) windowDidUpdate: (NSNotification*) n {
-    
-}
-
+/* TODO remove:
 - (void) resetViews: (NSView*) v {
     id i = v;
     if ([i respondsToSelector:@selector(setDelegate:)]) {
@@ -480,6 +454,7 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     [_splitView removeFromSuperview];
     _splitView.subviews = @[];
 }
+ */
 
 - (void) windowDidBecomeKey {
 }
@@ -493,22 +468,6 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     if (fr == _tableView) {
         [_tableViewDelegate tableViewBecameFirstResponder: _tableView];
     }
-}
-
-- (void)observeValueForKeyPath: (NSString*) keyPath ofObject: (id) o change: (NSDictionary*)change context: (void*) context {
-    NSInteger resizedColumn = _tableView.headerView.resizedColumn;
-    if (resizedColumn != -1) {
-        if ([o isKindOfClass:NSTableColumn.class] &&
-            o == [_tableView.tableColumns objectAtIndex: resizedColumn]) {
-            NSTableColumn* tc = (NSTableColumn*)o;
-            console(@"User resized table column %@", tc);
-            // TODO: does it affect autosizing? for how long?
-        }
-    }
-}
-
-- (void)oulineViewContentBoundsDidChange:(NSNotification *)notification {
-    [self sizeToContent];
 }
 
 - (void) sizeToContent {
@@ -564,9 +523,15 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
 - (void)close {
     NSTableColumn* tc = _tableView.tableColumns[0];
     assert(tc != null);
-    [tc removeObserver:self forKeyPath:@"width"];
     [_operationQueue cancelAllOperations];
     [_operationQueue waitUntilAllOperationsAreFinished];
+    _splitView.subviews = @[];
+    [_splitView removeFromSuperview];
+    _splitView = null;
+    [_heroView removeFromSuperview];
+    _heroView = null;
+    _outlineView = null;
+    _tableView = null;
     if (_archive != null) {
         [_archive close];
         _archive = null;
@@ -657,10 +622,10 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
             NSAlert* alert = [NSAlert alertWithError: error];
             NSWindowController* wc = doc.windowControllers[0];
             assert(wc.window == doc.windowPresenter.window);
-            [doc.windowPresenter presentSheetWithSheet:alert
+            [doc.windowPresenter presentSheetWithSheet: alert
                                                   done: ^(int rc) {
-                                                      [_window orderOut: self];
-                                                      [_window performClose:self];
+//                                                    [_window orderOut: self];
+                                                      [_window performClose: _window];
                                                   }];
         } else {
             // error == null - aborted by user

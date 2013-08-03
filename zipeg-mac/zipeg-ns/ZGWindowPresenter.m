@@ -108,11 +108,18 @@
 - (void) didEndPresentedAlert: (NSAlert*) a returnCode: (NSInteger) rc contextInfo: (void*) c {
     [self dismissSheet: a];
     if (done != null) {
-        dispatch_async(dispatch_get_main_queue(), ^() {
+        double delayInSeconds = 0.2;
+        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
             void(^d)(int rc) = done;
             done = null;
             d((int)rc);
         });
+//        dispatch_async(dispatch_get_main_queue(), ^() {
+//            void(^d)(int rc) = done;
+//            done = null;
+//            d((int)rc);
+//        });
     }
 }
 

@@ -3,16 +3,23 @@
 #import "ZGImageAndTextCell.h"
 
 @interface ZGSplitViewDelegate () {
+    id _windowWillCloseObserver;
+    ZGDocument* __weak _document;
 }
-@property (weak) ZGDocument* document;
 @end
 
 @implementation ZGSplitViewDelegate
 
-- (id)initWithDocument:(ZGDocument*) document {
+- (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
     if (self) {
-        _document = document;
+        _document = doc;
+        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
+            ^(NSNotification* n) {
+                trace(@"");
+                _document.splitView.delegate = null;
+                _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+        });
     }
     return self;
 }

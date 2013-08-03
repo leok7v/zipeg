@@ -16,6 +16,7 @@
     ZGSectionCell* _sectionCell;
     ZGBlock* _delayedExpand;
     ZGBlock* _delayedSizeToContent;
+    id _windowWillCloseObserver;
 }
 @end
 
@@ -27,18 +28,24 @@
         alloc_count(self);
         _sectionCell = [ZGSectionCell new];
         _document = doc;
+        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
+            ^(NSNotification* n) {
+                trace(@"");
+                _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+                _delayedExpand = [_delayedExpand cancel];
+                _delayedSizeToContent = [_delayedSizeToContent cancel];
+                _document.outlineView.delegate = null;
+                _sectionCell = null;
+                [_document.tableView removeTableColumn: _document.tableView.tableColumns[0]];
+
+            });
     }
     return self;
 }
 
 - (void) dealloc {
     trace(@"%@", self);
-    [_delayedExpand cancel];
-    [_delayedSizeToContent cancel];
-    _delayedExpand = null;
-    _delayedSizeToContent = null;
     dealloc_count(self);
-    [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
 - (void) outlineView: (NSOutlineView *) v willDisplayCell: (NSCell*) c forTableColumn: (NSTableColumn *) tc item: (id) i {

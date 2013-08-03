@@ -3,10 +3,11 @@
 
 
 @interface ZGToolbarDelegate() {
+    ZGDocument* __weak _document;
     NSSearchField* _searchFieldOutlet;
     NSToolbarItem* _activeSearchItem;
+    id _windowWillCloseObserver;
 }
-@property (weak) ZGDocument* document;
 @end
 
 @interface ZGValidatedViewToolbarItem : NSToolbarItem
@@ -23,6 +24,12 @@ static NSString* ViewsId  = @"ViewsId";
     if (self != null) {
         alloc_count(self);
         _document = doc;
+        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
+            ^(NSNotification* n) {
+                trace(@"");
+                _document.toolbar.delegate = null;
+                _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+            });
     }
     return self;
 }
@@ -34,7 +41,7 @@ static NSString* ViewsId  = @"ViewsId";
 
 - (void) searchUsingToolbarSearchField:(id) sender {
     NSString *s = ((NSTextField*)_activeSearchItem.view).stringValue;
-    [self.document search: s];
+    [_document search: s];
 }
 
 - (void) searchMenuFormRepresentationClicked:(id) sender {

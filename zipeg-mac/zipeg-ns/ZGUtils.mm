@@ -54,28 +54,65 @@ FOUNDATION_EXPORT void trace_allocs() {
     }
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+
+static id getBySelector(id o, SEL sel) {
+    return [o respondsToSelector: sel] ? [o performSelector: sel] : nil;
+}
+
+#pragma clang diagnostic pop
+
+static NSString* debugDescription(id o, SEL sel) {
+    id s = [getBySelector(o, sel) debugDescription];
+    return s ? s : @"";
+}
+
+
 static void _dumpViews(NSView* v, int level) {
+    if (v == null) {
+        return;
+    }
     NSString* indent = @"";
     for (int i = 0; i < level; i++) {
         indent = [indent stringByAppendingString:@"    "];
     }
-    NSString* debugDelegate = @"";
-    if ([v respondsToSelector:@selector(delegate)]) {
-        id delegate = [(id)v delegate];
-        if (delegate != null) {
-            debugDelegate = [delegate debugDescription];
-        }
-    }
-    NSLog(@"%@%@ %@ %@", indent, v.class, NSStringFromRect(v.frame), debugDelegate);
-    if (v.subviews != null) {
-        for (id s in v.subviews) {
+    NSString* delegate = debugDescription(v, @selector(delegate));
+    NSString* dataSource = debugDescription(v, @selector(dataSource));
+    NSString* dataCell = debugDescription(v, @selector(dataCell));
+    NSString* frame = [v respondsToSelector: @selector(frame)] ?
+          [@" frame=" stringByAppendingString: NSStringFromRect(v.frame)] : @"";
+    NSString* bounds = [v respondsToSelector: @selector(bounds)] ?
+          [@" bounds=" stringByAppendingString: NSStringFromRect(v.bounds)] : @"";
+    NSLog(@"%@%@%@%@ %@ %@ %@", indent, v.class, frame, bounds, delegate, dataSource, dataCell);
+    id subviews = getBySelector(v, @selector(subviews));
+    if (subviews != null) {
+        for (id s in subviews) {
             _dumpViews(s, level + 1);
+        }
+        _dumpViews(getBySelector(v, @selector(headerView)), level + 1);
+        NSArray* tcs = getBySelector(v, @selector(tableColumns));
+        if (tcs != null) {
+            for (NSTableColumn* tc in tcs) {
+                _dumpViews(getBySelector(tc, @selector(dataCell)), level + 2);
+            }
         }
     }
 }
 
 FOUNDATION_EXPORT void dumpViews(NSView* v) {
     _dumpViews(v, 0);
+}
+
+FOUNDATION_EXPORT id addObserver(NSString* n, id o, void(^b)(NSNotification*)) {
+    assert(n != null && b != null);
+    return [NSNotificationCenter.defaultCenter addObserverForName: n object: o
+            queue: NSOperationQueue.mainQueue usingBlock: b];
+}
+
+FOUNDATION_EXPORT id removeObserver(id observer) {
+    [NSNotificationCenter.defaultCenter removeObserver: observer];
+    return null;
 }
 
 FOUNDATION_EXPORT void dumpAllViews() {
@@ -86,13 +123,16 @@ FOUNDATION_EXPORT void dumpAllViews() {
             ZGDocument* doc = (ZGDocument*)docs[i];
             if (doc.window != null) {
                 NSLog(@"%@", doc.displayName);
-                dumpViews(doc.window.contentView);
+                dumpViews([doc.window.contentView superview]);
                 NSLog(@"");
             }
         }
     }
 }
 
+FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
+    NSLog(@"%@", [v performSelector: @selector(_subtreeDescription)]);
+}
 
 @implementation NSString(ZGExtensions)
 
@@ -152,6 +192,29 @@ FOUNDATION_EXPORT void dumpAllViews() {
 }
 
 @end
+
+@implementation NSView(ZGExtensions)
+
++ (NSView*) findView: (NSView*) v byClassName: (NSString*) cn {
+    if ([cn  isEqualToString: NSStringFromClass(v.class)]) {
+        return v;
+    }
+    NSView* r = null;
+    if (v.subviews != null) {
+        for (id s in v.subviews) {
+            r = [self findView: (NSView*)s byClassName: cn];
+        }
+    }
+    return r;
+}
+
+- (NSView*) findViewByClassName: (NSString*) className {
+    return [NSView findView: self byClassName: className];
+}
+
+@end
+
+
 
 @implementation NSOutlineView(ZGExtensions)
 
@@ -221,7 +284,7 @@ FOUNDATION_EXPORT void dumpAllViews() {
     dealloc_count(self);
 }
 
--(void) cancel {
+-(id) cancel {
     if (done == null) {
         NSLog(@"ZGBlock.cancel: too late, already executing or executed");
     } else {
@@ -229,6 +292,7 @@ FOUNDATION_EXPORT void dumpAllViews() {
         _isCanceled = true;
         done = null;
     }
+    return null;
 }
 
 -(BOOL) isExecuting {

@@ -12,6 +12,10 @@ FOUNDATION_EXPORT void trace_allocs();
 
 FOUNDATION_EXPORT void dumpViews(NSView* v);
 FOUNDATION_EXPORT void dumpAllViews();
+FOUNDATION_EXPORT void subtreeDescription(NSView* v);
+
+FOUNDATION_EXPORT id addObserver(NSString* name, id object, void(^block)(NSNotification*));
+FOUNDATION_EXPORT id removeObserver(id observer); // always returns null - see usages
 
 @interface NSString(ZGExtensions)
 - (int) indexOf: (NSString*) s;
@@ -27,6 +31,10 @@ FOUNDATION_EXPORT void dumpAllViews();
 - (NSString*) substringFrom: (int) fromInclusive to: (int) toExclusive;
 @end
 
+@interface NSView(ZGExtensions)
+- (NSView*) findViewByClassName: (NSString*) cn;
+@end
+
 @interface NSOutlineView(ZGExtensions)
 - (void)expandParentsOfItem: (id) i;
 - (void) selectItem: (id) i;
@@ -37,21 +45,16 @@ FOUNDATION_EXPORT void dumpAllViews();
 @end
 
 @interface ZGBlock : NSObject
-
 @property (readonly, nonatomic) BOOL isCanceled;
 @property (readonly, nonatomic) BOOL isDone;
-
--(void) cancel;
+-(id) cancel; // always returns null - see usages
 -(void) invokeNow;
 -(BOOL) isExecuting; // only makes sense called from not main thread
-
 @end
 
 @interface ZGUtils : NSObject
-
 // can be called from any thread, does dispatch_async to main thread
 + (ZGBlock*) invokeLater: (void(^)()) block;
-
 @end
 
 #endif

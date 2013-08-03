@@ -19,6 +19,7 @@
         self.sizeMode = NSToolbarSizeModeSmall;
         self.showsBaselineSeparator = true;
         self.displayMode = NSToolbarDisplayModeIconAndLabel; // NSToolbarDisplayModeIconOnly;
+        self.sizeMode = NSToolbarSizeModeRegular;
     }
     return self;
 }
@@ -27,6 +28,5 @@
     trace(@"%@", self);
     dealloc_count(self);
 }
-
 
 @end
