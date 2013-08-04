@@ -7,6 +7,8 @@
     NSSearchField* _searchFieldOutlet;
     NSToolbarItem* _activeSearchItem;
     id _windowWillCloseObserver;
+    BOOL completePosting;
+    BOOL commandHandling;
 }
 @end
 
@@ -41,6 +43,7 @@ static NSString* ViewsId  = @"ViewsId";
 
 - (void) searchUsingToolbarSearchField:(id) sender {
     NSString *s = ((NSTextField*)_activeSearchItem.view).stringValue;
+    [(NSTextField*)_activeSearchItem.view validateEditing];
     [_document search: s];
 }
 
@@ -77,9 +80,9 @@ static NSString* ViewsId  = @"ViewsId";
 
 static NSToolbarItem* createToolbarItem(NSString* id, NSString* label, NSString* tooltip) {
     NSToolbarItem* ti = [[NSToolbarItem alloc] initWithItemIdentifier: id];
-    ti.label = label;
-    ti.paletteLabel = label;
-    ti.toolTip = tooltip;
+    ti.label = NSLocalizedString(label, @"");
+    ti.paletteLabel = NSLocalizedString(label, @"");
+    ti.toolTip = NSLocalizedString(tooltip, @"");
     return ti;
 }
 
@@ -90,7 +93,7 @@ static NSToolbarItem* createButton(NSString* id, NSString* label, NSString* tool
     return ti;
 }
 
-static NSMenuItem* createSearchMenu(NSString* label, NSString* title, SEL selPanel, SEL sel) {
+static NSMenuItem* createSearchPanelMenu(NSString* label, NSString* title, SEL selPanel, SEL sel) {
     NSMenu* submenu = [NSMenu new];
     NSMenuItem* submenuItem = [[NSMenuItem alloc] initWithTitle: title action: selPanel keyEquivalent: @""];
     NSMenuItem* menuFormRep = [NSMenuItem new];
@@ -145,21 +148,52 @@ static NSToolbarItem* createSegmentedControl(NSString* id, NSString* label, NSSt
     return ti;
 }
 
+static void insertMenuItem(NSMenu* m, NSString* title, int tag) {
+    NSMenuItem *it = [[NSMenuItem alloc] initWithTitle: NSLocalizedString(title, @"") action: null keyEquivalent:@""];
+    // tag this menu item so NSSearchField can use it and respond to it appropriately
+    it.tag = tag;
+    [m insertItem: it atIndex: m.itemArray.count];
+}
+
+static NSMenu* createSearchMenu() {
+    NSMenu *m = [[NSMenu alloc] initWithTitle:NSLocalizedString(@"Search Menu", @"")];
+    m.autoenablesItems = true;
+    insertMenuItem(m, @"Recent Searches", NSSearchFieldRecentsTitleMenuItemTag);
+    insertMenuItem(m, @"No recent searches", NSSearchFieldNoRecentsMenuItemTag);
+    insertMenuItem(m, @"Recents", NSSearchFieldRecentsMenuItemTag);
+    NSMenuItem *separatorItem = (NSMenuItem*)[NSMenuItem separatorItem];
+    // tag this menu item so NSSearchField can use it, by hiding/show it appropriately:
+    separatorItem.tag = NSSearchFieldRecentsTitleMenuItemTag;
+    [m insertItem: separatorItem atIndex: m.itemArray.count];
+    insertMenuItem(m, @"Clear", NSSearchFieldClearRecentsMenuItemTag);
+    return m;
+}
+
 - (NSToolbarItem*) toolbar: (NSToolbar*) toolbar itemForItemIdentifier: (NSString*) itemIdent willBeInsertedIntoToolbar:(BOOL) willBeInserted {
     NSToolbarItem* ti = null;
     if ([itemIdent isEqual: SaveId]) {
         ti = createButton(SaveId, @"Save", @"Save the Document", @"save-64x64.png", @selector(saveDocument:));
         ti.target = self;
     } else if([itemIdent isEqual: SearchId]) {
-        NSMenuItem* mi = createSearchMenu(@"Search", @"Search Panel",
+        NSMenuItem* mi = createSearchPanelMenu(@"Search", @"Search Panel",
                                           @selector(searchUsingSearchPanel:),
                                           @selector(searchMenuFormRepresentationClicked:));
         mi.target = self;
         for (NSMenuItem* m in mi.submenu.itemArray) {
             m.target = self;
         }
+        
         _searchFieldOutlet = [[NSSearchField alloc] initWithFrame:[_searchFieldOutlet frame]];
         ti = createSearch(SearchId, @"Search", @"Search Your Document", mi, _searchFieldOutlet);
+        NSTextFieldCell* c = _searchFieldOutlet.cell;
+        c.placeholderString = @"Search File Names";
+        _searchFieldOutlet.recentsAutosaveName = @"ZipegRecentSearches";
+        NSSearchFieldCell* sc = _searchFieldOutlet.cell;
+        sc.searchMenuTemplate = createSearchMenu();
+        sc.sendsWholeSearchString = false;
+        sc.maximumRecents = 16;
+        sc.sendsSearchStringImmediately = true;
+        _searchFieldOutlet.delegate = self;
     } else if ([itemIdent isEqual: ViewsId]) {
         ti = createSegmentedControl(ViewsId, @"View Style", @"Show items in different views",
                                              @[@"folders-blue.png", @"folders-white.png"],
@@ -240,6 +274,52 @@ static NSToolbarItem* createSegmentedControl(NSString* id, NSString* label, NSSt
     }
     return enabled;
 }
+
+- (NSArray *) control: (NSControl*) control textView:(NSTextView*) textView completions: (NSArray*) words
+ forPartialWordRange: (NSRange) charRange indexOfSelectedItem: (int*) index {
+    NSMutableArray* keywords = [_searchFieldOutlet.recentSearches mutableCopy];
+    [keywords addObject: @"Hello"];
+    [keywords addObject: @"World"];
+    NSUInteger count = [keywords count];
+    NSString* partialString = [[textView string] substringWithRange:charRange];
+    NSMutableArray* matches = [NSMutableArray array];
+    // find any match in our keyword array against what was typed -
+    for (int i = 0; i < count; i++) {
+        NSString* string = [keywords objectAtIndex:i];
+        if ([string rangeOfString:partialString
+                          options:NSAnchoredSearch | NSCaseInsensitiveSearch
+                            range:NSMakeRange(0, [string length])].location != NSNotFound) {
+            [matches addObject: string];
+        }
+    }
+    [matches sortUsingSelector:@selector(compare:)];
+    return matches;
+}
+
+- (void) controlTextDidChange: (NSNotification *) n {
+    NSTextView* textView = n.userInfo[@"NSFieldEditor"];
+    if (!completePosting && !commandHandling) {	// prevent calling "complete" too often
+        completePosting = true;
+        [textView complete: null];
+        completePosting = false;
+    }
+}
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+
+- (BOOL) control: (NSControl*) control textView: (NSTextView*) textView doCommandBySelector: (SEL) commandSelector {
+    BOOL result = false;
+    if ([textView respondsToSelector: commandSelector]) {
+        commandHandling = true;
+        [textView performSelector: commandSelector withObject:nil];
+        commandHandling = false;
+        result = true;
+    }
+    return result;
+}
+
+#pragma clang diagnostic pop
 
 @end
 

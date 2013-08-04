@@ -77,6 +77,7 @@ static void _dumpViews(NSView* v, int level) {
     for (int i = 0; i < level; i++) {
         indent = [indent stringByAppendingString:@"    "];
     }
+    // TODO: NSTextField.cell (other cells?)
     NSString* delegate = debugDescription(v, @selector(delegate));
     NSString* dataSource = debugDescription(v, @selector(dataSource));
     NSString* dataCell = debugDescription(v, @selector(dataCell));

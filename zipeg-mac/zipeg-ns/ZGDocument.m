@@ -28,7 +28,6 @@
     NSTableViewSelectionHighlightStyle _highlightStyle;
 }
 
-@property NSSearchField* searchField;
 @property (weak) NSView* contentView;
 @property ZGToolbarDelegate* toolbarDelegate;
 @property NSLevelIndicator* levelIndicator;
@@ -704,16 +703,18 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     if (_archive == null) {
         return;
     }
-    if (_searchTextColor == null) {
-        _searchTextColor = [_searchField textColor];
-    }
     ZGDocument* __block doc = self;
     SearchArchiveOperation* op = [[SearchArchiveOperation alloc]
       initWithDocument: self searchString: s
         done: (^(BOOL found){
             assert([NSThread isMainThread]);
             [doc reloadData];
-            _searchField.textColor = found ? _searchTextColor : NSColor.redColor;
+            if (_searchTextColor == null && _toolbarDelegate.searchFieldOutlet != null) {
+                 _searchTextColor = _toolbarDelegate.searchFieldOutlet.textColor;
+            }
+            if (_searchTextColor != null && _toolbarDelegate.searchFieldOutlet != null) {
+                _toolbarDelegate.searchFieldOutlet.textColor = found ? _searchTextColor : NSColor.redColor;
+            }
         })];
     [_operationQueue addOperation: op];
 }

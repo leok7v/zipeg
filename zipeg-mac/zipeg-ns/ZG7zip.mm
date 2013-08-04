@@ -406,7 +406,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
             } else {
                 const NSString* pathname = _paths[i];
                 ZG7zipItem* it = _items[pathname];
-                if ([it.name rangeOfString:_filterText options:opts].location != NSNotFound) {
+                if ([pathname rangeOfString:_filterText options:opts].location != NSNotFound) {
                     while (it) {
                         if (it->_index >= 0) {
                             if (![isFilteredOut isSet:it->_index]) {
