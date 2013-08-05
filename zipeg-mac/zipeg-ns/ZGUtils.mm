@@ -54,7 +54,11 @@ FOUNDATION_EXPORT void trace_allocs() {
                 }
             }
         }
-        NSLog(@"%lld bytes in %lld allocs\n", mstat.bytes, mstat.allocs);
+        NSNumberFormatter* nf = [NSNumberFormatter new];
+        nf.numberStyle = NSNumberFormatterDecimalStyle;
+        NSString* b = [nf stringFromNumber:[NSNumber numberWithInteger: mstat.bytes]];
+        NSString* a = [nf stringFromNumber:[NSNumber numberWithInteger: mstat.allocs]];
+        NSLog(@"%@ bytes in %@ allocs\n", b, a);
     }
 }
 
