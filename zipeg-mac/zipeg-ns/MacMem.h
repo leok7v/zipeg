@@ -6,9 +6,9 @@ extern "C" {
 #endif
     
 typedef struct {
-    uint64_t ram;    // -1 or physical memory size in bytes (valid after macmem_hook_malloc() call)
-    uint64_t bytes;  // total number of bytes allocated
-    uint64_t allocs; // number of individual allocated chunks
+    int64_t ram;    // -1 or physical memory size in bytes (valid after macmem_hook_malloc() call)
+    int64_t bytes;  // total number of bytes allocated
+    int64_t allocs; // number of individual allocated chunks
 } MemoryStatistics;
 
 extern MemoryStatistics mstat;

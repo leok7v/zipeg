@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/sysctl.h>
+#include <pthread.h>
 
 // see: http://www.cocoawithlove.com/2010/05/look-at-how-malloc-works-on-mac.html
 //      http://www.opensource.apple.com/source/Libc/Libc-594.1.4/gen/magazine_malloc.c
@@ -28,6 +29,7 @@ static void (*saved_free_definite_size)(struct _malloc_zone_t *zone, void *ptr, 
 
 MemoryStatistics mstat;
 static void* safety_pool;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static uint64_t physmem() {
     uint64_t	hw_memsize = 0;
@@ -40,87 +42,150 @@ static uint64_t physmem() {
 }
 
 static void* hook_malloc(struct _malloc_zone_t *zone, size_t size) {
-    void* ptr = saved_malloc(zone, size);
-    if (ptr) {
-        mstat.allocs++;
-        mstat.bytes += malloc_size(ptr);
+    @try {
+        pthread_mutex_lock(&mutex);
+        void* ptr = saved_malloc(zone, size);
+        if (ptr != null) {
+            mstat.allocs++;
+            mstat.bytes += malloc_size(ptr);
+        }
+        return ptr;
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
-    return ptr;
 }
 
 static void* hook_calloc(struct _malloc_zone_t *zone, size_t num_items, size_t size) {
-    void* ptr = saved_calloc(zone, num_items, size);
-    if (ptr) {
-        mstat.allocs++;
-        mstat.bytes += malloc_size(ptr);
+    @try {
+        pthread_mutex_lock(&mutex);
+        void* ptr = saved_calloc(zone, num_items, size);
+        if (ptr != null) {
+            mstat.allocs++;
+            mstat.bytes += malloc_size(ptr);
+        }
+        return ptr;
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
-    return ptr;
 }
 
 static void* hook_valloc(struct _malloc_zone_t *zone, size_t size) {
-    void* ptr = saved_valloc(zone, size);
-    if (ptr) {
-        mstat.allocs++;
-        mstat.bytes += malloc_size(ptr);
+    @try {
+        pthread_mutex_lock(&mutex);
+        void* ptr = saved_valloc(zone, size);
+        if (ptr != null) {
+            mstat.allocs++;
+            mstat.bytes += malloc_size(ptr);
+        }
+        return ptr;
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
-    return ptr;
 }
 
 static void hook_free(struct _malloc_zone_t *zone, void *ptr) {
-    if (ptr) {
-        mstat.bytes -= malloc_size(ptr);
-        mstat.allocs--;
+    @try {
+        pthread_mutex_lock(&mutex);
+        if (ptr != null) {
+            assert(mstat.bytes >= malloc_size(ptr)); // set env NO_MEMHOOK if this fires
+            mstat.bytes -= malloc_size(ptr);
+            assert(mstat.allocs > 0);
+            mstat.allocs--;
+        }
+        saved_free(zone, ptr);
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
-    saved_free(zone, ptr);
 }
 
 static void* hook_realloc(struct _malloc_zone_t *zone, void *ptr, size_t size) {
-    if (ptr) {
-        mstat.bytes -= malloc_size(ptr);
+    @try {
+        pthread_mutex_lock(&mutex);
+        if (ptr != null) {
+            assert(mstat.bytes >= malloc_size(ptr));
+            mstat.bytes -= malloc_size(ptr);
+        }
+        ptr = saved_realloc(zone, ptr, size);
+        if (ptr != null) {
+            mstat.bytes += malloc_size(ptr);
+        }
+        return ptr;
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
-    ptr = saved_realloc(zone, ptr, size);
-    if (ptr) {
-        mstat.bytes += malloc_size(ptr);
-    }
-    return ptr;
 }
 
 static unsigned hook_batch_malloc(struct _malloc_zone_t *zone, size_t size, void **results, unsigned num_requested) {
-    unsigned n = saved_batch_malloc(zone, size, results, num_requested);
-    for (int i = 0; i < n; i++) {
-        if (results && results[i]) {
-            mstat.bytes -= malloc_size(results[i]);
-            mstat.allocs--;
+    @try {
+        pthread_mutex_lock(&mutex);
+        unsigned n = saved_batch_malloc(zone, size, results, num_requested);
+        for (int i = 0; i < n; i++) {
+            if (results != null && results[i] != null) {
+                mstat.bytes += malloc_size(results[i]);
+                mstat.allocs++;
+            }
         }
+        return n;
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
-    return n;
 }
 
 static void hook_batch_free(struct _malloc_zone_t *zone, void **to_be_freed, unsigned num_to_be_freed) {
-    return saved_batch_free(zone, to_be_freed, num_to_be_freed);
+    @try {
+        pthread_mutex_lock(&mutex);
+        for (int i = 0; i < num_to_be_freed; i++) {
+            if (to_be_freed[i] != null) {
+                assert(mstat.bytes >= malloc_size(to_be_freed[i]));
+                mstat.bytes -= malloc_size(to_be_freed[i]);
+                assert(mstat.allocs > 0);
+                mstat.allocs--;
+            }
+        }
+        return saved_batch_free(zone, to_be_freed, num_to_be_freed);
+    } @finally {
+        pthread_mutex_unlock(&mutex);
+    }
 }
 
 static void *hook_memalign(struct _malloc_zone_t *zone, size_t alignment, size_t size) {
-    void* ptr = saved_memalign(zone, alignment, size);
-    if (ptr) {
-        mstat.allocs++;
-        mstat.bytes += malloc_size(ptr);
+    @try {
+        pthread_mutex_lock(&mutex);
+        void* ptr = saved_memalign(zone, alignment, size);
+        if (ptr != null) {
+            mstat.allocs++;
+            mstat.bytes += malloc_size(ptr);
+        }
+        return ptr;
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
-    return ptr;
 }
 
 static void hook_free_definite_size(struct _malloc_zone_t *zone, void *ptr, size_t size) {
-    if (ptr) {
-        mstat.bytes -= malloc_size(ptr);
-        mstat.allocs--;
+    @try {
+        pthread_mutex_lock(&mutex);
+        if (ptr != null) {
+            assert(mstat.bytes >= malloc_size(ptr));
+            mstat.bytes -= malloc_size(ptr);
+            assert(mstat.allocs > 0);
+            mstat.allocs--;
+        }
+        saved_free_definite_size(zone, ptr, size);
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
-    saved_free_definite_size(zone, ptr, size);
 }
 
 void macmem_free_safety_pool() {
-    if (safety_pool) {
-        free(safety_pool);
-        safety_pool = null;
+    @try {
+        pthread_mutex_lock(&mutex);
+        if (safety_pool) {
+            free(safety_pool);
+            safety_pool = null;
+        }
+    } @finally {
+        pthread_mutex_unlock(&mutex);
     }
 }
 
@@ -151,7 +216,7 @@ void macmem_hook_malloc(int bytesInSafetyPool) {
     defaultZone->batch_free = hook_batch_free;
     defaultZone->memalign = hook_memalign;
     defaultZone->free_definite_size = hook_free_definite_size;
-    if (bytesInSafetyPool) {
+    if (bytesInSafetyPool != 0) {
         safety_pool = calloc(1, bytesInSafetyPool);
     }
 }

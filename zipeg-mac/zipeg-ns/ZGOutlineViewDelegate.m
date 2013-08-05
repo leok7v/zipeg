@@ -8,7 +8,6 @@
 #import "ZGOutlineViewDataSource.h"
 #import "ZGImageAndTextCell.h"
 
-
 @interface ZGOutlineViewDelegate () {
     int _nestedCollapse; // only collapse callbacks are nested,
     int _expandCounter;  // expand callbacks are sequential
@@ -182,11 +181,11 @@
     }
 }
 
--(BOOL)outlineView: (NSOutlineView*) v shouldShowOutlineCellForItem: (id) i {
+-(BOOL) outlineView: (NSOutlineView*) v shouldShowOutlineCellForItem: (id) i {
     return [self outlineView: v isGroupItem: i] ? false : true;
 }
 
-- (BOOL)outlineView: (NSOutlineView *) v isGroupItem: (id) i {
+- (BOOL) outlineView: (NSOutlineView *) v isGroupItem: (id) i {
     NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
     // trace(@"isGroupItem %@=%@ %d", it.name, it.parent == null ? @"true" : @"false", it.isGroup);
     return it.isGroup;

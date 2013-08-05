@@ -81,7 +81,7 @@
 		B3BECDBD179A149300B07871 /* nsUTF8Prober.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD99179A149300B07871 /* nsUTF8Prober.cpp */; };
 		B3BECDBE179A149300B07871 /* universalchardet.c in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD9C179A149300B07871 /* universalchardet.c */; };
 		B3BF7D2D1792462500A3E5EF /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7D2C1792462500A3E5EF /* main.mm */; };
-		B3D1BE5F1797366E007BE5E7 /* MacMem.c in Sources */ = {isa = PBXBuildFile; fileRef = B3D1BE5E1797366E007BE5E7 /* MacMem.c */; };
+		B3D1BE5F1797366E007BE5E7 /* MacMem.m in Sources */ = {isa = PBXBuildFile; fileRef = B3D1BE5E1797366E007BE5E7 /* MacMem.m */; };
 		B3E1F0BD17A1E22A003D3E68 /* ZGTableViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E1F0BC17A1E22A003D3E68 /* ZGTableViewDataSource.m */; };
 		B3E87DA917A922CE00B246B8 /* ZGGenericItem.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E87DA817A922CE00B246B8 /* ZGGenericItem.m */; };
 		B3E87DAC17A95C6100B246B8 /* folders-blue.png in Resources */ = {isa = PBXBuildFile; fileRef = B3E87DAA17A95C6100B246B8 /* folders-blue.png */; };
@@ -264,7 +264,7 @@
 		B3BECD9D179A149300B07871 /* universalchardet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = universalchardet.h; path = ../chardet/universalchardet.h; sourceTree = "<group>"; };
 		B3BF7D2C1792462500A3E5EF /* main.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = SOURCE_ROOT; };
 		B3D1BE5D17973662007BE5E7 /* MacMem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MacMem.h; sourceTree = SOURCE_ROOT; };
-		B3D1BE5E1797366E007BE5E7 /* MacMem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MacMem.c; sourceTree = SOURCE_ROOT; };
+		B3D1BE5E1797366E007BE5E7 /* MacMem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MacMem.m; sourceTree = SOURCE_ROOT; };
 		B3E1F0BB17A1E22A003D3E68 /* ZGTableViewDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGTableViewDataSource.h; sourceTree = "<group>"; };
 		B3E1F0BC17A1E22A003D3E68 /* ZGTableViewDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGTableViewDataSource.m; sourceTree = "<group>"; };
 		B3E87DA717A922CE00B246B8 /* ZGGenericItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGGenericItem.h; sourceTree = "<group>"; };
@@ -320,7 +320,7 @@
 				B37E555617928A3700E54693 /* ZGAppDelegate.h */,
 				B37E555717928A3700E54693 /* ZGAppDelegate.m */,
 				B3D1BE5D17973662007BE5E7 /* MacMem.h */,
-				B3D1BE5E1797366E007BE5E7 /* MacMem.c */,
+				B3D1BE5E1797366E007BE5E7 /* MacMem.m */,
 				B32FF53117933C6B0083146C /* ZGItemProtocol.h */,
 				B3E87DA717A922CE00B246B8 /* ZGGenericItem.h */,
 				B3E87DA817A922CE00B246B8 /* ZGGenericItem.m */,
@@ -645,7 +645,7 @@
 				B35D1E4A1794DC8300A0210F /* ZGDate.m in Sources */,
 				B36196D617959F6800C515E4 /* ZGBitset.m in Sources */,
 				B36196D91795BB8E00C515E4 /* ZGUtils.mm in Sources */,
-				B3D1BE5F1797366E007BE5E7 /* MacMem.c in Sources */,
+				B3D1BE5F1797366E007BE5E7 /* MacMem.m in Sources */,
 				B3BECD9F179A149300B07871 /* CharDistribution.cpp in Sources */,
 				B3BECDA0179A149300B07871 /* dll.cpp in Sources */,
 				B3BECDA5179A149300B07871 /* JpCntx.cpp in Sources */,
