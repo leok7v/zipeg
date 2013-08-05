@@ -146,9 +146,9 @@
 }
 
 -(void) outlineViewItemWillExpand: (NSNotification*) n {
-    NSOutlineView* v = (NSOutlineView*)n.object;
-    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)n.userInfo[@"NSObject"];
-    trace(@"willExpand %@ %@ %@", v, i, i.name);
+//  NSOutlineView* v = (NSOutlineView*)n.object;
+//  NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)n.userInfo[@"NSObject"];
+//  trace(@"willExpand %@ %@ %@", v, i, i.name);
     _expandCounter++;
 }
 

@@ -495,26 +495,6 @@ static NSTableView* createTableView(NSRect r) {
     [super close];
 }
 
-- (BOOL)writeSelectionToPasteboard:(NSPasteboard *)pasteboard {
-    // This method will be called for services, or for drags originating from the preview column ZipEntryView, and it calls the previous method
-    return false; // TODO: depending on FirstResponder being table or outline view
-}
-
-+ (void)registerServices {
-    static BOOL registeredServices = NO;
-    if (!registeredServices) {
-        [NSApp setServicesProvider:self];
-        registeredServices = YES;
-    }
-}
-
-+ (void)exportData:(NSPasteboard *)pasteboard userData:(NSString *)data error:(NSString **)error {
-    ZGDocument *d = [[[NSApp makeWindowsPerform: @selector(windowController) inOrder:YES] windowController] document];
-    if (d) {
-        [d writeSelectionToPasteboard:pasteboard];
-    }
-}
-
 
 - (NSData *)dataOfType:(NSString *)typeName error:(NSError **)outError {
     // Insert code here to write your document to data of the specified type.
@@ -680,6 +660,52 @@ static NSTableView* createTableView(NSRect r) {
     [_archive setFilter: s operation: op done: block];
 }
 
+- (BOOL)writeSelectionToPasteboard:(NSPasteboard *)pasteboard {
+    // This method will be called for services, or for drags originating from the preview column ZipEntryView, and it calls the previous method
+    return false; // TODO: depending on FirstResponder being table or outline view
+}
+
++ (void)registerServices {
+    static BOOL registeredServices = NO;
+    if (!registeredServices) {
+        [NSApp setServicesProvider:self];
+        registeredServices = YES;
+    }
+}
+
++ (void)exportData:(NSPasteboard *)pasteboard userData:(NSString *)data error:(NSString **)error {
+    ZGDocument *d = [[[NSApp makeWindowsPerform: @selector(windowController) inOrder:YES] windowController] document];
+    if (d) {
+        [d writeSelectionToPasteboard:pasteboard];
+    }
+}
+
+- (NSURL*) extract: (NSObject<ZGItemProtocol>*) it to: (NSURL*) d {
+    NSURL* fileURL = [NSURL fileURLWithPath:[[d path] stringByAppendingPathComponent: it.name] isDirectory: false];
+    // TODO: extact file here and wrtie to fileURL
+    double delayInSeconds = 2.0;
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        trace(@"writeFile=%@", fileURL);
+        NSMutableData* data = [NSMutableData dataWithLength: 4096];
+        NSError* e = [NSError new];
+        [data writeToURL:fileURL options:NSAtomicWrite error: &e];
+    });
+    trace(@"fileURL=%@", fileURL);
+    return fileURL;
+}
+
+- (void)pasteboard:(NSPasteboard *)pasteboard provideDataForType: (NSString*) type {
+    // This method will be called to provide data for NSFilenamesPboardType
+    if ([type isEqualToString:NSFilenamesPboardType]) {
+        int draggedRow = 1;
+        NSObject<ZGItemProtocol>* it = [_tableViewDatatSource itemAtRow: draggedRow];
+        NSURL *fileURL = [self extract: it to: [NSURL fileURLWithPath: NSTemporaryDirectory()]];
+        if (fileURL) {
+            [pasteboard setPropertyList:@[[fileURL path]] forType:NSFilenamesPboardType];
+        }
+    }
+}
 
 @end
 

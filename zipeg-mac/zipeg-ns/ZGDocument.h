@@ -13,6 +13,7 @@
 @property (nonatomic, readonly, weak) NSWindow* window;
 @property (nonatomic, readonly) NSObject<ZGItemProtocol>* root;
 
+- (NSURL*) extract: (NSObject<ZGItemProtocol>*) it to: (NSURL*) d;
 - (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) i open: (BOOL) o;
 - (void) setViewStyle: (int) s;
 - (void) search: (NSString*) s;
