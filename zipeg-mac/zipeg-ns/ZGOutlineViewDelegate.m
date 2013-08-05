@@ -31,8 +31,7 @@
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
             ^(NSNotification* n) {
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
-                _delayedExpand = [_delayedExpand cancel];
-                _delayedSizeToContent = [_delayedSizeToContent cancel];
+                [self cancelDelayed];
                 _document.outlineView.delegate = null;
                 _sectionCell = null;
                 [_document.tableView removeTableColumn: _document.tableView.tableColumns[0]];
@@ -44,8 +43,15 @@
 
 - (void) dealloc {
     trace(@"%@", self);
+    [self cancelDelayed];
     dealloc_count(self);
 }
+
+- (void) cancelDelayed {
+    _delayedExpand = [_delayedExpand cancel];
+    _delayedSizeToContent = [_delayedSizeToContent cancel];
+}
+
 
 - (CGFloat) outlineView: (NSOutlineView*) v heightOfRowByItem: (id) i {
     return [self outlineView: v isGroupItem: i] ? 0 : 18;
@@ -69,11 +75,11 @@
     if ([c isKindOfClass:[ZGImageAndTextCell class]] && [i conformsToProtocol:@protocol(ZGItemProtocol)]) {
         NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
         ZGImageAndTextCell* itc = (ZGImageAndTextCell*)c;
-        NSImage* image = [_document itemImage: it];
+        NSImage* image = null;
         if ([self outlineView: v isGroupItem: i]) {
             image = ZGImages.shared.appImage;
         } else { // TODO: ask ZGImages to retrieve system icon
-            image = [_document itemImage: it];
+            image = [_document itemImage: it open: [v isItemExpanded: it]];
         }
         [itc setRepresentedObject: i];
         // trace(@"cell=%@ for %@ %@", c, it, it.name);

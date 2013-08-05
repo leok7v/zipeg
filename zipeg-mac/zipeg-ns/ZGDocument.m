@@ -10,7 +10,7 @@
 #import "ZGTableViewDataSource.h"
 #import "ZGSplitViewDelegate.h"
 #import "ZGWindowController.h"
-#import "ZGWindowPresenter.h"
+#import "ZGSheet.h"
 #import "ZGToolbar.h"
 #import "ZGToolbarDelegate.h"
 #import "ZGImages.h"
@@ -45,7 +45,7 @@
 @property NSString* typeName;
 @property NSError* error;
 @property ZGHeroView* heroView;
-@property ZGWindowPresenter* windowPresenter;
+@property ZGSheet* sheet;
 
 - (void) openArchiveForOperation: (NSOperation*) op;
 - (void) searchArchiveWithString: (NSString*) s forOperation: (NSOperation*) op done: (void(^)(BOOL)) block;
@@ -195,7 +195,13 @@
         } else {
             _root = [[ZGGenericItem alloc] initWithChild: _archive.root];
         }
-        _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: _root];
+        if (_outlineViewDataSource == null) {
+            _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: _root];
+        } else {
+            [_outlineViewDelegate cancelDelayed];
+            [_tableViewDelegate cancelDelayed];
+            _outlineViewDataSource.root = _root;
+        }
         if (_archive.numberOfFolders > 0) {
             _outlineView.dataSource = _outlineViewDataSource;
             [_outlineView reloadData];
@@ -206,8 +212,10 @@
                 _splitView.subviews = @[_splitView.subviews[1]];
             }
         }
-        _tableViewDatatSource = [[ZGTableViewDataSource alloc] initWithDocument: self];
-        _tableView.dataSource = _tableViewDatatSource;
+        if (_tableViewDatatSource == null) {
+            _tableViewDatatSource = [[ZGTableViewDataSource alloc] initWithDocument: self];
+            _tableView.dataSource = _tableViewDatatSource;
+        }
         [_tableView reloadData];
         dispatch_async(dispatch_get_current_queue(), ^{
             [_outlineViewDelegate expandAll];
@@ -330,9 +338,8 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) it {
-    NSImage* dir = _outlineView.selectionHighlightStyle == NSTableViewSelectionHighlightStyleSourceList ?
-    ZGImages.shared.dirYellow : ZGImages.shared.dirImage;
+- (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) it open: (BOOL) o {
+    NSImage* dir = o ? ZGImages.shared.dirOpen : ZGImages.shared.dirImage;
     return it.children == null ? ZGImages.shared.docImage : dir;
 }
 
@@ -346,6 +353,9 @@ static NSTableView* createTableView(NSRect r) {
     _contentView = _window.contentView;
     _contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _contentView.autoresizesSubviews = true;
+    assert(!_contentView.wantsLayer);
+    // NSOutlineView backgrown drawing code is broken if content view wants layer (by my own experiments) and also:
+    // http://stackoverflow.com/questions/6638702/nstableview-redraw-not-updating-display-selection-sticking
     NSRect bounds = _contentView.bounds;
     bounds.origin.y += 30;
     bounds.size.height -= 60;
@@ -373,7 +383,7 @@ static NSTableView* createTableView(NSRect r) {
     _splitView.hidden = true;
     _heroView = [[ZGHeroView alloc] initWithFrame: _splitView.frame];
     _heroView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    _heroView.hidden = true;
+//    _heroView.hidden = true;  // TODO: unhide on password, error or long progress
     _contentView.subviews = @[_splitView, _heroView];
 
     _toolbar = [ZGToolbar new];
@@ -383,7 +393,7 @@ static NSTableView* createTableView(NSRect r) {
     _toolbar.delegate = _toolbarDelegate; // weak reference
     _window.toolbar = _toolbar;
  
-    _windowPresenter = [ZGWindowPresenter windowPresenterFor: controller.window];
+    _sheet = [[ZGSheet alloc] initWithWindow: controller.window];
 
     //  assert(_levelIndicator != null);
     _levelIndicator.maxValue = 10000;
@@ -403,7 +413,6 @@ static NSTableView* createTableView(NSRect r) {
             _clipViewFrameDidChangeObserver = removeObserver(_clipViewFrameDidChangeObserver);
         }
     );
-//    _contentView.wantsLayer = true; // needs to be done as early as possible
     if (_url != null) {
         dispatch_async(dispatch_get_main_queue(), ^(void){
             OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
@@ -569,13 +578,10 @@ static NSTableView* createTableView(NSRect r) {
             [[self.windowControllers[0] window] makeFirstResponder:_outlineView];
         } else if (error != null) {
             NSAlert* alert = [NSAlert alertWithError: error];
-            NSWindowController* wc = doc.windowControllers[0];
-            assert(wc.window == doc.windowPresenter.window);
-            [doc.windowPresenter presentSheetWithSheet: alert
-                                                  done: ^(int rc) {
-//                                                    [_window orderOut: self];
-                                                      [_window performClose: _window];
-                                                  }];
+            [doc.sheet begin: alert
+                done: ^(int rc) {
+                    [_window performClose: _window];
+                }];
         } else {
             // error == null - aborted by user
         }
@@ -604,22 +610,17 @@ static NSTableView* createTableView(NSRect r) {
         password_input.stringValue = @"";
         [alert setAccessoryView:password_input];
         dumpAllViews();
-/*
-        [alert beginSheetModalForWindow: _window modalDelegate: self
-                     didEndSelector: @selector(didEndPresentedAlert:returnCode:contextInfo:)
-                        contextInfo: null];
-*/
-        [self.windowPresenter presentSheetWithSheet: alert
-                                              done: ^(int rc) {
-                                                  if (rc == NSAlertDefaultReturn) {
-                                                      [password_input validateEditing];
-                                                      password = password_input.stringValue;
-                                                  } else {
-                                                      password = @"";
-                                                  }
-                                                  [alert setAccessoryView: null];
-                                                  dispatch_semaphore_signal(password_semaphore);
-                                              }];
+        [self.sheet begin: alert
+            done: ^(int rc) {
+                if (rc == NSAlertDefaultReturn) {
+                    [password_input validateEditing];
+                    password = password_input.stringValue;
+                } else {
+                    password = @"";
+                }
+                [alert setAccessoryView: null];
+                dispatch_semaphore_signal(password_semaphore);
+            }];
     });
     dispatch_semaphore_wait(password_semaphore, DISPATCH_TIME_FOREVER);
     dispatch_release(password_semaphore);

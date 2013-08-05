@@ -3,7 +3,7 @@
 #import "ZGErrors.h"
 #import "ZGDate.h"
 #import "ZGBitset.h"
-#import "ZGWindowPresenter.h"
+#import "ZGSheet.h"
 #import "ZGDocument.h"
 #include "universalchardet.h"
 #include "p7z.hpp"

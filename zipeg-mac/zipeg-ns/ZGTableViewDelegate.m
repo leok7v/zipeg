@@ -23,7 +23,8 @@
         _document = doc;
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
             ^(NSNotification* n) {
-                _delayedSizeToContent = [_delayedSizeToContent cancel];
+                [self cancelDelayed];
+                _document.tableView.delegate = null;
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
                 [_document.tableView removeTableColumn: _document.tableView.tableColumns[0]];
             });
@@ -33,11 +34,13 @@
 
 - (void) dealloc {
     trace(@"%@", self);
-    [_delayedSizeToContent cancel];
-    _delayedSizeToContent = null;
+    [self cancelDelayed];
     dealloc_count(self);
 }
 
+- (void) cancelDelayed {
+    _delayedSizeToContent = [_delayedSizeToContent cancel];
+}
 
 - (void) tableViewColumnDidResize: (NSNotification*) n {
     // NSTableViewColumnDidResizeNotification  @"NSTableColumn", @"NSOldWidth"
@@ -64,7 +67,7 @@
     NSObject<ZGItemProtocol>* it = [ds itemAtRow: row];
     if ([cell isKindOfClass:[ZGImageAndTextCell class]]) {
         ZGImageAndTextCell* c = (ZGImageAndTextCell*)cell;
-        NSImage* image = [_document itemImage: it];
+        NSImage* image = [_document itemImage: it open: false];
         c.representedObject = it;
         c.image = image;
         c.stringValue = it.name;

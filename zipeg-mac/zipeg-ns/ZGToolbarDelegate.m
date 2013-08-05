@@ -182,7 +182,7 @@ static NSMenu* createSearchMenu() {
         _searchFieldOutlet = [[NSSearchField alloc] initWithFrame:[_searchFieldOutlet frame]];
         ti = createSearch(SearchId, @"Search", @"Search Your Document", mi, _searchFieldOutlet);
         NSTextFieldCell* c = _searchFieldOutlet.cell;
-        c.placeholderString = @"Search File Names (e.g. \"Homework*.doc\")";
+        c.placeholderString = @"Search Files by Name (e.g. \"Design*.psd\")";
         _searchFieldOutlet.recentsAutosaveName = @"ZipegRecentSearches";
         NSSearchFieldCell* sc = _searchFieldOutlet.cell;
         sc.searchMenuTemplate = createSearchMenu();
@@ -192,7 +192,7 @@ static NSMenu* createSearchMenu() {
         _searchFieldOutlet.delegate = self;
     } else if ([itemIdent isEqual: ViewsId]) {
         ti = createSegmentedControl(ViewsId, @"View Style", @"Show items in different views",
-                                             @[@"folders-yellow.png", @"folders-blue.png"],
+                                             @[@"folders-blue.png", @"folders-white.png"],
                                              @[@"Modern", @"Legacy"],
                                              @selector(viewStyleClicked:));
         NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
