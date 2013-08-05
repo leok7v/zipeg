@@ -16,7 +16,6 @@
 #import "ZGImages.h"
 #import "ZGApp.h"
 
-
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* _archive;
     NSObject<ZGItemProtocol>* _root;
@@ -25,7 +24,7 @@
     id _clipViewFrameDidChangeObserver;
     id _clipViewBoundsDidChangeObserver;
     NSTableViewSelectionHighlightStyle _highlightStyle;
-    uint64_t _openTime;
+    uint64_t _timeToShowHeroView;
 }
 
 @property (weak) NSView* contentView;
@@ -414,7 +413,7 @@ static NSTableView* createTableView(NSRect r) {
         }
     );
     if (_url != null) {
-        _openTime = nanotime();
+        _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
         OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
         [_operationQueue addOperation: operation];
     }
@@ -470,8 +469,7 @@ static NSTableView* createTableView(NSRect r) {
     if (rc == NSAlertDefaultReturn) {
         [_operationQueue cancelAllOperations];
         [_operationQueue waitUntilAllOperationsAreFinished];
-        [_window orderOut:null]; // ???
-        // TODO: cannot do it here because other documents can still be working.... [NSApp terminate:nil];
+        [_window performClose: self];
     } else {
         // trace(@"Quit - canceled");
     }
@@ -575,13 +573,13 @@ static NSTableView* createTableView(NSRect r) {
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder:_outlineView];
-            _openTime = 0;
+            _timeToShowHeroView = 0;
         } else if (error != null) {
             _heroView.hidden = false;
             NSAlert* alert = [NSAlert alertWithError: error];
             [doc.sheet begin: alert
                 done: ^(int rc) {
-                    [_window performClose: _window];
+                    [_window performClose: null];
                 }];
         } else {
             // error == null - aborted by user
@@ -631,24 +629,30 @@ static NSTableView* createTableView(NSRect r) {
     return password;
 }
 
-- (BOOL) progress:(long long)pos ofTotal:(long long)total {
+- (void) checkTimeToShowHeroView {
+    if (_timeToShowHeroView > 0 && nanotime() > _timeToShowHeroView) {
+        _timeToShowHeroView = 0;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _heroView.hidden = false;
+        });
+    }
+}
+
+- (BOOL) progressOnBackgroundThread: (long long)pos ofTotal:(long long)total {
+    assert(![NSThread isMainThread]);
     // TODO: connect to progress bar(s)
     // trace(@"%llu of %llu", pos, total);
-    if (_openTime > 0 && nanotime() > _openTime + 1000000ULL * 500) {
-        _heroView.hidden = false;
-    }
-    return true; // TODO: cancel button
+    [self checkTimeToShowHeroView];
+    return true; // TODO: may read the state of cancel button even from background thread
 }
 
-- (BOOL) progressFile:(long long)fileno ofTotal:(long long)totalNumberOfFiles {
+- (BOOL) progressFileOnBackgroundThread:(long long)fileno ofTotal:(long long)totalNumberOfFiles {
+    assert(![NSThread isMainThread]);
     // TODO: connect to progress bar(s)
     // trace(@"%llu of %llu", fileno, totalNumberOfFiles);
-    if (_openTime > 0 && nanotime() > _openTime + 1000000ULL * 500) {
-        _heroView.hidden = false;
-    }
-    return true; // TODO: cancel button
+    [self checkTimeToShowHeroView];
+    return true; // TODO: may read the state of cancel button even from background thread
 }
-
 
 - (void) search: (NSString*) s {
     assert([NSThread isMainThread]);

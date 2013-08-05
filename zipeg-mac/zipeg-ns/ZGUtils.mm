@@ -280,7 +280,7 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
 
 @implementation ZGBlock {
 @public
-    void(^done)();
+    void (^_done)();
     BOOL _isCanceled;
     BOOL _isDone;
 }
@@ -299,24 +299,24 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
 
 - (id) cancel {
     _isCanceled = true;
-    if (done != null) {
+    if (_done != null) {
         trace("cancelled %@", self);
-        done = null;
+        _done = null;
     }
     return null; // always - see usages
 }
 
 - (BOOL) isExecuting {
-    return done == null && !_isDone;
+    return _done == null && !_isDone;
 }
 
 - (void) invokeNow {
     if (![NSThread isMainThread]) {
         @throw @"invokeNow can be called only on main thread";
     } else {
-        void(^d)() = done;
+        void(^d)() = _done;
         if (d != null) {
-            done = null;
+            _done = null;
             d();
         }
     }
@@ -329,16 +329,18 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
 + (ZGBlock*) invokeLater: (void(^)()) b {
     assert(b != null);
     ZGBlock* block = [ZGBlock new];
-    block->done = b;
-    dispatch_async(dispatch_get_current_queue(), ^(){
-        if (!block.isCanceled && !block.isDone) {
-            void(^d)() = block->done;
-            if (d != null) {
-                block->done = null;
-                d();
+    if (block) {
+        block->_done = b;
+        dispatch_async(dispatch_get_current_queue(), ^(){
+            if (!block.isCanceled && !block.isDone) {
+                void(^d)() = block->_done;
+                if (d != null) {
+                    block->_done = null;
+                    d();
+                }
             }
-        }
-    });
+        });
+    }
     return block;
 }
 

@@ -231,6 +231,7 @@ struct D : P7Z::Delegate {
 - (void) close {
     // trace(@"");
     if (a != null) {
+        trace("folders %d items %d", folders, items);
         a->close();
     }
     delete a; a = null;
@@ -251,6 +252,9 @@ static bool ignore(const NSString* pathname) {
 - (BOOL) buildTree {
     folders = 0;
     for (int i = 0; i < items; i++) {
+        if (i % 100 == 0 && self.isCancelled) {
+            return false;
+        }
         const NSString* pathname = _paths[i];
         if (ignore(pathname)) {
             continue;
@@ -279,6 +283,9 @@ static bool ignore(const NSString* pathname) {
         }
     }
     for (int i = 0; i < items; i++) {
+        if (i % 100 == 0 && self.isCancelled) {
+            return false;
+        }
         const NSString* pathname = _paths[i];
         if (ignore(pathname)) {
             continue;
@@ -328,10 +335,13 @@ static bool ignore(const NSString* pathname) {
         assert(item.parent != null);
         [(ZG7zipItem*)item.parent addChild:item];
     }
+    if (self.isCancelled) {
+        return false;
+    }
     NSComparator c = ^NSComparisonResult(id f, id s) {
         ZG7zipItem *first = (ZG7zipItem*)f;
         ZG7zipItem *second = (ZG7zipItem*)s;
-        return [first.name compare:second.name];
+        return [first.name compare: second.name];
     };
     for (NSString* pathname in _items) {
         if (ignore(pathname)) {
@@ -344,7 +354,7 @@ static bool ignore(const NSString* pathname) {
         [item.children sortUsingComparator: c];
     }
     [_root.children sortUsingComparator: c];
-    return true;
+    return !self.isCancelled;
 }
 
 // http://regexkit.sourceforge.net/RegexKitLite/#ICUSyntax_ICURegularExpressionSyntax
@@ -401,7 +411,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
         b = isFilteredOut != null;
         [isFilteredOut fill];
         for (int i = 0; b && i < items; i++) {
-            if (op.isCancelled) {
+            if (i % 100 == 0 && op.isCancelled) {
                 b = false;
             } else {
                 const NSString* pathname = _paths[i];
@@ -423,9 +433,15 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
         }
         timestamp("setFilter");
     }
-    if (b) {
-        trace("search done");
-        dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // I have to post asynchronously because I need to replace
+        // _isFilteredOut and _filterText and it can only be done in main thread
+        // However - no deadlock here in sight because in worse case scenario search
+        // results will just accumulate on the main queue if it is blocked by e.g.
+        // modal dialog box. If main queue is blocked for prolonged period of time
+        // it means no new searches are coming in.
+        if (b) {
+            trace("search done");
             assert([NSThread isMainThread]);
             bool found = true;
             if (in == items) {
@@ -438,10 +454,11 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
             }
             trace("block(%d)", found);
             block(found);
-        });
-    } else {
-        trace("search cancelled");
-    }
+        } else {
+            trace("search cancelled");
+            block(false);
+        }
+    });
 }
 
 - (BOOL) isFiltered {
@@ -520,6 +537,8 @@ static CFStringEncoding CHARDET_ENCODING_to_CFStringEncoding(const char* encodin
 }
 
 - (CFStringEncoding) detectEncoding {
+return (CFStringEncoding)-1;
+    
     int n = a->getNumberOfItems();
     bool b = true;
     char encoding[CHARDET_MAX_ENCODING_NAME] = {0};
@@ -776,22 +795,12 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 
 - (BOOL) progress:(long long)pos ofTotal:(long long)total {
     assert(![NSThread isMainThread]);
-    BOOL __block b = false;
-    dispatch_sync(dispatch_get_main_queue(), ^{
-        assert([NSThread isMainThread]);
-        b = [document progress:pos ofTotal:total];
-    });
-    return b && !self.isCancelled;
+    return [document progressOnBackgroundThread: pos ofTotal: total] && !self.isCancelled;
 }
 
 - (BOOL) progressFile:(long long)fileno ofTotal:(long long)totalNumberOfFiles {
     assert(![NSThread isMainThread]);
-    BOOL __block b = false;
-    dispatch_sync(dispatch_get_main_queue(), ^{
-        assert([NSThread isMainThread]);
-        b = [document progressFile:fileno ofTotal:totalNumberOfFiles];
-    });
-    return b && !self.isCancelled;
+    return [document progressFileOnBackgroundThread: fileno ofTotal: totalNumberOfFiles] && !self.isCancelled;
 }
 
 @end

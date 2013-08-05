@@ -130,6 +130,7 @@
     int __block counter = _expandCounter;
     ZGOutlineViewDelegate* __weak __block this = self; // TODO: not portable to 10.6
     _delayedExpand= [ZGUtils invokeLater: ^{
+        _delayedExpand = null;
         [this areWeThereYet: counter notification: n];
     }];
 }
@@ -137,7 +138,6 @@
 -(void) areWeThereYet: (int) counter notification: (NSNotification*) n {
     if (_expandCounter == counter) {
         _expandCounter = 0;
-        _delayedExpand = null;
         [self selectItemByNotification: n];
         [self sizeToContentByNotification: n];
     } else {
@@ -147,9 +147,9 @@
 }
 
 -(void) outlineViewItemWillExpand: (NSNotification*) n {
-//  NSOutlineView* v = (NSOutlineView*)n.object;
-//  NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)n.userInfo[@"NSObject"];
-//  trace(@"willExpand %@ %@ %@", v, i, i.name);
+    NSOutlineView* v = (NSOutlineView*)n.object;
+    NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)n.userInfo[@"NSObject"];
+    trace(@"willExpand %@ %@ %@", v, i, i.name);
     _expandCounter++;
 }
 
