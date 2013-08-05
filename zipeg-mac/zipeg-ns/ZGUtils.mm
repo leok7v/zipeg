@@ -251,8 +251,12 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
 + (NSColor*) sourceListBackgroundColor {
     static NSColor* sourceListBackgroundColor = null;
     if (sourceListBackgroundColor == null) {
-        sourceListBackgroundColor =
-        [NSColor colorWithCatalogName:@"System" colorName:@"_sourceListBackgroundColor"];
+        sourceListBackgroundColor = [NSColor colorWithCatalogName:@"System" colorName: @"_sourceListBackgroundColor"];
+        if (sourceListBackgroundColor == null) {
+            NSTableView *tv = [[NSTableView alloc] initWithFrame: NSZeroRect];
+            tv.selectionHighlightStyle = NSTableViewSelectionHighlightStyleSourceList;
+            sourceListBackgroundColor = tv.backgroundColor;
+        }
         if (sourceListBackgroundColor == null) {
             sourceListBackgroundColor =
             [NSColor colorWithCalibratedRed:0.905882
@@ -288,7 +292,7 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
 - (id) cancel {
     _isCanceled = true;
     if (done != null) {
-        // trace("cancelled %@", self);
+        trace("cancelled %@", self);
         done = null;
     }
     return null; // always - see usages

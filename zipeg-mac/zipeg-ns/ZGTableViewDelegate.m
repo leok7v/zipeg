@@ -23,7 +23,6 @@
         _document = doc;
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
             ^(NSNotification* n) {
-                trace(@"");
                 _delayedSizeToContent = [_delayedSizeToContent cancel];
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
                 [_document.tableView removeTableColumn: _document.tableView.tableColumns[0]];
@@ -56,6 +55,7 @@
 
 - (void) outlineViewSelectionDidChange {
     [_document.tableView reloadData];
+    [self sizeToContent: _document.tableView];
 }
 
 - (void) tableView: (NSTableView *) tableView willDisplayCell: (id) cell

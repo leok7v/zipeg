@@ -3,7 +3,6 @@
 #import "ZGOutlineViewDelegate.h"
 #import "ZGImageAndTextCell.h"
 
-
 @interface ZGTableViewDataSource () {
     ZGDocument* __weak _document;
     NSObject<ZGItemProtocol>* __weak _item;
@@ -30,7 +29,7 @@
 - (NSObject<ZGItemProtocol>*) selectedItem {
     NSObject<ZGItemProtocol>* it = null;
     if (_document.outlineView.isHidden) {
-        it = _document.root;
+        it = _document.root.isGroup ? _document.root.children[0] : _document.root;
     } else {
         ZGOutlineViewDelegate* d = _document.outlineView.delegate;
         it = [d selectedItem];

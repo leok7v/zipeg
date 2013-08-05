@@ -1,14 +1,12 @@
 #import "ZGToolbarDelegate.h"
 #import "ZGDocument.h"
 
-
 @interface ZGToolbarDelegate() {
     ZGDocument* __weak _document;
     NSSearchField* _searchFieldOutlet;
     NSToolbarItem* _activeSearchItem;
     id _windowWillCloseObserver;
     BOOL completePosting;
-    BOOL commandHandling;
 }
 @end
 
@@ -28,7 +26,6 @@ static NSString* ViewsId  = @"ViewsId";
         _document = doc;
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
             ^(NSNotification* n) {
-                trace(@"");
                 _document.toolbar.delegate = null;
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
             });
@@ -72,9 +69,8 @@ static NSString* ViewsId  = @"ViewsId";
     if (rc == NSAlertDefaultReturn) {
         NSTextField* input = (NSTextField*)a.accessoryView;
         [input validateEditing];
-        trace(@"%@", input.stringValue);
     } else {
-        trace(@"cancel");
+//      trace(@"cancel");
     }
 }
 
@@ -186,7 +182,7 @@ static NSMenu* createSearchMenu() {
         _searchFieldOutlet = [[NSSearchField alloc] initWithFrame:[_searchFieldOutlet frame]];
         ti = createSearch(SearchId, @"Search", @"Search Your Document", mi, _searchFieldOutlet);
         NSTextFieldCell* c = _searchFieldOutlet.cell;
-        c.placeholderString = @"Search File Names";
+        c.placeholderString = @"Search File Names (e.g. \"Homework*.doc\")";
         _searchFieldOutlet.recentsAutosaveName = @"ZipegRecentSearches";
         NSSearchFieldCell* sc = _searchFieldOutlet.cell;
         sc.searchMenuTemplate = createSearchMenu();
@@ -196,7 +192,7 @@ static NSMenu* createSearchMenu() {
         _searchFieldOutlet.delegate = self;
     } else if ([itemIdent isEqual: ViewsId]) {
         ti = createSegmentedControl(ViewsId, @"View Style", @"Show items in different views",
-                                             @[@"folders-blue.png", @"folders-white.png"],
+                                             @[@"folders-yellow.png", @"folders-blue.png"],
                                              @[@"Modern", @"Legacy"],
                                              @selector(viewStyleClicked:));
         NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
@@ -209,7 +205,7 @@ static NSMenu* createSearchMenu() {
 }
 
 - (void) saveDocument: (id) sender {
-    trace(@"saveDocument %@", sender);
+//  trace(@"saveDocument %@", sender);
 }
 
 - (void) viewStyleClicked: (id) sender {
@@ -278,8 +274,9 @@ static NSMenu* createSearchMenu() {
 - (NSArray *) control: (NSControl*) control textView:(NSTextView*) textView completions: (NSArray*) words
  forPartialWordRange: (NSRange) charRange indexOfSelectedItem: (int*) index {
     NSMutableArray* keywords = [_searchFieldOutlet.recentSearches mutableCopy];
-    [keywords addObject: @"Hello"];
-    [keywords addObject: @"World"];
+    // TODO: it might be cool to communicate with archive to get suggestions and add them on the fly.
+    // may be yes, may be no - leave it for the future development.
+    // [keywords addObjectsFromArray: @[@"Hello", @"World"]];
     NSUInteger count = [keywords count];
     NSString* partialString = [[textView string] substringWithRange:charRange];
     NSMutableArray* matches = [NSMutableArray array];
@@ -298,28 +295,12 @@ static NSMenu* createSearchMenu() {
 
 - (void) controlTextDidChange: (NSNotification *) n {
     NSTextView* textView = n.userInfo[@"NSFieldEditor"];
-    if (!completePosting && !commandHandling) {	// prevent calling "complete" too often
+    if (!completePosting) {	// prevent calling "complete" too often
         completePosting = true;
         [textView complete: null];
         completePosting = false;
     }
 }
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-
-- (BOOL) control: (NSControl*) control textView: (NSTextView*) textView doCommandBySelector: (SEL) commandSelector {
-    BOOL result = false;
-    if ([textView respondsToSelector: commandSelector]) {
-        commandHandling = true;
-        [textView performSelector: commandSelector withObject:nil];
-        commandHandling = false;
-        result = true;
-    }
-    return result;
-}
-
-#pragma clang diagnostic pop
 
 @end
 
@@ -331,9 +312,9 @@ static NSMenu* createSearchMenu() {
         NSControl *control = (NSControl*)[self view];
         id t = control.target;
         SEL a = control.action;
-        if ([t respondsToSelector:a]) {
+        if ([t respondsToSelector: a]) {
             BOOL e = true;
-            if ([t respondsToSelector:@selector(validateToolbarItem:)]) {
+            if ([t respondsToSelector: @selector(validateToolbarItem:)]) {
                 e = [t validateToolbarItem:self];
             }
             self.enabled = e;

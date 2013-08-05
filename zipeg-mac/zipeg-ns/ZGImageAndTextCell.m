@@ -61,7 +61,6 @@
 }
 
 - (void)drawWithFrame: (NSRect) f inView: (NSView *) v {
-    [NSGraphicsContext saveGraphicsState];
     bool ov = [v isKindOfClass:NSOutlineView.class];
     int imageOriginYOffset = kImageOriginYOffset + 1 * ov;
     int textOriginYOffset = kTextOriginYOffset + 0 * ov;
@@ -88,7 +87,6 @@
     // trace(@"%@ cellFrame=%@ newCellFrame=%@", [self stringValue], NSStringFromRect(cellFrame), NSStringFromRect(newCellFrame));
     // trace(@"background color = %@", self.backgroundColor);
     [super drawWithFrame: f inView: v];
-    [NSGraphicsContext restoreGraphicsState];
 }
 
 - (NSSize)cellSize {
@@ -102,6 +100,42 @@
 @end
 
 @implementation ZGSectionCell
+
+- (id) init {
+    self = [super init];
+    if (self != null) {
+        alloc_count(self);
+        
+    }
+    return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
+}
+
+- (id) copyWithZone: (NSZone *)zone {
+    ZGSectionCell* cell = (ZGSectionCell*) [super copyWithZone: zone];
+    alloc_count(cell);
+    return cell;
+}
+
+- (NSRect) titleRectForBounds: (NSRect) bounds {
+    return NSZeroRect;
+}
+
+- (void)drawWithFrame: (NSRect) f inView:(NSView *) v {
+}
+
+- (NSSize)cellSize {
+    return NSZeroSize;
+}
+
+@end
+
+/*
+
+@implementation ZGSectionCell 
 
 - (id) init {
     self = [super init];
@@ -131,3 +165,4 @@
 
 @end
 
+*/

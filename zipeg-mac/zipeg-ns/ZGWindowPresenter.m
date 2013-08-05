@@ -37,7 +37,7 @@
     ZGWindowPresenter* it = [ZGWindowPresenter new];
     it.window = w;
     NSView* cv = w.contentView;
-    assert(cv.wantsLayer);
+//    assert(cv.wantsLayer);
     return it;
 }
 
@@ -50,26 +50,26 @@
     sheetWindow = s;
     
     NSView* cv = _window.contentView;
-    assert(cv.wantsLayer); // should be set at least one dispatch cycle in advance
+   // assert(cv.wantsLayer); // should be set at least one dispatch cycle in advance
 
     CATransition *animation = [CATransition animation];
     animation.type = kCATransitionFade;
     animation.speed = 0.75; // slightly slower
     animation.removedOnCompletion = true;
-    [cv.layer addAnimation: animation forKey:@"layerAnimation"];
+    [cv.layer addAnimation: animation forKey: @"PresenterAnimationLayer"];
     
     assert(blankingView == null);
     blankingView = [[NSView alloc] initWithFrame: cv.bounds];
     [cv addSubview:blankingView];
-    CIFilter *exposureFilter = [CIFilter filterWithName:@"CIExposureAdjust"];
+    CIFilter *exposureFilter = [CIFilter filterWithName: @"CIExposureAdjust"];
     [exposureFilter setDefaults];
-    [exposureFilter setValue:@-1.25 forKey:@"inputEV"];
-    CIFilter *saturationFilter = [CIFilter filterWithName:@"CIColorControls"];
+    [exposureFilter setValue:@-1.25 forKey: @"inputEV"];
+    CIFilter *saturationFilter = [CIFilter filterWithName: @"CIColorControls"];
     [saturationFilter setDefaults];
-    [saturationFilter setValue:@0.35 forKey:@"inputSaturation"];
-    CIFilter *gloomFilter = [CIFilter filterWithName:@"CIGloom"];
+    [saturationFilter setValue:@0.35 forKey: @"inputSaturation"];
+    CIFilter *gloomFilter = [CIFilter filterWithName: @"CIGloom"];
     [gloomFilter setDefaults];
-    [gloomFilter setValue:@0.75 forKey:@"inputIntensity"];
+    [gloomFilter setValue:@0.75 forKey: @"inputIntensity"];
     blankingView.layer.backgroundFilters = @[exposureFilter, saturationFilter, gloomFilter];
     if ([sheetWindow isKindOfClass:[NSAlert class]]) {
         NSAlert* a = (NSAlert*)sheetWindow;
@@ -92,7 +92,7 @@
     animation.removedOnCompletion = true;
     NSView* cv = _window.contentView;
     timestamp("animation");
-    [cv.layer addAnimation: animation forKey:@"layerAnimation"];
+    [cv.layer addAnimation: animation forKey: @"PresenterAnimationLayer"];
     [blankingView removeFromSuperview];
     blankingView = null;
     if ([s isKindOfClass:[NSWindow class]]) {

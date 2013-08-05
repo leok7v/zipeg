@@ -30,7 +30,6 @@
         _document = doc;
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
             ^(NSNotification* n) {
-                trace(@"");
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
                 _delayedExpand = [_delayedExpand cancel];
                 _delayedSizeToContent = [_delayedSizeToContent cancel];
@@ -48,8 +47,8 @@
     dealloc_count(self);
 }
 
-- (CGFloat) outlineView: (NSOutlineView*) outlineView heightOfRowByItem: (id) item {
-    return 18;
+- (CGFloat) outlineView: (NSOutlineView*) v heightOfRowByItem: (id) i {
+    return [self outlineView: v isGroupItem: i] ? 0 : 18;
 }
 
 - (void) outlineViewColumnDidResize:(NSNotification*) n {
@@ -60,7 +59,6 @@
 - (void) outlineViewSelectionIsChanging: (NSNotification *) n {
     // useless because it is only sent on mouse clicks not even on keyboard up/down
 }
-
 
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification {
     ZGTableViewDelegate* d = _document.tableView.delegate;
@@ -90,9 +88,9 @@
     // trace(@"%@ = %d", i.name, ![self outlineView: v isGroupItem: item]);
     BOOL b = ![self outlineView:v isGroupItem:item];
     if (b) {
+        [_delayedSizeToContent cancel];
         ZGTableViewDelegate* d = _document.tableView.delegate;
         [d outlineViewSelectionWillChange];
-        [_delayedSizeToContent cancel];
     }
     return b;
 }
@@ -137,7 +135,7 @@
         [self selectItemByNotification: n];
         [self sizeToContentByNotification: n];
     } else {
-        trace("re-postDelayed: %d", _expandCounter);
+//      trace("re-postDelayed: %d", _expandCounter);
         [self postDelayed: n];
     }
 }
@@ -155,7 +153,7 @@
 //  trace(@"didExpand %@ %@ %@ %d", v, i, i.name, _expandCounter);
     _expandCounter++;
     if (_delayedExpand == null) {
-        trace("postDelayed: %d\n", _expandCounter);
+//      trace("postDelayed: %d\n", _expandCounter);
         [self postDelayed: n];
     }
 }
@@ -179,7 +177,7 @@
 }
 
 -(BOOL)outlineView: (NSOutlineView*) v shouldShowOutlineCellForItem: (id) i {
-    return true;
+    return [self outlineView: v isGroupItem: i] ? false : true;
 }
 
 - (BOOL)outlineView: (NSOutlineView *) v isGroupItem: (id) i {
@@ -225,12 +223,12 @@
             v.delegate = self;
         }
     } else {
-        trace(@"root=%@ with %ld childs will be expanded", r.name, r.children.count);
+//      trace(@"root=%@ with %ld childs will be expanded", r.name, r.children.count);
         v.delegate = null;
         NSArray* kids = r.children;
         for (int i = 0; i < kids.count; i++) {
             NSObject<ZGItemProtocol>* c = kids[i];
-            trace(@"  %@ with %ld childs", c.name, c.children.count);
+//          trace(@"  %@ with %ld childs", c.name, c.children.count);
             if (c.children != null) {
                 [v expandItem: c expandChildren: true];
             }

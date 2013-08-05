@@ -16,7 +16,6 @@
         _document = doc;
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
             ^(NSNotification* n) {
-                trace(@"");
                 _document.splitView.delegate = null;
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
         });

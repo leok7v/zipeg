@@ -4,7 +4,7 @@
 
 @end
 
-@interface ZGSectionCell : ZGImageAndTextCell
+@interface ZGSectionCell : NSCell
 
 @end
 

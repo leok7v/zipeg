@@ -30,8 +30,8 @@
         window.showsToolbarButton = true;
 
         NSView* cv = window.contentView;
-        cv.wantsLayer = true; // needs to be done as early as possible
-        assert(cv.wantsLayer);
+//        cv.wantsLayer = true; // needs to be done as early as possible
+//        assert(cv.wantsLayer);
         // window.frameAutosaveName = @""; // otherwise it will try to reopen all archives on startup
         if (window.frame.size.width < window.minSize.width || window.frame.size.height < window.minSize.height) {
             [window setFrame: NSMakeRect(0, 0, window.minSize.width, window.minSize.height) display: true animate: false];

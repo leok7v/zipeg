@@ -21,10 +21,8 @@
     NSObject<ZGItemProtocol>* _root;
     NSWindow* __weak _window;
     id _windowWillCloseObserver;
-    id _outlineViewSelectionDidChangeObserver;
     id _clipViewFrameDidChangeObserver;
     id _clipViewBoundsDidChangeObserver;
-    NSColor* _sourceListBackgroundColor; // strong
     NSTableViewSelectionHighlightStyle _highlightStyle;
 }
 
@@ -67,7 +65,6 @@
 }
 
 - (void) drawRect: (NSRect) dirtyRect {
-//  trace(@"%@", NSStringFromRect(self.frame));
     NSGradient *g = [[NSGradient alloc] initWithColorsAndLocations:
                      [NSColor colorWithDeviceWhite:1.00 alpha:1], 0.3,
                      [NSColor colorWithDeviceWhite:0.96 alpha:1], 0.42,
@@ -155,19 +152,17 @@
 
 - (void) restoreStateWithCoder: (NSCoder*) state {
     [super restoreStateWithCoder: state];
-    trace(@"_operationQueue=%@ %@", _operationQueue, [NSThread currentThread]);
 }
 
 - (id) ctor {
     if (self != null) {
         alloc_count(self);
-        trace_allocs();
         self.hasUndoManager = false;
         _operationQueue = [NSOperationQueue new];
         _operationQueue.maxConcurrentOperationCount = 1; // TODO: can it be 2?
         _encoding = (CFStringEncoding)-1;
-        //      _highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
-        _highlightStyle = NSTableViewSelectionHighlightStyleRegular;
+        _highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
+        // _highlightStyle = NSTableViewSelectionHighlightStyleRegular;
     }
     return self;
 }
@@ -192,10 +187,6 @@
         _outlineView.selectionHighlightStyle =  _highlightStyle;
         [_outlineView deselectAll: null];
         [self reloadData];
-        // void* v = (__bridge void *)(_outlineView.backgroundColor);
-        // trace(@"_outlineView.background = %@ 0x%016llX", _outlineView.backgroundColor, (UInt64)v);
-        _outlineView.backgroundColor = _sourceListBackgroundColor;
-        _outlineView.backgroundColor = [NSColor sourceListBackgroundColor];
     }
 }
 
@@ -203,8 +194,6 @@
     assert(_operationQueue != null);
     ZGWindowController* wc = [ZGWindowController new];
     [self addWindowController: wc];
-    // trace("wc.document=%@ %s (self %@)", wc.document, wc.document == self ? "==" : "!=", self);
-    // [wc window]; // this actually loads Nib (see docs)
     [self setupDocumentWindow: wc];
 }
 
@@ -216,7 +205,6 @@
             _root = [[ZGGenericItem alloc] initWithChild: _archive.root];
         }
         _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: _root];
-        // trace("_root=%@", _root);
         if (_archive.numberOfFolders > 0) {
             _outlineView.dataSource = _outlineViewDataSource;
             [_outlineView reloadData];
@@ -268,7 +256,6 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     ov.focusRingType = NSFocusRingTypeNone;
     ov.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     ov.allowsEmptySelection = true; // because of the sections (groups) collapse in Outline View
-    ov.selectionHighlightStyle = hs;
     ov.indentationMarkerFollowsCell = true;
     ov.indentationPerLevel = 16;
 //  ov.headerView = [[ZGOutlineHeaderView alloc] initWithFrame: r];
@@ -279,75 +266,30 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     ov.outlineTableColumn = tc;
     ZGImageAndTextCell* c = [ZGImageAndTextCell new];
     tc.dataCell = c;
-    c.backgroundColor = [NSColor sourceListBackgroundColor];
     tc.minWidth = 92;
     tc.maxWidth = 3000;
     tc.editable = true;
+    ov.selectionHighlightStyle = hs;
 //  tc.resizingMask = NSTableColumnAutoresizingMask;
     assert(ov.outlineTableColumn == tc);
     assert(ov.tableColumns[0] == tc);
     return ov;
 }
 
-- (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
-    // this is called after readFromURL
-    _window = controller.window;
-    assert(_window != null);
-    _window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
-    [self setWindow: _window]; // weak
-    NSRect bounds = [_window.contentView bounds];
-    _contentView = _window.contentView;
-    bounds = _contentView.frame;
-    bounds.origin.y += 30;
-    bounds.size.height -= 60;
- 
-    NSRect tbounds = bounds;
-    tbounds.size.width /= 2;
-    tbounds.origin.x = 0;
-    tbounds.origin.y = 0;
-    _outlineView = createOutlineView(tbounds, _highlightStyle);
-    _outlineView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleSourceList;
-    _sourceListBackgroundColor = _outlineView.backgroundColor;
-//  trace(@"_outlineView.background = %@", _outlineView.backgroundColor);
-    _outlineView.selectionHighlightStyle = _highlightStyle;
-//  trace(@"_outlineView.background = %@", _outlineView.backgroundColor);
-    
-    assert(_outlineView != null);
-
-    _tableView = [[NSTableView alloc] initWithFrame: tbounds];
-    assert(_tableView != null);
+static NSTableView* createTableView(NSRect r) {
+    NSTableView* _tableView = [[NSTableView alloc] initWithFrame: r];
     _tableView.focusRingType = NSFocusRingTypeNone;
-    _splitView = createSplitView(bounds,
-                                 createScrollView(tbounds, _outlineView),
-                                 createScrollView(tbounds, _tableView));
-    _contentView.autoresizesSubviews = true;
-    _contentView.subviews = @[_splitView];
-    controller.window.contentView = _contentView;
-    
-    assert(_contentView != null);
-    assert(controller.window.contentView == _contentView);
-    assert(_splitView != null);
-
-    _toolbar = [ZGToolbar new];
-    assert(_toolbar != null);
-    _toolbarDelegate = [[ZGToolbarDelegate alloc] initWithDocument: self];
-    assert(_toolbarDelegate != null);
-    _toolbar.delegate = _toolbarDelegate; // weak reference
-    _window.toolbar = _toolbar;
- 
-    //  assert(_levelIndicator != null);
-    
     NSTableColumn* tableColumn = [NSTableColumn new];
-
+    
     [_tableView addTableColumn: tableColumn];
     tableColumn.dataCell = [ZGImageAndTextCell new];
     tableColumn.minWidth = 92;
     tableColumn.maxWidth = 3000;
     tableColumn.editable = true;
     assert(_tableView.tableColumns[0] == tableColumn);
-
+    
     NSSortDescriptor *sd = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES
-                                                selector:@selector(localizedCaseInsensitiveCompare:)];
+                                                          selector:@selector(localizedCaseInsensitiveCompare:)];
     tableColumn.sortDescriptorPrototype = sd;
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
     for (int i = 1; i < 3; i++) {
@@ -360,8 +302,6 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
         tableColumn.editable = true;
     }
     
-    _contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-
     _tableView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     _tableView.allowsColumnReordering = true;
     _tableView.allowsColumnResizing = true;
@@ -370,7 +310,7 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     _tableView.allowsEmptySelection = true; // otherwise deselectAll won't work
     _tableView.allowsTypeSelect = true;
     _tableView.usesAlternatingRowBackgroundColors = true;
-//  _tableView.menu = _tableRowContextMenu; // TODO:
+    //  _tableView.menu = _tableRowContextMenu; // TODO:
     NSFont* font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
     for (int i = 0; i < _tableView.tableColumns.count; i++) {
         NSTableColumn* tc = _tableView.tableColumns[i];
@@ -382,79 +322,83 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     [_tableView setDraggingSourceOperationMask : NSDragOperationGeneric forLocal: YES];
     // TODO: for now:
     [_tableView registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
+    return _tableView;
+}
 
-    
+- (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
+    // this is called after readFromURL
+    _window = controller.window;
+    assert(_window != null);
+    _window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
+    self.window = _window; // weak
+    _contentView = _window.contentView;
+    _contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    _contentView.autoresizesSubviews = true;
+    NSRect bounds = _contentView.bounds;
+    bounds.origin.y += 30;
+    bounds.size.height -= 60;
+ 
+    NSRect tbounds = bounds;
+    tbounds.size.width /= 2;
+    tbounds.origin.x = 0;
+    tbounds.origin.y = 0;
+    _outlineView = createOutlineView(tbounds, _highlightStyle);
+    assert(_outlineView != null);
     _outlineViewDelegate = [[ZGOutlineViewDelegate alloc] initWithDocument: self];;
     _outlineView.delegate = _outlineViewDelegate;
     
+    _tableView = createTableView(tbounds);
+    assert(_tableView != null);
     _tableViewDelegate = [[ZGTableViewDelegate alloc] initWithDocument: self];
     _tableView.delegate = _tableViewDelegate;
-
-//  [self reloadOutlineView];
-    
-    // trace(@"0x%016llx 0x%016llx", (UInt64)(id)_outlineView, (UInt64)(id)(_outlineView.dataSource));
+   
+    _splitView = createSplitView(bounds,
+                                 createScrollView(tbounds, _outlineView),
+                                 createScrollView(tbounds, _tableView));
+    assert(_splitView != null);
     _splitViewDelegate = [[ZGSplitViewDelegate alloc] initWithDocument: self];
     _splitView.delegate = _splitViewDelegate;
     _splitView.hidden = true;
-    _heroView = [[ZGHeroView alloc] initWithFrame:_splitView.frame];
+    _heroView = [[ZGHeroView alloc] initWithFrame: _splitView.frame];
     _heroView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    _heroView.hidden = true;
+    _contentView.subviews = @[_splitView, _heroView];
+
+    _toolbar = [ZGToolbar new];
+    assert(_toolbar != null);
+    _toolbarDelegate = [[ZGToolbarDelegate alloc] initWithDocument: self];
+    assert(_toolbarDelegate != null);
+    _toolbar.delegate = _toolbarDelegate; // weak reference
+    _window.toolbar = _toolbar;
+ 
+    _windowPresenter = [ZGWindowPresenter windowPresenterFor: controller.window];
+
+    //  assert(_levelIndicator != null);
     _levelIndicator.maxValue = 10000;
     _levelIndicator.intValue = 5000;
 
     NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
     clipView.postsFrameChangedNotifications = true;
-    void (^sizeToContent)(NSNotification*)   = ^(NSNotification* n) { [self sizeToContent]; };
+    void (^sizeToContent)(NSNotification*) = ^(NSNotification* n) {
+        [self sizeToContent];
+    };
     _clipViewBoundsDidChangeObserver = addObserver(NSViewBoundsDidChangeNotification, clipView, sizeToContent);
     _clipViewFrameDidChangeObserver = addObserver(NSViewFrameDidChangeNotification, clipView, sizeToContent);
     _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _window,
         ^(NSNotification* n) {
-            trace(@"");
-            _clipViewBoundsDidChangeObserver = removeObserver(_clipViewBoundsDidChangeObserver);
             _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
             _clipViewBoundsDidChangeObserver = removeObserver(_clipViewBoundsDidChangeObserver);
             _clipViewFrameDidChangeObserver = removeObserver(_clipViewFrameDidChangeObserver);
-    });
-    _windowPresenter = [ZGWindowPresenter windowPresenterFor: controller.window];
-    [_contentView addSubview: _heroView];
-//  dumpViews(_contentView);
-    if (_url != null) { // ??? delay?
-        OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument:self];
-        [_operationQueue addOperation:operation];
-    }
-}
-
-/* TODO remove:
-- (void) resetViews: (NSView*) v {
-    id i = v;
-    if ([i respondsToSelector:@selector(setDelegate:)]) {
-        [i setDelegate: null];
-    }
-    if (v.subviews != null) {
-        NSArray* sv = [NSArray arrayWithArray:v.subviews];
-        for (id s in sv) { // to avoid array was mutated while being enumerated
-            [self resetViews: (NSView*) s];
         }
-    }
-    if ([v.superview isKindOfClass: NSClipView.class] &&
-        [v.superview.superview isKindOfClass: NSScrollView.class]) {
-        // ((NSScrollView*)v.superview.superview).contentView = null; // scrollview does not take null :(
-    } else  if ([v isKindOfClass: NSClipView.class] &&
-                [v.superview isKindOfClass: NSScrollView.class]) {
-        // skip this too
-    } else if (v != _window.contentView) {
-        [v removeFromSuperview];
+    );
+//    _contentView.wantsLayer = true; // needs to be done as early as possible
+    if (_url != null) {
+        dispatch_async(dispatch_get_main_queue(), ^(void){
+            OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
+            [_operationQueue addOperation: operation];
+        });
     }
 }
-
-- (void) windowWillClose: (NSNotification*) n {
-    [self resetViews: _window.contentView];
-    self.window.toolbar.delegate = null;
-    self.window.toolbar = null;
-    dumpAllViews();
-    [_splitView removeFromSuperview];
-    _splitView.subviews = @[];
-}
- */
 
 - (void) windowDidBecomeKey {
 }
@@ -472,12 +416,6 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
 
 - (void) sizeToContent {
     [_outlineViewDelegate sizeToContent: _outlineView];
-    [_tableViewDelegate sizeToContent: _tableView];
-}
-
-- (void) outlineViewSelectionDidChange: (NSNotification *) notification  {
-    [_tableView deselectAll: null];
-    [_tableView reloadData];
     [_tableViewDelegate sizeToContent: _tableView];
 }
 
@@ -517,7 +455,6 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     } else {
         // trace(@"Quit - canceled");
     }
-    // trace(@"");
 }
 
 - (void)close {
@@ -612,7 +549,7 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
         assert([NSThread isMainThread]);
         if (a != null) {
             _archive = a;
-            // archive = [ZGFileSystem new];
+            // _archive = [ZGFileSystem new];
             [self reloadData];
             _heroView.hidden = true;
             _splitView.hidden = false;
