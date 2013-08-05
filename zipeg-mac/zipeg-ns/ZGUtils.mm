@@ -9,6 +9,10 @@ FOUNDATION_EXPORT uint64_t timestamp(const char* label) {
     return NanoTime::timestamp(label);
 }
 
+FOUNDATION_EXPORT uint64_t nanotime() {
+    return NanoTime::time();
+}
+
 #define NOT_A_VALUE 0xFFFFFFFFFFFFFFFFULL
 
 static HashMapS2L map(500, NOT_A_VALUE);

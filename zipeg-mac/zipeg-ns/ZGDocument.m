@@ -25,6 +25,7 @@
     id _clipViewFrameDidChangeObserver;
     id _clipViewBoundsDidChangeObserver;
     NSTableViewSelectionHighlightStyle _highlightStyle;
+    uint64_t _openTime;
 }
 
 @property (weak) NSView* contentView;
@@ -343,7 +344,6 @@ static NSTableView* createTableView(NSRect r) {
     return it.children == null ? ZGImages.shared.docImage : dir;
 }
 
-
 - (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
     // this is called after readFromURL
     _window = controller.window;
@@ -383,7 +383,7 @@ static NSTableView* createTableView(NSRect r) {
     _splitView.hidden = true;
     _heroView = [[ZGHeroView alloc] initWithFrame: _splitView.frame];
     _heroView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-//    _heroView.hidden = true;  // TODO: unhide on password, error or long progress
+    _heroView.hidden = true;
     _contentView.subviews = @[_splitView, _heroView];
 
     _toolbar = [ZGToolbar new];
@@ -414,10 +414,9 @@ static NSTableView* createTableView(NSRect r) {
         }
     );
     if (_url != null) {
-        dispatch_async(dispatch_get_main_queue(), ^(void){
-            OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
-            [_operationQueue addOperation: operation];
-        });
+        _openTime = nanotime();
+        OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
+        [_operationQueue addOperation: operation];
     }
 }
 
@@ -576,7 +575,9 @@ static NSTableView* createTableView(NSRect r) {
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder:_outlineView];
+            _openTime = 0;
         } else if (error != null) {
+            _heroView.hidden = false;
             NSAlert* alert = [NSAlert alertWithError: error];
             [doc.sheet begin: alert
                 done: ^(int rc) {
@@ -584,6 +585,7 @@ static NSTableView* createTableView(NSRect r) {
                 }];
         } else {
             // error == null - aborted by user
+            [_window performClose: _window];
         }
     });
 }
@@ -594,6 +596,7 @@ static NSTableView* createTableView(NSRect r) {
     NSString* __block password;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
+        _heroView.hidden = false;
         NSString* prompt = [NSString stringWithFormat:@"Please enter archive password for archive\n«%@»",
                             [_url.path lastPathComponent]];
         NSString* info = @"Password has been set by the person who created this archive file.\n"
@@ -628,22 +631,21 @@ static NSTableView* createTableView(NSRect r) {
     return password;
 }
 
-- (void) didEndPresentedAlert: (NSAlert*) a returnCode: (NSInteger) rc contextInfo: (void*) c {
-// ignore for now...
-}
-
-- (void) didEndPasswordInput: (NSAlert*) a returnCode: (NSInteger)rc contextInfo: (void*) ctx {
-}
-
 - (BOOL) progress:(long long)pos ofTotal:(long long)total {
     // TODO: connect to progress bar(s)
     // trace(@"%llu of %llu", pos, total);
+    if (_openTime > 0 && nanotime() > _openTime + 1000000ULL * 500) {
+        _heroView.hidden = false;
+    }
     return true; // TODO: cancel button
 }
 
 - (BOOL) progressFile:(long long)fileno ofTotal:(long long)totalNumberOfFiles {
     // TODO: connect to progress bar(s)
     // trace(@"%llu of %llu", fileno, totalNumberOfFiles);
+    if (_openTime > 0 && nanotime() > _openTime + 1000000ULL * 500) {
+        _heroView.hidden = false;
+    }
     return true; // TODO: cancel button
 }
 
