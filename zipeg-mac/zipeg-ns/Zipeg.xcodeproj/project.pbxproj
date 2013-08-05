@@ -41,6 +41,7 @@
 		B36196D91795BB8E00C515E4 /* ZGUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = B36196D81795BB8E00C515E4 /* ZGUtils.mm */; };
 		B361A43517A3FE28008C8199 /* libp7z.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = B39F1D4817924CBE00472FEF /* libp7z.dylib */; };
 		B3767AFC17AF825000971CE4 /* folders-yellow.png in Resources */ = {isa = PBXBuildFile; fileRef = B3E87DAB17A95C6100B246B8 /* folders-yellow.png */; };
+		B3767AFE17AF8C6900971CE4 /* yellow-folder.png in Resources */ = {isa = PBXBuildFile; fileRef = B3767AFD17AF8C6900971CE4 /* yellow-folder.png */; };
 		B37E554B179278DF00E54693 /* zipeg.icns in Resources */ = {isa = PBXBuildFile; fileRef = B37E554A179278DF00E54693 /* zipeg.icns */; };
 		B37E554F1792857400E54693 /* ZGImageAndTextCell.m in Sources */ = {isa = PBXBuildFile; fileRef = B37E554E1792857400E54693 /* ZGImageAndTextCell.m */; };
 		B37E55541792864200E54693 /* ZGOutlineViewDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B37E55511792864200E54693 /* ZGOutlineViewDelegate.m */; };
@@ -180,6 +181,7 @@
 		B36196D517959F6800C515E4 /* ZGBitset.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGBitset.m; sourceTree = "<group>"; };
 		B36196D71795BB8E00C515E4 /* ZGUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGUtils.h; sourceTree = "<group>"; };
 		B36196D81795BB8E00C515E4 /* ZGUtils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ZGUtils.mm; sourceTree = "<group>"; };
+		B3767AFD17AF8C6900971CE4 /* yellow-folder.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "yellow-folder.png"; path = "Resources/yellow-folder.png"; sourceTree = "<group>"; };
 		B37E554A179278DF00E54693 /* zipeg.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = zipeg.icns; sourceTree = SOURCE_ROOT; };
 		B37E554D1792857400E54693 /* ZGImageAndTextCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGImageAndTextCell.h; sourceTree = "<group>"; };
 		B37E554E1792857400E54693 /* ZGImageAndTextCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGImageAndTextCell.m; sourceTree = "<group>"; };
@@ -404,6 +406,7 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B3767AFD17AF8C6900971CE4 /* yellow-folder.png */,
 				B3E87DAA17A95C6100B246B8 /* folders-blue.png */,
 				B3E87DAB17A95C6100B246B8 /* folders-yellow.png */,
 				B322F08117A643E700715C6D /* save-64x64.png */,
@@ -621,6 +624,7 @@
 				B322F08017A613E100715C6D /* license.txt in Resources */,
 				B322F08217A643E700715C6D /* save-64x64.png in Resources */,
 				B3E87DAC17A95C6100B246B8 /* folders-blue.png in Resources */,
+				B3767AFE17AF8C6900971CE4 /* yellow-folder.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

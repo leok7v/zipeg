@@ -116,7 +116,7 @@ static void addControl(NSSegmentedControl* sc, int ix, NSString* imageName, NSSt
     NSImage* image = [NSImage imageNamed: imageName];
     assert(image != null);
     image.size = NSMakeSize(32, 32);
-    [sc setWidth: image.size.width + 8 forSegment: ix];
+    [sc setWidth: image.size.width forSegment: ix];
     [sc setImageScaling:NSImageScaleProportionallyUpOrDown forSegment: ix];
     [sc setImage: image forSegment: ix];
     [c  setToolTip: tooltip forSegment: ix];

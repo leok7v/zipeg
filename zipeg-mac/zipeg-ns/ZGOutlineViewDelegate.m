@@ -69,11 +69,11 @@
     if ([c isKindOfClass:[ZGImageAndTextCell class]] && [i conformsToProtocol:@protocol(ZGItemProtocol)]) {
         NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
         ZGImageAndTextCell* itc = (ZGImageAndTextCell*)c;
-        NSImage* image = it.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
+        NSImage* image = [_document itemImage: it];
         if ([self outlineView: v isGroupItem: i]) {
             image = ZGImages.shared.appImage;
         } else { // TODO: ask ZGImages to retrieve system icon
-            image = it.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
+            image = [_document itemImage: it];
         }
         [itc setRepresentedObject: i];
         // trace(@"cell=%@ for %@ %@", c, it, it.name);

@@ -58,18 +58,18 @@
     [self sizeToContent: _document.tableView];
 }
 
-- (void) tableView: (NSTableView *) tableView willDisplayCell: (id) cell
+- (void) tableView: (NSTableView *) v willDisplayCell: (id) cell
    forTableColumn: (NSTableColumn*) column row: (NSInteger) row {
-    ZGTableViewDataSource* ds = (ZGTableViewDataSource*) tableView.dataSource;
-    NSObject<ZGItemProtocol>* item = [ds itemAtRow: row];
+    ZGTableViewDataSource* ds = (ZGTableViewDataSource*) v.dataSource;
+    NSObject<ZGItemProtocol>* it = [ds itemAtRow: row];
     if ([cell isKindOfClass:[ZGImageAndTextCell class]]) {
-        ZGImageAndTextCell* it = (ZGImageAndTextCell*)cell;
-        NSImage* image = item.children == null ? ZGImages.shared.docImage : ZGImages.shared.dirImage;
-        it.representedObject = item;
-        it.image = image;
-        it.stringValue = item.name;
+        ZGImageAndTextCell* c = (ZGImageAndTextCell*)cell;
+        NSImage* image = [_document itemImage: it];
+        c.representedObject = it;
+        c.image = image;
+        c.stringValue = it.name;
     } else if ([cell isKindOfClass:[NSTextFieldCell class]]) {
-        NSObject* o = [ds tableView: tableView objectValueForTableColumn:column row: row];
+        NSObject* o = [ds tableView: v objectValueForTableColumn:column row: row];
         NSTextFieldCell* t = (NSTextFieldCell*)cell;
         t.stringValue = o.description;
     } else {

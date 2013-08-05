@@ -13,6 +13,7 @@
 #import "ZGWindowPresenter.h"
 #import "ZGToolbar.h"
 #import "ZGToolbarDelegate.h"
+#import "ZGImages.h"
 #import "ZGApp.h"
 
 
@@ -180,16 +181,6 @@
     [ZGApp deferedTraceAllocs];
 }
 
-- (void) setViewStyle: (int) s {
-    int hs  = s == 0? NSTableViewSelectionHighlightStyleSourceList : NSTableViewSelectionHighlightStyleRegular;
-    if (_highlightStyle != hs) {
-        _highlightStyle = hs;
-        _outlineView.selectionHighlightStyle =  _highlightStyle;
-        [_outlineView deselectAll: null];
-        [self reloadData];
-    }
-}
-
 - (void) makeWindowControllers {
     assert(_operationQueue != null);
     ZGWindowController* wc = [ZGWindowController new];
@@ -324,6 +315,27 @@ static NSTableView* createTableView(NSRect r) {
     [_tableView registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
     return _tableView;
 }
+
+- (void) setViewStyle: (int) s {
+    int hs  = s == 0 ? NSTableViewSelectionHighlightStyleSourceList : NSTableViewSelectionHighlightStyleRegular;
+    if (_highlightStyle != hs) {
+        _highlightStyle = hs;
+        NSRect bounds = _outlineView.bounds;
+        _outlineView = createOutlineView(bounds, _highlightStyle);
+        assert(_outlineView != null);
+        _outlineView.delegate = _outlineViewDelegate;
+        _splitView.subviews = @[createScrollView(bounds, _outlineView), _splitView.subviews[1]];
+        [_outlineView deselectAll: null];
+        [self reloadData];
+    }
+}
+
+- (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) it {
+    NSImage* dir = _outlineView.selectionHighlightStyle == NSTableViewSelectionHighlightStyleSourceList ?
+    ZGImages.shared.dirYellow : ZGImages.shared.dirImage;
+    return it.children == null ? ZGImages.shared.docImage : dir;
+}
+
 
 - (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
     // this is called after readFromURL

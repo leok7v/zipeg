@@ -13,6 +13,7 @@
 @property (nonatomic, readonly, weak) NSWindow* window;
 @property (nonatomic, readonly) NSObject<ZGItemProtocol>* root;
 
+- (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) i;
 - (void) setViewStyle: (int) s;
 - (void) search: (NSString*) s;
 - (void) firstResponderChanged;
