@@ -148,8 +148,8 @@ static ZGFileSystemItem *g_root;
     return 999999;
 }
 
-- (void) extract: (NSArray*) indices to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(BOOL)) block {
-    block(true);
+- (void) extract: (NSArray*) items to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(NSError* e)) block {
+    block(null);
 }
 
 @end

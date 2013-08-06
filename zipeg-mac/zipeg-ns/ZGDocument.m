@@ -48,32 +48,8 @@
 @property ZGSheet* sheet;
 
 - (void) openArchiveForOperation: (NSOperation*) op;
+- (void) extractItemsForOperation: (NSOperation*) op items: (NSArray*) items to: (NSURL*) url;
 - (void) searchArchiveWithString: (NSString*) s forOperation: (NSOperation*) op done: (void(^)(BOOL)) block;
-
-@end
-
-@interface ZGOutlineHeaderView : NSTableHeaderView
-@end
-
-@implementation ZGOutlineHeaderView
-
-- (id) initWithFrame: (NSRect) frame {
-    frame.size.height = 17;
-    self = [super initWithFrame:frame];
-    self.autoresizesSubviews = true;
-    self.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin;
-    return self;
-}
-
-- (void) drawRect: (NSRect) dirtyRect {
-    NSGradient *g = [[NSGradient alloc] initWithColorsAndLocations:
-                     [NSColor colorWithDeviceWhite:1.00 alpha:1], 0.3,
-                     [NSColor colorWithDeviceWhite:0.96 alpha:1], 0.42,
-                     [NSColor colorWithDeviceWhite:0.93 alpha:1], 0.99, nil];
-    [g drawInRect: self.bounds angle:90];
-    [[NSColor colorWithDeviceWhite:0.66 alpha:1] set];
-    NSFrameRect(NSMakeRect(0, 0, self.frame.size.width, self.frame.size.height));
-}
 
 @end
 
@@ -120,6 +96,34 @@
 }
 
 @end
+
+
+@interface ExtractItemsOperation : NSOperation {
+    ZGDocument* __weak _document;
+    NSArray* _items;
+    NSURL* _url;
+}
+- (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url;
+@end
+
+@implementation ExtractItemsOperation
+
+- (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url {
+    self = [super init];
+    if (self != null) {
+        _document = doc;
+        _items = items;
+        _url = url;
+    }
+    return self;
+}
+
+- (void)main {
+    [_document extractItemsForOperation: self items: _items to: _url];
+}
+
+@end
+
 
 @implementation ZGDocument
 
@@ -257,9 +261,7 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     ov.allowsEmptySelection = true; // because of the sections (groups) collapse in Outline View
     ov.indentationMarkerFollowsCell = true;
     ov.indentationPerLevel = 16;
-//  ov.headerView = [[ZGOutlineHeaderView alloc] initWithFrame: r];
     ov.headerView = null;
-//  ov.columnAutoresizingStyle = NSTableViewLastColumnOnlyAutoresizingStyle;
     NSTableColumn* tc = [NSTableColumn new];
     [ov addTableColumn: tc];
     ov.outlineTableColumn = tc;
@@ -269,7 +271,6 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     tc.maxWidth = 3000;
     tc.editable = true;
     ov.selectionHighlightStyle = hs;
-//  tc.resizingMask = NSTableColumnAutoresizingMask;
     assert(ov.outlineTableColumn == tc);
     assert(ov.tableColumns[0] == tc);
     return ov;
@@ -326,7 +327,7 @@ static NSTableView* createTableView(NSRect r) {
 
 - (void) setViewStyle: (int) s {
     int hs  = s == 0 ? NSTableViewSelectionHighlightStyleSourceList : NSTableViewSelectionHighlightStyleRegular;
-    if (_highlightStyle != hs) {
+    if (_highlightStyle != hs && !_outlineView.isHidden) {
         _highlightStyle = hs;
         NSRect bounds = _outlineView.bounds;
         _outlineView = createOutlineView(bounds, _highlightStyle);
@@ -529,6 +530,20 @@ static NSTableView* createTableView(NSRect r) {
     return _archive != null;
 }
 
+- (void) extractItemsForOperation: (NSOperation*) op items: (NSArray*) items to: (NSURL*) url {
+    // This method is called on the background thread
+    assert(![NSThread isMainThread]);
+    assert(_archive != null);
+    [_archive extract: items to: url operation: op done: ^(NSError* error) {
+        if (error != null) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                               NSAlert* alert = [NSAlert alertWithError: error];
+                               [_sheet begin: alert done: ^(int rc) { } ];
+            });
+        }
+    }];
+}
+
 - (void) openArchiveForOperation: (NSOperation*) op {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
@@ -559,10 +574,7 @@ static NSTableView* createTableView(NSRect r) {
         } else if (error != null) {
             _heroView.hidden = false;
             NSAlert* alert = [NSAlert alertWithError: error];
-            [doc.sheet begin: alert
-                done: ^(int rc) {
-                    [_window performClose: null];
-                }];
+            [doc.sheet begin: alert done: ^(int rc) { [_window performClose: null]; } ];
         } else {
             // error == null - aborted by user
             [_window performClose: _window];
@@ -683,8 +695,11 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (NSURL*) extract: (NSObject<ZGItemProtocol>*) it to: (NSURL*) d {
-    NSURL* fileURL = [NSURL fileURLWithPath:[[d path] stringByAppendingPathComponent: it.name] isDirectory: false];
+- (void) extract: (NSArray*) items to: (NSURL*) url {
+    ExtractItemsOperation *operation = [[ExtractItemsOperation alloc] initWithDocument: self items: items to: url];
+    [_operationQueue addOperation: operation];
+
+/*
     // TODO: extact file here and wrtie to fileURL
     double delayInSeconds = 2.0;
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
@@ -692,14 +707,16 @@ static NSTableView* createTableView(NSRect r) {
         trace(@"writeFile=%@", fileURL);
         NSMutableData* data = [NSMutableData dataWithLength: 4096];
         NSError* e = [NSError new];
-        [data writeToURL:fileURL options:NSAtomicWrite error: &e];
+        [data writeToURL:fileURL options: NSAtomicWrite error: &e];
     });
     trace(@"fileURL=%@", fileURL);
     return fileURL;
+*/ 
 }
 
-- (void)pasteboard:(NSPasteboard *)pasteboard provideDataForType: (NSString*) type {
+- (void) pasteboard:(NSPasteboard *) pasteboard provideDataForType: (NSString*) type {
     // This method will be called to provide data for NSFilenamesPboardType
+/*
     if ([type isEqualToString:NSFilenamesPboardType]) {
         int draggedRow = 1;
         NSObject<ZGItemProtocol>* it = [_tableViewDatatSource itemAtRow: draggedRow];
@@ -708,6 +725,7 @@ static NSTableView* createTableView(NSRect r) {
             [pasteboard setPropertyList:@[[fileURL path]] forType:NSFilenamesPboardType];
         }
     }
+*/
 }
 
 @end

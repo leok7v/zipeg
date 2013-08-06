@@ -110,29 +110,18 @@
 
 - (NSArray*) tableView: (NSTableView*) tv namesOfPromisedFilesDroppedAtDestination: (NSURL*) d
              forDraggedRowsWithIndexes: (NSIndexSet*) rowIndexes {
-/*
-    NSMutableArray *draggedFilenames = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
-    NSUInteger i = [rowIndexes firstIndex];
-    while (i != NSNotFound) {
-        NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
-        NSString *destPath = [[dest path] stringByAppendingPathComponent: it.name];
-        [draggedFilenames addObject: destPath];
-        i = [rowIndexes indexGreaterThanIndex: i];
-    }
-    trace(@"%@", draggedFilenames);
-    NSURL *fileURL = [_document writeDraggedRowsWithIndexes: rowIndexes toDestination: destPath];
-    return draggedFilenames;
-*/
     NSMutableArray *urls  = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
     NSMutableArray *items = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
     NSUInteger i = [rowIndexes firstIndex];
     while (i != NSNotFound) {
         NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
         [items addObject: it];
-        NSURL* u = [_document extract: it to: d];
+        NSURL* u =[NSURL fileURLWithPath:[[d path] stringByAppendingPathComponent: it.name] isDirectory: false];
+        trace(@"fileURL=%@", u);
         [urls addObject: [[u path] lastPathComponent]];
         i = [rowIndexes indexGreaterThanIndex: i];
     }
+    [_document extract: items to: d];
     return urls;
 }
 

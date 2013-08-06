@@ -373,10 +373,7 @@ bool P7Z::open(const char* archiveName) {
 bool P7Z::extract(int* indices, int n, const char* dest) {
     
     struct ExtractCallback : public CArchiveExtractCallback,
-                             public IFolderArchiveExtractCallback /*,
-                             public IArchiveExtractCallback,
-                             public ICryptoGetTextPassword,
-                             public CMyUnknownImp */ {
+                             public IFolderArchiveExtractCallback {
         ExtractCallback(P7Z *context) : asked(false), total(0), completed(0) { ctx = context; }
         MY_QUERYINTERFACE_BEGIN
         MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
@@ -402,6 +399,7 @@ bool P7Z::extract(int* indices, int n, const char* dest) {
         virtual HRESULT SetCompleted(const UInt64 *completeValue) {
             completed = completeValue == 0 ? 0 : *completeValue;
             trace("completeValue=%lld\n", completed);
+            ctx->delegate->progress(ctx, completed, total);
             return S_OK;
         }
         
@@ -431,6 +429,12 @@ bool P7Z::extract(int* indices, int n, const char* dest) {
                                  
         virtual HRESULT MessageError(const wchar_t *message) {
             trace("MessageError: %ls\n", message);
+            AString e;
+            if (ConvertUnicodeToUTF8(message, e)) {
+                ctx->delegate->error(e);
+            } else {
+                ctx->delegate->error("internal error");
+            }
             return S_OK;
         }
                                  

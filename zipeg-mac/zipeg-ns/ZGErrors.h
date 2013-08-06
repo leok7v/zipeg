@@ -9,8 +9,9 @@ void ZGErrorsInit();
 enum {
     ZGInternalError = 1000,
     ZGIsNotAFile = 1001,
-    ZGFileIsNotReachable = 1002,
-    ZGArchiverError = 1003,
+    ZGIsNotAFolder = 1002,
+    ZGFileIsNotReachable = 1003,
+    ZGArchiverError = 1004,
     ZGOutOfMemory = 1999
 };
 

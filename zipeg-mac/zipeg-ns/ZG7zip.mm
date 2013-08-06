@@ -640,9 +640,11 @@ static NSString* starifyMultipartRAR(NSString* s) {
                 if (b) {
                     b = [self buildTree];
                 }
+/*
                 mkdir("/tmp/foo", 0700);
                 int ix[] = {1};
                 a->extract(ix, -1, "/tmp/foo");
+ */
             }
         } else {
             if (_error == null && _password != null) {
@@ -769,8 +771,8 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return !self.isCancelled;
 }
 
-- (void) error:(const char*)text {
-    _error = [NSString stringWithUTF8String:text];
+- (void) error: (const char*) message {
+    _error = [NSString stringWithUTF8String: message];
 }
 
 - (const wchar_t*) password {
@@ -808,9 +810,35 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return [document progressFileOnBackgroundThread: fileno ofTotal: totalNumberOfFiles] && !self.isCancelled;
 }
 
-- (void) extract: (NSArray*) indices to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(BOOL)) block {
+- (void) extract: (NSArray*) itms to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(NSError* e)) block {
     assert(![NSThread isMainThread]);
-    block(true);
+    if (![url isFileURL]) {
+        NSMutableDictionary *details = [NSMutableDictionary dictionary];
+        [details setValue: ZG_ERROR_LOCALIZED_DESCRIPTION(ZGIsNotAFile) forKey: NSLocalizedDescriptionKey];
+        [details setValue:url forKey: NSURLErrorKey];
+        NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile userInfo: details];
+        block(err);
+        return;
+    }
+    NSString* path = [url path];
+    int n = 0;
+    int indices[(int)itms.count];
+    for (ZG7zipItem* it in itms) {
+        if (it->_index >= 0) {
+            indices[n++] = it->_index;
+        }
+    }
+    _error = null;
+    a->extract(indices, n, [path UTF8String]);
+    if (_error == null) {
+        block(null);
+    } else {
+        NSMutableDictionary *details = [NSMutableDictionary dictionary];
+        [details setValue: _error forKey: NSLocalizedDescriptionKey];
+        [details setValue:url forKey: NSURLErrorKey];
+        NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile userInfo: details];
+        block(err);
+    }
 }
 
 
