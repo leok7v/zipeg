@@ -38,7 +38,8 @@ void CArchiveExtractCallback::Init(
   _crcMode = crcMode;
   _unpTotal = 1;
   _packTotal = packSize;
-
+  _overwriteMode = NExtract::NOverwriteMode::kAskBefore;
+    
   _extractCallback2 = extractCallback2;
   _compressProgress.Release();
   _extractCallback2.QueryInterface(IID_ICompressProgressInfo, &_compressProgress);

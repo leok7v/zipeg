@@ -85,9 +85,7 @@ UString MultiByteToUnicodeString(const AString &srcString, int codePage)
     return r;
 }
 
-AString UnicodeStringToMultiByte(const UString &s, int codePage)
-{
-    printf("UnicodeStringToMultiByte \"%ls\" %d 0x%08X\n", (LPCTSTR)s, codePage, wchar_t_encoding);
+AString UnicodeStringToMultiByte(const UString &s, int codePage) {
     if (s.IsEmpty()) {
         return "";
     }
@@ -102,7 +100,6 @@ AString UnicodeStringToMultiByte(const UString &s, int codePage)
     CFIndex index = CFStringGetBytes(cfs, CFRangeMake(0, n), kCFStringEncodingUTF8, '?', false,
                                      (UInt8*)buff, size, NULL);
     buff[index] = 0;
-    printf("UnicodeStringToMultiByte buff=\"%s\" %d\n", (LPCTSTR)buff, index);
     CFRelease(cfs);
     AString a = buff;
     return a;
