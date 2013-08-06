@@ -12,7 +12,7 @@
 				<string>zip</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
-			<string></string>
+			<string>zipeg-archive</string>
 			<key>CFBundleTypeName</key>
 			<string>Zip Archive</string>
 			<key>CFBundleTypeOSTypes</key>
@@ -160,6 +160,8 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>WinZip Zip Archive</string>
+			<key>UTTypeIconFile</key>
+			<string>zipeg-archive</string>
 			<key>UTTypeIdentifier</key>
 			<string>com.winzip.zip-archive</string>
 			<key>UTTypeReferenceURL</key>
@@ -183,14 +185,12 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>LHA archive</string>
-			<key>UTTypeIconName</key>
-			<string>file-lha.icns</string>
+			<key>UTTypeIconFile</key>
+			<string>zipeg-archive</string>
 			<key>UTTypeIdentifier</key>
 			<string>public.archive.lha</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
-				<key>com.apple.macos.ostype</key>
-				<string>LHA </string>
 				<key>public.filename-extension</key>
 				<array>
 					<string>lha</string>
@@ -210,8 +210,8 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>7z archive</string>
-			<key>UTTypeIconName</key>
-			<string>file-7z.icns</string>
+			<key>UTTypeIconFile</key>
+			<string>zipeg-archive</string>
 			<key>UTTypeIdentifier</key>
 			<string>org.7-zip.7-zip-archive</string>
 			<key>UTTypeReferenceURL</key>
