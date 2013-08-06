@@ -32,7 +32,8 @@ class CHandler:
   UInt64 _headersSize;
   bool _phySizeDefined;
   AString _errorMessage;
-
+  Int32 _encoding = CP_UTF8;
+    
   NCompress::CCopyCoder *copyCoderSpec;
   CMyComPtr<ICompressCoder> copyCoder;
 

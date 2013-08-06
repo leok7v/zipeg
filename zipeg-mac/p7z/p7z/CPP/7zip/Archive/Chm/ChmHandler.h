@@ -22,6 +22,7 @@ public:
 private:
   CFilesDatabase m_Database;
   CMyComPtr<IInStream> m_Stream;
+  Int32 _encoding = CP_UTF8;
 };
 
 }}

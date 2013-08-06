@@ -204,8 +204,15 @@ MY_EXTERN_C UINT SysStringLen(BSTR bstr);
 /* MY_EXTERN_C DWORD GetLastError(); */
 MY_EXTERN_C LONG CompareFileTime(const FILETIME* ft1, const FILETIME* ft2);
 
-#define CP_ACP    0
-#define CP_OEMCP  1
+#ifdef __APPLE_CC__
+#define CP_ACP   -3  // because 0 is kCFStringEncodingMacRoman
+#define CP_OEMCP -4  // because 1 is kCFStringEncodingMacJapanese
+#define CP_UTF8  0x08000100 // kCFStringEncodingUTF8
+#else
+#define CP_ACP   0
+#define CP_OEMCP 1
+#define CP_UTF8  65001
+#endif
 
 typedef enum tagSTREAM_SEEK
 {

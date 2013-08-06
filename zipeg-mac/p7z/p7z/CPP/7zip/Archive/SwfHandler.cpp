@@ -70,6 +70,7 @@ class CHandler:
   CMyComPtr<IInStream> _stream;
 
   CDeflateProps _method;
+  Int32 _encoding = CP_UTF8;
 
 public:
   MY_UNKNOWN_IMP4(IInArchive, IArchiveOpenSeq, IOutArchive, ISetProperties)
@@ -101,6 +102,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
@@ -344,6 +350,7 @@ class CHandler:
   CObjectVector<CTag> _tags;
   NSwfc::CItem _item;
   UInt64 _packSize;
+  Int32 _encoding = CP_UTF8;
 
   HRESULT OpenSeq3(ISequentialInStream *stream, IArchiveOpenCallback *callback);
   HRESULT OpenSeq2(ISequentialInStream *stream, IArchiveOpenCallback *callback);
@@ -378,6 +385,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

@@ -543,6 +543,7 @@ class CHandler:
   UString _resourceFileName;
   CUsedBitmap _usedRes;
   bool _parseResources;
+  Int32 _encoding = CP_UTF8;
 
   CRecordVector<CMixItem> _mixItems;
 
@@ -1579,6 +1580,11 @@ STDMETHODIMP CHandler::Close()
 
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

@@ -126,6 +126,7 @@ class CHandler:
   AString _xml;
   CObjectVector<CFile> _files;
   CRecordVector<int> _fileIndices;
+  Int32 _encoding = CP_UTF8;
 
   HRESULT Open2(IInStream *stream);
   HRESULT Extract(IInStream *stream);
@@ -440,6 +441,11 @@ STDMETHODIMP CHandler::Close()
 
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

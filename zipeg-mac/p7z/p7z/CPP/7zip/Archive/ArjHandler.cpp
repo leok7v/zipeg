@@ -463,6 +463,7 @@ private:
   CInArchive _archive;
   CObjectVector<CItem> _items;
   CMyComPtr<IInStream> _stream;
+  Int32 _encoding = CP_UTF8;
 };
 
 const wchar_t *kHostOS[] =
@@ -569,6 +570,11 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     COM_TRY_END
 }
     
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
+    
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
@@ -576,7 +582,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   const CItem &item = _items[index];
   switch(propID)
   {
-    case kpidPath:  prop = NItemName::GetOSName(MultiByteToUnicodeString(item.Name, CP_OEMCP)); break;
+    case kpidPath:  prop = NItemName::GetOSName(MultiByteToUnicodeString(item.Name, _encoding)); break;
     case kpidIsDir:  prop = item.IsDir(); break;
     case kpidSize:  prop = item.Size; break;
     case kpidPackSize:  prop = item.PackSize; break;

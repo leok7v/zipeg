@@ -192,6 +192,7 @@ class CHandler:
   CObjectVector<CItem> _items;
   UInt64 _totalSize;
   CByteBuffer _buffer;
+  Int32 _encoding = CP_UTF8;
 
   HRESULT ReadTables(IInStream *stream, UInt32 baseLba, UInt32 lba, int level);
 public:
@@ -378,6 +379,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

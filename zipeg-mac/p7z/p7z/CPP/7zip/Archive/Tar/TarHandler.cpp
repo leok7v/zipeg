@@ -175,6 +175,11 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return S_OK;
     COM_TRY_END
 }
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -220,9 +225,9 @@ HRESULT CHandler::SkipTo(UInt32 index)
   return S_OK;
 }
 
-static UString TarStringToUnicode(const AString &s)
+static UString TarStringToUnicode(const AString &s, Int32 encoding)
 {
-  return MultiByteToUnicodeString(s, CP_OEMCP);
+  return MultiByteToUnicodeString(s, encoding);
 }
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
@@ -246,7 +251,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
   switch(propID)
   {
-    case kpidPath: prop = NItemName::GetOSName2(TarStringToUnicode(item->Name)); break;
+    case kpidPath: prop = NItemName::GetOSName2(TarStringToUnicode(item->Name, _encoding)); break;
     case kpidIsDir: prop = item->IsDir(); break;
     case kpidSize: prop = item->GetUnpackSize(); break;
     case kpidPackSize: prop = item->GetPackSize(); break;
@@ -259,9 +264,9 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
       }
       break;
     case kpidPosixAttrib: prop = item->Mode; break;
-    case kpidUser: prop = TarStringToUnicode(item->User); break;
-    case kpidGroup: prop = TarStringToUnicode(item->Group); break;
-    case kpidLink: prop = TarStringToUnicode(item->LinkName); break;
+    case kpidUser: prop = TarStringToUnicode(item->User, _encoding); break;
+    case kpidGroup: prop = TarStringToUnicode(item->Group, _encoding); break;
+    case kpidLink: prop = TarStringToUnicode(item->LinkName,  _encoding); break;
   }
   prop.Detach(value);
   return S_OK;

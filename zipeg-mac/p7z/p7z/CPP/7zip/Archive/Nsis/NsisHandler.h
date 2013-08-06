@@ -20,6 +20,7 @@ class CHandler:
 {
   CMyComPtr<IInStream> _inStream;
   CInArchive _archive;
+  Int32 _encoding = CP_UTF8;
 
   DECL_EXTERNAL_CODECS_VARS
 

@@ -40,6 +40,7 @@ class CHandler:
   UInt64 _startPos;
   CMyComPtr<IInStream> _stream;
   UInt32 _numItems;
+  Int32 _encoding = CP_UTF8;
   CItem _items[kNumFilesMax + 1];
   HRESULT Open2(IInStream *stream);
 public:
@@ -65,6 +66,11 @@ IMP_IInArchive_ArcProps_NO
 #define MACH_MACHINE_PPC64 (MACH_MACHINE_PPC | MACH_ARCH_ABI64)
 #define MACH_MACHINE_AMD64 (MACH_MACHINE_386 | MACH_ARCH_ABI64)
 
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
+    
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   NWindows::NCOM::CPropVariant prop;

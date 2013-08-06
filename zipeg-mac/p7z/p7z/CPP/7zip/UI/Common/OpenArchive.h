@@ -29,6 +29,9 @@ struct CArc
   CArc(): MTimeDefined(false) {}
   HRESULT GetItemPath(UInt32 index, UString &result) const;
   HRESULT GetItemMTime(UInt32 index, FILETIME &ft, bool &defined) const;
+//http://sourceforge.net/p/sevenzip/discussion/45798/thread/0dbcc588
+//Anti-item (item that will delete file or directory during extracting).
+//This feature is supported only in 7z format (Update options). LK: How aweful! :)
   HRESULT IsItemAnti(UInt32 index, bool &result) const
     { return GetArchiveItemBoolProp(Archive, index, kpidIsAnti, result); }
 

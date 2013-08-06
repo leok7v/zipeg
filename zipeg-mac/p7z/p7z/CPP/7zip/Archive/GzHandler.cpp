@@ -304,6 +304,7 @@ class CHandler:
   CMyComPtr<IInStream> _stream;
   CMyComPtr<ICompressCoder> _decoder;
   NCompress::NDeflate::NDecoder::CCOMCoder *_decoderSpec;
+  Int32 _encoding = CP_UTF8;
 
   CDeflateProps _method;
 
@@ -351,6 +352,11 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     buf = _item.Name;
     return S_OK;
 }
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -366,7 +372,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 /* index */, PROPID propID,  PROPVARIA
   {
     case kpidPath:
       if (_item.NameIsPresent())
-        prop = MultiByteToUnicodeString(_item.Name, CP_ACP);
+        prop = MultiByteToUnicodeString(_item.Name, _encoding);
       break;
     // case kpidComment: if (_item.CommentIsPresent()) prop = MultiByteToUnicodeString(_item.Comment, CP_ACP); break;
     case kpidMTime:

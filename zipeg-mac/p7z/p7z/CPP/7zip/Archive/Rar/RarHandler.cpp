@@ -143,6 +143,11 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return S_OK;
     COM_TRY_END
 }
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -191,7 +196,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID,  PROPVARIANT *va
       if (item.HasUnicodeName() && !item.UnicodeName.IsEmpty())
         u = item.UnicodeName;
       else
-        u = MultiByteToUnicodeString(item.Name, CP_OEMCP);
+        u = MultiByteToUnicodeString(item.Name, _encoding);
       prop = (const wchar_t *)NItemName::WinNameToOSName(u);
       break;
     }

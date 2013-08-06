@@ -171,15 +171,17 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   return S_OK;
 }
 
-    
-    
-
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
   *numItems = m_Items.Size();
   return S_OK;
 }
 
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
+    
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     COM_TRY_BEGIN
     const CItemEx &item = m_Items[index];
@@ -187,7 +189,7 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return S_OK;
     COM_TRY_END
 }
-    
+        
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
   COM_TRY_BEGIN
@@ -195,7 +197,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   const CItemEx &item = m_Items[index];
   switch(propID)
   {
-    case kpidPath:  prop = NItemName::GetOSName2(item.GetUnicodeString(item.Name)); break;
+    case kpidPath:  prop = NItemName::GetOSName2(item.GetUnicodeString(item.Name, _encoding)); break;
     case kpidIsDir:  prop = item.IsDir(); break;
     case kpidSize:  prop = item.UnPackSize; break;
     case kpidPackSize:  prop = item.PackSize; break;
@@ -246,7 +248,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
     }
     case kpidAttrib:  prop = item.GetWinAttributes(); break;
     case kpidEncrypted:  prop = item.IsEncrypted(); break;
-    case kpidComment:  prop = item.GetUnicodeString(BytesToString(item.Comment)); break;
+    case kpidComment:  prop = item.GetUnicodeString(BytesToString(item.Comment),  _encoding); break;
     case kpidCRC:  if (item.IsThereCrc()) prop = item.FileCRC; break;
     case kpidMethod:
     {

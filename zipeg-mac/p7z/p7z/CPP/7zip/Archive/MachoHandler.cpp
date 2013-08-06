@@ -135,6 +135,7 @@ class CHandler:
   CObjectVector<CSection> _sections;
   bool _mode64;
   bool _be;
+  Int32 _encoding = CP_UTF8;
   UInt32 _machine;
   UInt32 _type;
   UInt32 _headersSize;
@@ -428,6 +429,11 @@ STDMETHODIMP CHandler::Close()
     
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

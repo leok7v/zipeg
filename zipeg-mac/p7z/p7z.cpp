@@ -1,3 +1,9 @@
+#ifdef __APPLE_CC__
+#define UInt32  macUIn32
+#include <CoreFoundation/CoreFoundation.h>
+#undef UInt32
+#endif
+
 #include "myWindows/StdAfx.h"
 #include <stdio.h>
 #include <string.h>
@@ -195,109 +201,9 @@ static const char* pidName(PROPID pid) {
     return null;
 }
 
-/*
-static const char* g = "gee=ジー";
-static char buf[1024] = {0};
-
-static bool VERBOSE = true;
-
-void P7Z::foo(void* context, const char* utf, void (*bar)(void*, const char*)) {
-    UString s1 = L"ABC";
-    UString s2 = L"ABCD";
-    int r = CompareFileNames(s1, s2);
-    console("Hello P7Z utf=%s length=%ld r=%d\n", utf, strlen(utf), r);
-    bar(context, g);
-//  __uint8_t ui8 = 0xFFFF;
-    unsigned char ui8 = 0xFF;
-    void* temp = NULL;
-    ::snprintf(buf, sizeof(buf), "sizeof(__uint8_t)=%ld sizeof(int)=%ld sizeof(*int)=%ld", sizeof(ui8), sizeof(int), sizeof(temp));
-//  ::sprintf(buf, "sizeof(int)=%ld sizeof(*int)=%ld", sizeof(char), sizeof(int), sizeof(temp));
-    bar(context, buf);
-
-    char buf[1024];
-    char* cwd = getcwd(buf, sizeof(buf));
-//  const char *args[3] = {cwd, "l", "/Users/leo/tmp/ua23n46m9y-Skeletons.rar"};
-//  const char *args[3] = {cwd, "l", "/Users/leo/code/zipeg/test/sample.zip"};
-//  const char *args[3] = {cwd, "l", "/Users/leo/code/zipeg/test/zips/german-cmd.zip"};
-    const char *args[3] = {cwd, "l", "/Users/leo/code/zipeg/test/xxx (cp1251).zip"}; // needs codepage
-//
-    
-    
-    main2(3, args);
-    
-    struct D : P7Z::Delegate {
-        virtual const wchar_t* password(P7Z*) { return L"123456"; };
-        virtual void progress(P7Z*, int64_t pos, int64_t total) {}
-        virtual void progressFile(P7Z*, int64_t fileno, int64_t files) {}
-        virtual bool cancel(P7Z*) { return false; }
-        virtual bool archiveProperty(P7Z*, const char* name, Value& v) {
-            if (VERBOSE) {
-                fprintf(stderr, "archiveProperty(%s=v.kind=%d, v.num=0x%016llX(%lld), v.str=%ls)\n",
-                        name, v.kind, v.num, v.num, v.str);
-            }
-            return true; // carry on
-        }
-        virtual bool itemProperties(P7Z* a, int itemIndex, const char* names[], Value* values[]) {
-            int n = a->getNumberOfProperties();
-            HashMapS2L map(n * 2);
-            for (int i = 0; i < n; i++) {
-                map.put(names[i], (uint64_t)values[i]);
-            }
-            Value* v = (Value*)map.remove("Path");
-            if (VERBOSE) {
-                fprintf(stderr, "item[%d] %ls ", itemIndex, v->str);
-            }
-            for (int i = 0; i < n; i++) {
-                v = (Value*)map.remove(names[i]);
-                if (v != null && VERBOSE) {
-                    fprintf(stderr, "%s=%ls ", names[i], v->str);
-                }
-            }
-            if (VERBOSE) {
-                fprintf(stderr, "\n");
-            }
-            return true; // carry on
-        }
-    };
-
-    VERBOSE = true;
-    D d;
-    {
-        P7Z a(&d);
-        //  a.open("/Users/leo/code/zipeg/test/attachment(password-123456).rar");
-        NanoTime::timestamp("P7Z.open()");
-        bool b = a.open("/Users/leo/tmp/grim.part01.rar");
-        NanoTime::timestamp("P7Z.open()");
-        if (b) {
-            NanoTime::timestamp("iterateArchiveProperies()");
-            a.iterateArchiveProperies();
-            NanoTime::timestamp("iterateArchiveProperies()");
-            NanoTime::timestamp("iterateItems()");
-            a.iterateAllItems();
-            NanoTime::timestamp("iterateItems()");
-            a.close();
-        } else {
-            fprintf(stderr, "failed to open archive");
-        }
-    }
-
-    VERBOSE = false;
-    NanoTime::timestamp("100xP7Z.open()"); // about 40 seconds
-    for (int i = 0; i < 100; i++) {
-        P7Z p7z(&d);
-        // p7z.open("/Users/leo/code/zipeg/test/attachment(password-123456).rar");
-        p7z.open("/Users/leo/tmp/grim.part01.rar");
-        p7z.iterateArchiveProperies();
-        p7z.iterateAllItems();
-        p7z.close();
-    }
-    NanoTime::timestamp("100xP7Z.open()");
-}
-*/
-
 static CCodecs *codecs;
 
-P7Z::P7Z(Delegate* d) : archiveLink(null), delegate(d),codePage(-1) {
+P7Z::P7Z(Delegate* d) : archiveLink(null), delegate(d), codePage(CP_UTF8) {
     assert(delegate != null);
     if (delegate == null) {
         throw "delegate cannot be null";
@@ -310,7 +216,6 @@ P7Z::P7Z(Delegate* d) : archiveLink(null), delegate(d),codePage(-1) {
         }
     }
 }
-
 
 bool P7Z::reportException(int e) {
     char buff[1024] = {0};
@@ -348,8 +253,36 @@ bool P7Z::reportException(const wchar_t* e) {
     return false; // MUST ALWAYS RETURN FALSE (see usages)
 }
 
+
+static IInArchive* getArchive(void* archiveLink) {
+    CArchiveLink &link = *(CArchiveLink*)archiveLink;
+    return link.GetArchive();
+}
+
+int P7Z::getNumberOfItems() {
+    UInt32 n = 0;
+    return getArchive(archiveLink)->GetNumberOfItems(&n) == S_OK ? (int)n : 0;
+}
+
+int P7Z::getNumberOfProperties() {
+    UInt32 n = 0;
+    return getArchive(archiveLink)->GetNumberOfProperties(&n) == S_OK ? n : 0;
+}
+
+const char* P7Z::getItemName(int itemIndex) {
+    const char* buf;
+    HRESULT r = getArchive(archiveLink)->GetItemName(itemIndex, buf);
+    return r == S_OK ? buf : null;
+}
+
+int P7Z::getNumberOfArchiveProperties() {
+    UInt32 n = 0;
+    return getArchive(archiveLink)->GetNumberOfArchiveProperties(&n) == S_OK ? n : 0;
+}
+
 void P7Z::setCodePage(int cp) {
     codePage = cp;
+    getArchive(archiveLink)->SetEncoding(cp);
 }
 
 bool P7Z::open(const char* archiveName) {
@@ -429,9 +362,6 @@ bool P7Z::open(const char* archiveName) {
         if (link->Open2(codecs, formatIndices, stdInMode, NULL, name, &oc) != S_OK) {
             return false;
         }
-        mkdir("/tmp/foo", 0700);
-        int ix[] = {1};
-        extract(ix, "/tmp/foo");
         return true;
     } catch (int err) { return reportException(err);
     } catch (const char* err) { return reportException(err);
@@ -440,142 +370,100 @@ bool P7Z::open(const char* archiveName) {
     }
 }
 
-static IInArchive* getArchive(void* archiveLink) {
-    CArchiveLink &link = *(CArchiveLink*)archiveLink;
-    return link.GetArchive();
-}
-
-int P7Z::getNumberOfItems() {
-    UInt32 n = 0;
-    return getArchive(archiveLink)->GetNumberOfItems(&n) == S_OK ? (int)n : 0;
-}
-
-int P7Z::getNumberOfProperties() {
-    UInt32 n = 0;
-    return getArchive(archiveLink)->GetNumberOfProperties(&n) == S_OK ? n : 0;
-}
-
-const char* P7Z::getItemName(int itemIndex) {
-    const char* buf;
-    HRESULT r = getArchive(archiveLink)->GetItemName(itemIndex, buf);
-    return r == S_OK ? buf : null;
-}
-
-int P7Z::getNumberOfArchiveProperties() {
-    UInt32 n = 0;
-    return getArchive(archiveLink)->GetNumberOfArchiveProperties(&n) == S_OK ? n : 0;
-}
-
-bool P7Z::extract(int* indices, const char* dest) {
+bool P7Z::extract(int* indices, int n, const char* dest) {
     
     struct ExtractCallback : public CArchiveExtractCallback,
                              public IFolderArchiveExtractCallback /*,
                              public IArchiveExtractCallback,
                              public ICryptoGetTextPassword,
                              public CMyUnknownImp */ {
+        ExtractCallback(P7Z *context) : asked(false), total(0), completed(0) { ctx = context; }
         MY_QUERYINTERFACE_BEGIN
         MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
         MY_QUERYINTERFACE_END
         STDMETHOD_(ULONG, AddRef)() { return 1; } // only used on the stack
         STDMETHOD_(ULONG, Release)() { return 1; } // only used on the stack
-/*
-        MY_QUERYINTERFACE_BEGIN2(IFolderArchiveExtractCallback)
-        MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
-        MY_QUERYINTERFACE_END
-        STDMETHOD_(ULONG, AddRef)() { return 1; } // only used on the stack
-        STDMETHOD_(ULONG, Release)() { return 1; } // only used on the stack
-*/
-        ExtractCallback(P7Z *context) : asked(false), totalFiles(0), totalBytes(0) { ctx = context; }
-        
                                  
-        virtual HRESULT CryptoGetTextPassword(UString &password) {
-            password = L"123456";
+        virtual HRESULT CryptoGetTextPassword(UString &p) {
+            if (!asked) {
+                password = ctx->delegate->password(ctx);
+                asked = true;
+            }
+            p = password;
             return S_OK;
         }
                                  
-        virtual HRESULT SetTotal(UInt64 total) {
+        virtual HRESULT SetTotal(UInt64 t) {
+            total = t;
             trace("total=%lld\n", total);
             return S_OK;
         }
         
         virtual HRESULT SetCompleted(const UInt64 *completeValue) {
-            trace("completeValue=%lld\n", *completeValue);
+            completed = completeValue == 0 ? 0 : *completeValue;
+            trace("completeValue=%lld\n", completed);
             return S_OK;
         }
         
-        virtual HRESULT GetStream(UInt32 index, ISequentialOutStream **outStream,  Int32 askExtractMode) {
-            return CArchiveExtractCallback::GetStream(index, outStream, askExtractMode);
-        }
-                                 
-        virtual HRESULT PrepareOperation(Int32 askExtractMode) {
-            switch (askExtractMode) {
-                case NArchive::NExtract::NAskMode::kExtract: trace("PrepareOperation: extract\n"); break;
-                case NArchive::NExtract::NAskMode::kTest: trace("PrepareOperation: test\n"); break;
-                case NArchive::NExtract::NAskMode::kSkip: trace("PrepareOperation: skip\n"); break;
-                default: trace("PrepareOperation: unexpected: %d\n", askExtractMode);
-            }
-            return S_OK;            
-        }
-                                 
-        virtual HRESULT SetOperationResult(Int32 resultEOperationResult) {
-            switch (resultEOperationResult) {
-                case NArchive::NExtract::NOperationResult::kOK:
-                    trace("SetOperationResult: OK\n"); break;
-                case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
-                    trace("SetOperationResult: UnsupportedMethod\n"); break;
-                case NArchive::NExtract::NOperationResult::kDataError:
-                    trace("SetOperationResult: DataError\n"); break;
-                case NArchive::NExtract::NOperationResult::kCRCError:
-                    trace("SetOperationResult: CRCError\n"); break;
-                default: trace("SetOperationResult: unexpected: %d\n", resultEOperationResult);
-            }
-            return S_OK;
-        }
-        
-        virtual HRESULT AskOverwrite(
-                                const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
-                                const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
-                                     Int32 *answer){
+        virtual HRESULT AskOverwrite(const wchar_t *existName,
+                                     const FILETIME *existTime, const UInt64 *existSize,
+                                     const wchar_t *newName,
+                                     const FILETIME *newTime, const UInt64 *newSize,
+                                     Int32 *answer) {
             *answer = NOverwriteAnswer::kAutoRename;
             return S_OK;
         }
                                  
-        virtual HRESULT PrepareOperation(const wchar_t *name, bool isFolder, Int32 askExtractMode, const UInt64 *position){
-            return E_FAIL;
+        virtual HRESULT PrepareOperation(const wchar_t* name, bool isFolder, Int32 askExtractMode,
+                                         const UInt64 *position) {
+            const char* s = null;
+            char buff[128] = {0};
+            switch (askExtractMode) {
+                case NArchive::NExtract::NAskMode::kExtract: s = "extract"; break;
+                case NArchive::NExtract::NAskMode::kTest: s = "test"; break;
+                case NArchive::NExtract::NAskMode::kSkip: s = "skip"; break;
+                default: sprintf(buff, "askExtractMode=%d", askExtractMode); s = buff;
+            }
+            trace("PrepareOperation: name=%ls isFolder=%d %s position=%lld\n", name, isFolder, s,
+                  position != null ? *position : 0);
+            return S_OK;
         }
                                  
-        virtual HRESULT MessageError(const wchar_t *message){
+        virtual HRESULT MessageError(const wchar_t *message) {
             trace("MessageError: %ls\n", message);
             return S_OK;
         }
                                  
-        virtual HRESULT SetOperationResult(Int32 operationResult, bool encrypted){
-            return E_FAIL;
+        virtual HRESULT SetOperationResult(Int32 r, bool encrypted) {
+            const char* s = null;
+            char buff[128] = {0};
+            switch (r) {
+                case NArchive::NExtract::NOperationResult::kOK:
+                    s = "OK"; break;
+                case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
+                    s = "UnsupportedMethod"; break;
+                case NArchive::NExtract::NOperationResult::kDataError:
+                    s = "DataError"; break;
+                    trace("SetOperationResult: \n"); break;
+                case NArchive::NExtract::NOperationResult::kCRCError:
+                    s = "CRCError"; break;
+                default: sprintf(buff, "result=%d", r); s = buff;
+            }
+            trace("SetOperationResult: result=%s encrypted=%d\n", s, encrypted);
+            return S_OK;
         }
 
-        virtual HRESULT BeforeOpen(const wchar_t *name){
-            return E_FAIL;
-        }
-                                 
-        virtual HRESULT OpenResult(const wchar_t *name, HRESULT result, bool encrypted){
-            return E_FAIL;
-        }
-                                 
-        virtual HRESULT ThereAreNoFiles(){
-            return E_FAIL;
-        }
-        virtual HRESULT ExtractResult(HRESULT result){
-            return E_FAIL;
-        }
-        
-        virtual HRESULT SetPassword(const UString &password) {
-            return E_FAIL;
-        }
+        // folowing functions are only called when Extract.cpp is used to decompress multiple archives
+        virtual HRESULT BeforeOpen(const wchar_t *name) { return S_OK; }
+        virtual HRESULT OpenResult(const wchar_t *name, HRESULT result, bool encrypted) { return S_OK; }
+        virtual HRESULT ThereAreNoFiles() { return S_OK; }
+        virtual HRESULT ExtractResult(HRESULT result) { return S_OK; }
+        virtual HRESULT SetPassword(const UString &password) { return S_OK; }
         
         P7Z *ctx;
         bool asked;
-        int64_t totalFiles;
-        int64_t totalBytes;
+        int64_t total;
+        int64_t completed;
         UString password;
     };
     assert(archiveLink != null);
@@ -604,7 +492,7 @@ bool P7Z::extract(int* indices, const char* dest) {
         
         IInArchive* a = getArchive(archiveLink);
         // TODO: all for now
-        HRESULT result = a->Extract((const unsigned int*)indices, -1, false /*test*/, &ecs);
+        HRESULT result = a->Extract((const unsigned int*)indices, n, false /*test*/, &ecs);
         return true;
     } catch (int err) { return reportException(err);
     } catch (const char* err) { return reportException(err);

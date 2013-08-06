@@ -74,6 +74,7 @@ public:
 private:
   CMyComPtr<IInStream> _inStream;
   NArchive::N7z::CArchiveDatabaseEx _db;
+  Int32  _encoding;
   #ifndef _NO_CRYPTO
   bool _passwordIsDefined;
   #endif

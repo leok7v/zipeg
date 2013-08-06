@@ -46,6 +46,7 @@ private:
   CObjectVector<CItemEx> m_Items;
   CInArchive m_Archive;
 
+  Int32 _encoding = CP_UTF8;
   int m_Level;
   int m_MainMethod;
   UInt32 m_DicSize;

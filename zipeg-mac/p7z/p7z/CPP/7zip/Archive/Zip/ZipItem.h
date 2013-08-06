@@ -210,14 +210,14 @@ public:
   
   bool HasDescriptor() const  { return (Flags & NFileHeader::NFlags::kDescriptorUsedMask) != 0; }
 
-  UString GetUnicodeString(const AString &s) const
+  UString GetUnicodeString(const AString &s, Int32 encoding) const
   {
     UString res;
     if (IsUtf8())
       if (!ConvertUTF8ToUnicode(s, res))
         res.Empty();
     if (res.IsEmpty())
-      res = MultiByteToUnicodeString(s, GetCodePage());
+      res = MultiByteToUnicodeString(s, encoding);
     return res;
   }
   

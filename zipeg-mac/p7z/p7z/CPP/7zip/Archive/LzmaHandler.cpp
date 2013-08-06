@@ -183,6 +183,7 @@ class CHandler:
   bool _packSizeDefined;
   CMyComPtr<IInStream> _stream;
   CMyComPtr<ISequentialInStream> _seqStream;
+  Int32 _encoding = CP_UTF8;
 
   DECL_EXTERNAL_CODECS_VARS
   DECL_ISetCompressCodecsInfo
@@ -219,6 +220,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

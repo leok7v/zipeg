@@ -833,6 +833,7 @@ class CHandler:
   // CByteBuffer _uids;
   // CByteBuffer _gids;
   CHeader _h;
+  Int32 _encoding = CP_UTF8;
 
   CMyComPtr<IInStream> _stream;
   UInt64 _sizeCalculated;
@@ -1757,6 +1758,11 @@ bool CHandler::GetPackSize(int index, UInt64 &totalPack, bool fillOffsets)
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
 }
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {
@@ -1833,7 +1839,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
   switch(propID)
   {
-    case kpidPath: prop = MultiByteToUnicodeString(GetPath(index), CP_OEMCP); break;
+    case kpidPath: prop = MultiByteToUnicodeString(GetPath(index), _encoding); break;
     case kpidIsDir: prop = isDir; break;
     // case kpidOffset: if (!node.IsLink()) prop = (UInt64)node.StartBlock; break;
     case kpidSize: if (!isDir) prop = node.GetSize(); break;

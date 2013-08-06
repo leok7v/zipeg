@@ -126,6 +126,7 @@ IInArchive::Extract:
   STDMETHOD(Close)() x; \
   STDMETHOD(GetNumberOfItems)(UInt32 *numItems) x; \
   STDMETHOD(GetItemName)(UInt32 index, const char* &buf) x; \
+  STDMETHOD(SetEncoding)(Int32 encoding) x; \
   STDMETHOD(GetProperty)(UInt32 index, PROPID propID, PROPVARIANT *value) x; \
   STDMETHOD(Extract)(const UInt32* indices, UInt32 numItems, Int32 testMode, IArchiveExtractCallback *extractCallback) x; \
   STDMETHOD(GetArchiveProperty)(PROPID propID, PROPVARIANT *value) x; \

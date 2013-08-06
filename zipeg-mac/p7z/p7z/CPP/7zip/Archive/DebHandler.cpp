@@ -212,6 +212,7 @@ class CHandler:
   CMyComPtr<IInStream> _stream;
   Int32 _mainSubfile;
   UInt64 _phySize;
+  Int32 _encoding = CP_UTF8;
 public:
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)
@@ -302,6 +303,11 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     COM_TRY_END
 }
     
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
+    
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
   NCOM::CPropVariant prop;
@@ -322,7 +328,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
   switch(propID)
   {
-    case kpidPath: prop = (const wchar_t *)NItemName::GetOSName2(MultiByteToUnicodeString(item.Name, CP_OEMCP)); break;
+    case kpidPath: prop = (const wchar_t *)NItemName::GetOSName2(MultiByteToUnicodeString(item.Name, _encoding)); break;
     case kpidSize:
     case kpidPackSize:
       prop = item.Size;

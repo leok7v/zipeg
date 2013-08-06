@@ -400,6 +400,7 @@ class CHandler:
 {
   CObjectVector<CItemEx> _items;
   CMyComPtr<IInStream> _stream;
+  Int32 _encoding = CP_UTF8;
 public:
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)
@@ -512,6 +513,11 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return S_OK;
     COM_TRY_END
 }
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
 
 STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value)
 {
@@ -521,7 +527,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
 
   switch(propID)
   {
-    case kpidPath: prop = NItemName::GetOSName(MultiByteToUnicodeString(item.Name, CP_OEMCP)); break;
+    case kpidPath: prop = NItemName::GetOSName(MultiByteToUnicodeString(item.Name, _encoding)); break;
     case kpidIsDir: prop = item.IsDir(); break;
     case kpidSize:
     case kpidPackSize:

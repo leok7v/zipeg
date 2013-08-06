@@ -21,6 +21,7 @@ public:
 
 private:
   CMvDatabaseEx m_Database;
+  Int32 _encoding = CP_UTF8;
 };
 
 }}

@@ -214,6 +214,7 @@ class CHandler:
   CMyComPtr<IInStream> Stream;
   CMyComPtr<IInStream> ParentStream;
   CHandler *Parent;
+  Int32 _encoding = CP_UTF8;
 
   HRESULT Seek(UInt64 offset);
   HRESULT InitAndSeek();
@@ -623,6 +624,11 @@ STDMETHODIMP CHandler::Close()
 
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

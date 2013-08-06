@@ -691,6 +691,7 @@ class CHandler:
   public CMyUnknownImp,
   CDatabase
 {
+  Int32 _encoding = CP_UTF8;
 public:
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)
@@ -982,6 +983,11 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
     
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
     
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

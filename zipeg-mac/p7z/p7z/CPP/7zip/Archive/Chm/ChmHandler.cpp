@@ -717,6 +717,11 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return S_OK;
     COM_TRY_END
 }
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
 {

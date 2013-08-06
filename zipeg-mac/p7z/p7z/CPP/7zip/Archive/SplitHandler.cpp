@@ -39,6 +39,7 @@ class CHandler:
   CObjectVector<CMyComPtr<IInStream> > _streams;
   CRecordVector<UInt64> _sizes;
   UInt64 _totalSize;
+  Int32 _encoding = CP_UTF8;
 public:
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)
@@ -275,6 +276,11 @@ STDMETHODIMP CHandler::Close()
     
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

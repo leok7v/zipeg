@@ -188,6 +188,11 @@ STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
   return E_FAIL;
   COM_TRY_END
 }
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
 
     
 STDMETHODIMP CHandler::GetStream(UInt32 index, ISequentialInStream **stream)

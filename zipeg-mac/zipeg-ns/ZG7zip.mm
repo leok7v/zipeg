@@ -10,6 +10,7 @@
 #include "HashMapS2L.hpp"
 #include "NanoTime.hpp"
 #include "../chardet/universalchardet.h"
+#include <sys/stat.h>
 
 struct D;
 
@@ -639,6 +640,9 @@ static NSString* starifyMultipartRAR(NSString* s) {
                 if (b) {
                     b = [self buildTree];
                 }
+                mkdir("/tmp/foo", 0700);
+                int ix[] = {1};
+                a->extract(ix, -1, "/tmp/foo");
             }
         } else {
             if (_error == null && _password != null) {

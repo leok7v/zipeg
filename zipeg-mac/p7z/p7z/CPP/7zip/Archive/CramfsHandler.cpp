@@ -155,6 +155,7 @@ class CHandler:
   UInt32 _headersSize;
   AString _errorMessage;
   CHeader _h;
+  Int32 _encoding = CP_UTF8;
 
   // Current file
 
@@ -388,6 +389,11 @@ STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)
   *numItems = _items.Size();
   return S_OK;
 }
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
+}
 
 STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 {
@@ -426,7 +432,7 @@ STDMETHODIMP CHandler::GetProperty(UInt32 index, PROPID propID, PROPVARIANT *val
   bool isDir = IsDir(p, be);
   switch(propID)
   {
-    case kpidPath: prop = MultiByteToUnicodeString(GetPath(index), CP_OEMCP); break;
+    case kpidPath: prop = MultiByteToUnicodeString(GetPath(index), _encoding); break;
     case kpidIsDir: prop = isDir; break;
     // case kpidOffset: prop = (UInt32)GetOffset(p, be); break;
     case kpidSize: if (!isDir) prop = GetSize(p, be); break;

@@ -162,7 +162,7 @@ DWORD WINAPI GetTickCount(VOID);
 #ifdef __APPLE_CC__
 #define CP_ACP   -3  // because 0 is kCFStringEncodingMacRoman
 #define CP_OEMCP -4  // because 1 is kCFStringEncodingMacJapanese
-#define CP_UTF8  kCFStringEncodingUTF8
+#define CP_UTF8  0x08000100 // kCFStringEncodingUTF8
 #else
 #define CP_ACP   0
 #define CP_OEMCP 1

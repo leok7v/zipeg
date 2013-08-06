@@ -19,6 +19,7 @@ class CHandler:
 {
   CMyComPtr<IInStream> _stream;
   CInArchive _archive;
+  Int32 _encoding = CP_UTF8;
 public:
   MY_UNKNOWN_IMP2(IInArchive, IInArchiveGetStream)
   INTERFACE_IInArchive(;)

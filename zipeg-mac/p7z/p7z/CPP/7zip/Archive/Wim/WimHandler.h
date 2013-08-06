@@ -57,6 +57,7 @@ class CHandler:
   CObjectVector<CXml> _xmls;
   int _nameLenForStreams;
   bool _xmlInComments;
+  Int32 _encoding = CP_UTF8;
 
 public:
   MY_UNKNOWN_IMP1(IInArchive)

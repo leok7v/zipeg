@@ -25,6 +25,7 @@ class CHandler:
   UInt64 _streamStartPosition;
   UInt64 _packSize;
   Byte _properties;
+  Int32 _encoding = CP_UTF8;
 public:
   MY_UNKNOWN_IMP1(IInArchive)
   INTERFACE_IInArchive(;)
@@ -40,6 +41,11 @@ IMP_IInArchive_ArcProps_NO
 
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

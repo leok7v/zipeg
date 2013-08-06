@@ -47,6 +47,7 @@ class CHandler:
   UInt64 _packSize;
   UInt64 _startPosition;
   bool _packSizeDefined;
+  Int32 _encoding = CP_UTF8;
 
   UInt32 _level;
   UInt32 _dicSize;
@@ -97,6 +98,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
     
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     return E_FAIL;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
     
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

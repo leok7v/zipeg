@@ -23,6 +23,7 @@ class CHandler:
   CObjectVector<CInArchive> _archives;
   NArchive::NRar::CInArchiveInfo _archiveInfo;
   AString _errorMessage;
+  Int32 _encoding = CP_UTF8;
 
   DECL_EXTERNAL_CODECS_VARS
 

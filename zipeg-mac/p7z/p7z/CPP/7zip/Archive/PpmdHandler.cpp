@@ -107,6 +107,7 @@ class CHandler:
   UInt64 _packSize;
   bool _packSizeDefined;
   CMyComPtr<ISequentialInStream> _stream;
+  Int32 _encoding = CP_UTF8;
 
 public:
   MY_UNKNOWN_IMP2(IInArchive, IArchiveOpenSeq)
@@ -139,6 +140,11 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
 STDMETHODIMP CHandler::GetItemName(UInt32 index, const char* &buf) {
     buf = _item.Name;
     return S_OK;
+}
+    
+STDMETHODIMP CHandler::SetEncoding(Int32 e) {
+  _encoding = e;
+  return S_OK;
 }
 
 STDMETHODIMP CHandler::GetNumberOfItems(UInt32 *numItems)

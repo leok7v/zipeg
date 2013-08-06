@@ -27,7 +27,7 @@ public:
     P7Z(Delegate* d);
     virtual ~P7Z() { close(); };
     bool open(const char* archiveName);
-    bool extract(int* indices, const char* dest);
+    bool extract(int* indices, int n, const char* dest);
     void close();
 
     int  getNumberOfArchiveProperties();
