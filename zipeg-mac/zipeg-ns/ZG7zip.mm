@@ -537,8 +537,6 @@ static CFStringEncoding CHARDET_ENCODING_to_CFStringEncoding(const char* encodin
 }
 
 - (CFStringEncoding) detectEncoding {
-return (CFStringEncoding)-1;
-    
     int n = a->getNumberOfItems();
     bool b = true;
     char encoding[CHARDET_MAX_ENCODING_NAME] = {0};
@@ -566,7 +564,9 @@ return (CFStringEncoding)-1;
 }
 
 static NSString* starifyMultipartRAR(NSString* s) {
-    if ([s endsWithIgnoreCase:@".rar"]) {
+    NSString* ext = [s pathExtension];
+    // http://stackoverflow.com/questions/14928298/garbage-in-the-end-of-nsstring-on-xcode-after-stringbyreplacingcharactersinra
+    if ([ext equalsIgnoreCase: @"rar"] || [ext equalsIgnoreCase: @"zip"] || [ext equalsIgnoreCase: @"7z"]) {
         int i = [s lastIndexOfIgnoreCase:@".part"];
         if (i > 0 && isdigit([s characterAtIndex: i + 5])) {
             int j = i + 6; // no need to check s.length because s ends with ".rar"
@@ -574,7 +574,8 @@ static NSString* starifyMultipartRAR(NSString* s) {
                 j++;
             }
             if ([s characterAtIndex: j] == '.' && j == s.length - 4) {
-                s = [[s substringFrom: 0 to: i + 5] stringByAppendingString: @"*.rar"];
+                s = [[s substringFrom: 0 to: i + 5] stringByAppendingString: @"*."];
+                s = [s stringByAppendingString: ext];
             }
         }
     }

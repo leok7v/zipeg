@@ -143,7 +143,15 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
     NSLog(@"%@", [v performSelector: @selector(_subtreeDescription)]);
 }
 
+BOOL isEqual(NSObject* o1, NSObject* o2) {
+    return o1 == o2 || (o1 == null ? o2 == null : [o1 isEqual: o2]);
+}
+
 @implementation NSString(ZGExtensions)
+
+- (BOOL) equalsIgnoreCase: (NSString*) s {
+    return isEqual(self, s) || (self.length == s.length && [self indexOfIgnoreCase: s] == 0);
+}
 
 - (int) indexOf: (NSString*) s {
     NSRange r = [self rangeOfString: s];

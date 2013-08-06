@@ -548,12 +548,14 @@ static NSTableView* createTableView(NSRect r) {
         if (a != null) {
             _archive = a;
             // _archive = [ZGFileSystem new];
+            [_window setTitle: a.root.name]; // the DnD of title icon will still show filename.part1.rar
             [self reloadData];
             _heroView.hidden = true;
+            _timeToShowHeroView = 0;
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder:_outlineView];
-            _timeToShowHeroView = 0;
+            
         } else if (error != null) {
             _heroView.hidden = false;
             NSAlert* alert = [NSAlert alertWithError: error];
@@ -674,6 +676,7 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 + (void)exportData:(NSPasteboard *)pasteboard userData:(NSString *)data error:(NSString **)error {
+    // TODO:
     ZGDocument *d = [[[NSApp makeWindowsPerform: @selector(windowController) inOrder:YES] windowController] document];
     if (d) {
         [d writeSelectionToPasteboard:pasteboard];

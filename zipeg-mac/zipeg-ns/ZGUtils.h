@@ -18,7 +18,10 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v);
 FOUNDATION_EXPORT id addObserver(NSString* name, id object, void(^block)(NSNotification*));
 FOUNDATION_EXPORT id removeObserver(id observer); // always returns null - see usages
 
+FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
+
 @interface NSString(ZGExtensions)
+- (BOOL) equalsIgnoreCase: (NSString*) s;
 - (int) indexOf: (NSString*) s;
 - (int) indexOfIgnoreCase: (NSString*) s;
 - (int) lastIndexOf: (NSString*) s;
