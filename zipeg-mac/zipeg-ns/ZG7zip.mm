@@ -804,4 +804,11 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return [document progressFileOnBackgroundThread: fileno ofTotal: totalNumberOfFiles] && !self.isCancelled;
 }
 
+- (void) extract: (NSArray*) indices to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(BOOL)) block {
+    assert(![NSThread isMainThread]);
+    block(true);
+}
+
+
+
 @end

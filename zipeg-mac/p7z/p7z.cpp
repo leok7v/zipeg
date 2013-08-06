@@ -1,6 +1,7 @@
 #include "myWindows/StdAfx.h"
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "myPrivate.h"
 #include "p7z.hpp"
@@ -23,7 +24,9 @@
 #include "7zip/Common/FileStreams.h"
 
 #include "7zip/UI/Common/OpenArchive.h"
+#include "7zip/UI/Common/Extract.h"
 #include "7zip/UI/Common/PropIDUtils.h"
+#include "7zip/UI/Common/ExitCode.h"
 
 #include "7zip/Archive/IArchive.h"
 
@@ -36,6 +39,7 @@
 
 
 using namespace NWindows;
+using namespace NExtract;
 
 struct CPropIdToName {
     PROPID propId;
@@ -425,6 +429,9 @@ bool P7Z::open(const char* archiveName) {
         if (link->Open2(codecs, formatIndices, stdInMode, NULL, name, &oc) != S_OK) {
             return false;
         }
+        mkdir("/tmp/foo", 0700);
+        int ix[] = {1};
+        extract(ix, "/tmp/foo");
         return true;
     } catch (int err) { return reportException(err);
     } catch (const char* err) { return reportException(err);
@@ -457,6 +464,153 @@ const char* P7Z::getItemName(int itemIndex) {
 int P7Z::getNumberOfArchiveProperties() {
     UInt32 n = 0;
     return getArchive(archiveLink)->GetNumberOfArchiveProperties(&n) == S_OK ? n : 0;
+}
+
+bool P7Z::extract(int* indices, const char* dest) {
+    
+    struct ExtractCallback : public CArchiveExtractCallback,
+                             public IFolderArchiveExtractCallback /*,
+                             public IArchiveExtractCallback,
+                             public ICryptoGetTextPassword,
+                             public CMyUnknownImp */ {
+        MY_QUERYINTERFACE_BEGIN
+        MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
+        MY_QUERYINTERFACE_END
+        STDMETHOD_(ULONG, AddRef)() { return 1; } // only used on the stack
+        STDMETHOD_(ULONG, Release)() { return 1; } // only used on the stack
+/*
+        MY_QUERYINTERFACE_BEGIN2(IFolderArchiveExtractCallback)
+        MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
+        MY_QUERYINTERFACE_END
+        STDMETHOD_(ULONG, AddRef)() { return 1; } // only used on the stack
+        STDMETHOD_(ULONG, Release)() { return 1; } // only used on the stack
+*/
+        ExtractCallback(P7Z *context) : asked(false), totalFiles(0), totalBytes(0) { ctx = context; }
+        
+                                 
+        virtual HRESULT CryptoGetTextPassword(UString &password) {
+            password = L"123456";
+            return S_OK;
+        }
+                                 
+        virtual HRESULT SetTotal(UInt64 total) {
+            trace("total=%lld\n", total);
+            return S_OK;
+        }
+        
+        virtual HRESULT SetCompleted(const UInt64 *completeValue) {
+            trace("completeValue=%lld\n", *completeValue);
+            return S_OK;
+        }
+        
+        virtual HRESULT GetStream(UInt32 index, ISequentialOutStream **outStream,  Int32 askExtractMode) {
+            return CArchiveExtractCallback::GetStream(index, outStream, askExtractMode);
+        }
+                                 
+        virtual HRESULT PrepareOperation(Int32 askExtractMode) {
+            switch (askExtractMode) {
+                case NArchive::NExtract::NAskMode::kExtract: trace("PrepareOperation: extract\n"); break;
+                case NArchive::NExtract::NAskMode::kTest: trace("PrepareOperation: test\n"); break;
+                case NArchive::NExtract::NAskMode::kSkip: trace("PrepareOperation: skip\n"); break;
+                default: trace("PrepareOperation: unexpected: %d\n", askExtractMode);
+            }
+            return S_OK;            
+        }
+                                 
+        virtual HRESULT SetOperationResult(Int32 resultEOperationResult) {
+            switch (resultEOperationResult) {
+                case NArchive::NExtract::NOperationResult::kOK:
+                    trace("SetOperationResult: OK\n"); break;
+                case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
+                    trace("SetOperationResult: UnsupportedMethod\n"); break;
+                case NArchive::NExtract::NOperationResult::kDataError:
+                    trace("SetOperationResult: DataError\n"); break;
+                case NArchive::NExtract::NOperationResult::kCRCError:
+                    trace("SetOperationResult: CRCError\n"); break;
+                default: trace("SetOperationResult: unexpected: %d\n", resultEOperationResult);
+            }
+            return S_OK;
+        }
+        
+        virtual HRESULT AskOverwrite(
+                                const wchar_t *existName, const FILETIME *existTime, const UInt64 *existSize,
+                                const wchar_t *newName, const FILETIME *newTime, const UInt64 *newSize,
+                                     Int32 *answer){
+            *answer = NOverwriteAnswer::kAutoRename;
+            return S_OK;
+        }
+                                 
+        virtual HRESULT PrepareOperation(const wchar_t *name, bool isFolder, Int32 askExtractMode, const UInt64 *position){
+            return E_FAIL;
+        }
+                                 
+        virtual HRESULT MessageError(const wchar_t *message){
+            trace("MessageError: %ls\n", message);
+            return S_OK;
+        }
+                                 
+        virtual HRESULT SetOperationResult(Int32 operationResult, bool encrypted){
+            return E_FAIL;
+        }
+
+        virtual HRESULT BeforeOpen(const wchar_t *name){
+            return E_FAIL;
+        }
+                                 
+        virtual HRESULT OpenResult(const wchar_t *name, HRESULT result, bool encrypted){
+            return E_FAIL;
+        }
+                                 
+        virtual HRESULT ThereAreNoFiles(){
+            return E_FAIL;
+        }
+        virtual HRESULT ExtractResult(HRESULT result){
+            return E_FAIL;
+        }
+        
+        virtual HRESULT SetPassword(const UString &password) {
+            return E_FAIL;
+        }
+        
+        P7Z *ctx;
+        bool asked;
+        int64_t totalFiles;
+        int64_t totalBytes;
+        UString password;
+    };
+    assert(archiveLink != null);
+    if (archiveLink == null) {
+        throw "archive is not open";
+    }
+    try {
+        bool stdInMode = false;
+        UString directoryPath;
+        if (!ConvertUTF8ToUnicode(dest, directoryPath)) {
+            return false;
+        }
+        ExtractCallback ecs(this);
+        CArchiveLink &link = *(CArchiveLink*)archiveLink;
+        const CArc &arc = link.Arcs.Back();
+        const UStringVector removePathParts;
+        ecs.Init(
+             null, // const NWildcard::CCensorNode *wildcardCensor,
+             &arc,
+             &ecs, // IFolderArchiveExtractCallback *extractCallback2,
+             false /*stdOutMode*/, false /*testMode*/, false /*crcMode*/,
+             directoryPath,
+             removePathParts,
+             999999 // packSize
+        );
+        
+        IInArchive* a = getArchive(archiveLink);
+        // TODO: all for now
+        HRESULT result = a->Extract((const unsigned int*)indices, -1, false /*test*/, &ecs);
+        return true;
+    } catch (int err) { return reportException(err);
+    } catch (const char* err) { return reportException(err);
+    } catch (const wchar_t* err) { return reportException(err);
+    } catch (CSystemException &err) { return reportException(err.ErrorCode);
+    }
 }
 
 static void propToValue(PROPID propId, NCOM::CPropVariant &prop, UString* storage, P7Z::Value *value) {
@@ -604,7 +758,6 @@ void P7Z::close() {
         archiveLink = null;
     }
 }
-
 
 ////////////////////
 extern "C" {

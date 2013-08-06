@@ -145,7 +145,11 @@ static ZGFileSystemItem *g_root;
 }
 
 - (int) numberOfFolders {
-    return -1;
+    return 999999;
+}
+
+- (void) extract: (NSArray*) indices to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(BOOL)) block {
+    block(true);
 }
 
 @end
