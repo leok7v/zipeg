@@ -305,6 +305,7 @@ UString MultiByteToUnicodeString(const AString &srcString, int codePage)
 
 AString UnicodeStringToMultiByte(const UString &s, int codePage)
 {
+    printf("UnicodeStringToMultiByte \"%ls\" %d 0x%08X\n", (LPCTSTR)s, codePage, wchar_t_encoding);
     if (s.IsEmpty()) {
         return "";
     }
@@ -312,41 +313,17 @@ AString UnicodeStringToMultiByte(const UString &s, int codePage)
         wchar_t_encoding = CFByteOrderGetCurrent() == CFByteOrderLittleEndian ? kCFStringEncodingUTF32LE : kCFStringEncodingUTF32BE;
     }
     size_t n = s.Length();
-    CFStringRef cfs = CFStringCreateWithBytes(kCFAllocatorDefault, (const UInt8*)&s[0], n, wchar_t_encoding, false);
+    CFStringRef cfs = CFStringCreateWithBytes(kCFAllocatorDefault, (const UInt8*)&s[0], n * sizeof(wchar_t), wchar_t_encoding, false);
     assert(cfs);
-    char buff[(n + 1) * 2];
+    int size = (n + 1) * sizeof(wchar_t) + n; // very conservative, assume that we will need to escape every wchar_t
+    char buff[size];
     CFIndex index = CFStringGetBytes(cfs, CFRangeMake(0, n), kCFStringEncodingUTF8, '?', false,
-                                     (UInt8*)buff, (n + 1) * sizeof(char) * 2, NULL);
+                                     (UInt8*)buff, size, NULL);
     buff[index] = 0;
+    printf("UnicodeStringToMultiByte buff=\"%s\" %d\n", (LPCTSTR)buff, index);
     CFRelease(cfs);
     AString a = buff;
     return a;
-/*
-  if (!srcString.IsEmpty())
-  {
-    const wchar_t * wcs = &srcString[0];
-    char utf8[4096];
-    UniChar unipath[4096];
-    size_t n = wcslen(wcs);
-    for(size_t i =   0 ; i<= n ;i++) {
-      unipath[i] = wcs[i];
-    }
-    CFStringRef cfpath = CFStringCreateWithCharacters(NULL,unipath,n);
-    CFMutableStringRef cfpath2 = CFStringCreateMutableCopy(NULL,0,cfpath);
-    CFRelease(cfpath);
-    CFStringNormalize(cfpath2,kCFStringNormalizationFormD);
-    CFStringGetCString(cfpath2,(char *)utf8,4096,kCFStringEncodingUTF8);
-    CFRelease(cfpath2);
-    return AString(utf8);
-  }
-  AString resultString;
-  for (int i = 0; i < srcString.Length(); i++)
-  {
-    if (srcString[i] >= 256) resultString += '?';
-    else                     resultString += char(srcString[i]);
-  }
-  return resultString;
-*/
 }
 
 #else /* __APPLE_CC__ */
