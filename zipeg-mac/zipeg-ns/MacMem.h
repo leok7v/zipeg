@@ -13,10 +13,13 @@ typedef struct {
 
 extern MemoryStatistics mstat;
 
-void macmem_hook_malloc(int bytesInSafetyPool);
-void macmem_free_safety_pool();
+#ifdef DEBUG
+
+void macmem_hook_malloc();
 void macmem_unhook_malloc();
 
+#endif
+    
 #ifdef __cplusplus
 }
 #endif

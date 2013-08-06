@@ -9,6 +9,10 @@
 #include <sys/sysctl.h>
 #include <pthread.h>
 
+MemoryStatistics mstat;
+
+#ifdef DEBUG
+
 // see: http://www.cocoawithlove.com/2010/05/look-at-how-malloc-works-on-mac.html
 //      http://www.opensource.apple.com/source/Libc/Libc-594.1.4/gen/magazine_malloc.c
 
@@ -27,8 +31,6 @@ static void (*saved_batch_free)(struct _malloc_zone_t *zone, void **to_be_freed,
 static void *(*saved_memalign)(struct _malloc_zone_t *zone, size_t alignment, size_t size);
 static void (*saved_free_definite_size)(struct _malloc_zone_t *zone, void *ptr, size_t size);
 
-MemoryStatistics mstat;
-static void* safety_pool;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static uint64_t physmem() {
@@ -177,19 +179,7 @@ static void hook_free_definite_size(struct _malloc_zone_t *zone, void *ptr, size
     }
 }
 
-void macmem_free_safety_pool() {
-    @try {
-        pthread_mutex_lock(&mutex);
-        if (safety_pool) {
-            free(safety_pool);
-            safety_pool = null;
-        }
-    } @finally {
-        pthread_mutex_unlock(&mutex);
-    }
-}
-
-void macmem_hook_malloc(int bytesInSafetyPool) {
+void macmem_hook_malloc() {
     mstat.ram = physmem();
     defaultZone = malloc_default_zone();
     vm_protect(mach_task_self(), (uintptr_t)malloc_zones, 4096, 0, VM_PROT_READ|VM_PROT_WRITE);
@@ -216,9 +206,6 @@ void macmem_hook_malloc(int bytesInSafetyPool) {
     defaultZone->batch_free = hook_batch_free;
     defaultZone->memalign = hook_memalign;
     defaultZone->free_definite_size = hook_free_definite_size;
-    if (bytesInSafetyPool != 0) {
-        safety_pool = calloc(1, bytesInSafetyPool);
-    }
 }
 
 void macmem_unhook_malloc() {
@@ -233,4 +220,6 @@ void macmem_unhook_malloc() {
     defaultZone->memalign = saved_memalign;
     defaultZone->free_definite_size = saved_free_definite_size;
 }
+
+#endif
 

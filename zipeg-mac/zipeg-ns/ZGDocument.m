@@ -668,10 +668,10 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 + (void)registerServices {
-    static BOOL registeredServices = NO;
+    static BOOL registeredServices = false;
     if (!registeredServices) {
-        [NSApp setServicesProvider:self];
-        registeredServices = YES;
+        [NSApp setServicesProvider: self];
+        registeredServices = true;
     }
 }
 

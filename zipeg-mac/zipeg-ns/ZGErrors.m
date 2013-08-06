@@ -5,7 +5,6 @@ NSString *const ZGAppErrorDomain = @"com.zipeg.errors";
 NSError* ZGOOM;
 
 NSError* ZGOutOfMemoryError() {
-    macmem_free_safety_pool();
     return ZGOOM;
 }
 
