@@ -185,8 +185,11 @@
 }
 
 - (BOOL) tableView: (NSTableView*) v shouldEditTableColumn: (NSTableColumn*) c row: (NSInteger) row {
-    if ([v isRowSelected: row]) {
-        [self tableView: v enterFolder: row ];
+    // TODO: this is bugger - if the selection is already in table view but table view is not focused
+    // click on selection should only move the focus not enter the folder. Unfortunately this needs yet
+    // another delay on accept first responder... :( 
+    if ([v isRowSelected: row] && isEqual(v, [_document.window firstResponder])) {
+        [self tableView: v enterFolder: row];
     }
     return false;
 }

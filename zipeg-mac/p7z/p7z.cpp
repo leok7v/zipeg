@@ -370,7 +370,7 @@ bool P7Z::open(const char* archiveName) {
     }
 }
 
-bool P7Z::extract(int* indices, int n, const char* dest) {
+bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathComponents[], int pc) {
     
     struct ExtractCallback : public CArchiveExtractCallback,
                              public IFolderArchiveExtractCallback {
@@ -483,7 +483,13 @@ bool P7Z::extract(int* indices, int n, const char* dest) {
         ExtractCallback ecs(this);
         CArchiveLink &link = *(CArchiveLink*)archiveLink;
         const CArc &arc = link.Arcs.Back();
-        const UStringVector removePathParts;
+        UStringVector removePathParts;
+        for (int i = 0; i < pc; i++) {
+            UString s;
+            if (ConvertUTF8ToUnicode(removePathComponents[i], s)) {
+                removePathParts.Add(s);
+            }
+        }
         ecs.Init(
              null, // const NWildcard::CCensorNode *wildcardCensor,
              &arc,
@@ -493,11 +499,10 @@ bool P7Z::extract(int* indices, int n, const char* dest) {
              removePathParts,
              999999 // packSize
         );
-        
         IInArchive* a = getArchive(archiveLink);
         // TODO: all for now
         HRESULT result = a->Extract((const unsigned int*)indices, n, false /*test*/, &ecs);
-        return true;
+        return result == S_OK;
     } catch (int err) { return reportException(err);
     } catch (const char* err) { return reportException(err);
     } catch (const wchar_t* err) { return reportException(err);

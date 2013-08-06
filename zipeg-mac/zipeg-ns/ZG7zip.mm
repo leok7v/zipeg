@@ -69,7 +69,7 @@ static NSMutableArray *leafNode;
     leafNode = [[NSMutableArray alloc] init];
 }
 
-- (id) initWith:(ZG7zip*) archive name:(NSString*) name index:(int) i isLeaf:(BOOL) leaf {
+- (id) initWith:(ZG7zip*) archive name: (NSString*) name index: (int) i isLeaf: (BOOL) leaf {
     self = [super init];
     if (self != null) {
         alloc_count(self);
@@ -676,26 +676,26 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
             o = null;
             break;
         case P7Z::Value::kString:
-            o = [[NSString alloc] initWithBytes:v.str length:wcslen(v.str)*sizeof(wchar_t)
-                                       encoding:NSUTF32LittleEndianStringEncoding];
+            o = [[NSString alloc] initWithBytes: v.str length: wcslen(v.str) * sizeof(wchar_t)
+                                       encoding: NSUTF32LittleEndianStringEncoding];
             break;
         case P7Z::Value::kFiletime:
-            o = [ZGNumber numberWithLongLong:(unsigned long long)v.num];
+            o = [ZGNumber numberWithLongLong: (unsigned long long)v.num];
             break;
         case P7Z::Value::kBool:
-            o = [ZGNumber numberWithBool:v.num != 0];
+            o = [ZGNumber numberWithBool: v.num != 0];
             break;
         case P7Z::Value::kI1:
-            o = [ZGNumber numberWithUnsignedChar:(unsigned char)v.num];
+            o = [ZGNumber numberWithUnsignedChar: (unsigned char)v.num];
             break;
         case P7Z::Value::kI2:
-            o = [ZGNumber numberWithUnsignedShort:(unsigned short)v.num];
+            o = [ZGNumber numberWithUnsignedShort: (unsigned short)v.num];
             break;
         case P7Z::Value::kI4:
-            o = [ZGNumber numberWithUnsignedInt:(unsigned int)v.num];
+            o = [ZGNumber numberWithUnsignedInt: (unsigned int)v.num];
             break;
         case P7Z::Value::kI8:
-            o = [ZGNumber numberWithUnsignedLongLong:(unsigned long long)v.num];
+            o = [ZGNumber numberWithUnsignedLongLong: (unsigned long long)v.num];
             break;
         default:
             assert(false);
@@ -810,6 +810,68 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return [document progressFileOnBackgroundThread: fileno ofTotal: totalNumberOfFiles] && !self.isCancelled;
 }
 
+- (int) countChildren: (NSArray*) itms {
+    int c = 0;
+    for (ZG7zipItem* it in itms) {
+        if (it.children != 0 && it.children > 0) {
+            c+= [self countChildren: it.children];
+        }
+        c += it->_index >= 0;
+    }
+    return c;
+}
+
+- (int) collectChildren: (NSArray*) itms to: (int*) indices position: (int) p size: (int) n {
+    for (ZG7zipItem* it in itms) {
+        if (it.children != 0 && it.children > 0) {
+            p = [self collectChildren: it.children to: indices position: p size: n];
+        }
+        if (it->_index >= 0) {
+            // children first because we want to set correct time attributes on parent folders:
+            assert(p < n);
+            indices[p++] = it->_index;
+        }
+    }
+    return p;
+}
+
+- (const char**) prefixComponents: (NSArray*) itms count: (int*) count {
+    const char** prefixComponents = null;
+    int pc = 0;
+    // all items MUST have the same parent and it's pathname will be stripped
+    ZG7zipItem* parent = null;
+    for (ZG7zipItem* it in itms) {
+        if (parent == null) {
+            parent = (ZG7zipItem*)it.parent;
+        } else {
+            assert(isEqual(parent, it.parent));
+        }
+    }
+    if (!isEqual(parent, _root)) {
+        pc = 0;
+        NSObject<ZGItemProtocol>* p = parent;
+        while (!isEqual(p, _root)) {
+            pc++;
+            p = p.parent;
+        }
+        prefixComponents = new const char*[pc];
+        if (prefixComponents == null) {
+            *count = -1;
+            return null;
+        }
+        int i = pc;
+        p = parent;
+        while (!isEqual(p, _root)) {
+            NSString* name = p.name;
+            prefixComponents[--i] = [name cStringUsingEncoding: NSUTF8StringEncoding];
+            p = p.parent;
+        }
+        assert(i == 0);
+    }
+    *count = pc;
+    return prefixComponents;
+}
+
 - (void) extract: (NSArray*) itms to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(NSError* e)) block {
     assert(![NSThread isMainThread]);
     if (![url isFileURL]) {
@@ -821,17 +883,31 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
         return;
     }
     NSString* path = [url path];
-    int n = 0;
-    int indices[(int)itms.count];
-    for (ZG7zipItem* it in itms) {
-        if (it->_index >= 0) {
-            indices[n++] = it->_index;
+    int n = -1;
+    int* indices = null;
+    const char** prefixComponents = null;
+    int pc = 0;
+    if (itms != null && itms.count > 0) {
+        prefixComponents = [self prefixComponents: itms count: &pc];
+        if (pc < 0) {
+            block(ZGOutOfMemoryError());
+            return;
         }
+        int max = [self countChildren: itms];
+        indices = new int[max];
+        if (indices == null) {
+            delete[] prefixComponents;
+            block(ZGOutOfMemoryError());
+            return;
+        }
+        n = [self collectChildren:itms to: indices position: 0 size: max];
     }
     _error = null;
-    a->extract(indices, n, [path UTF8String]);
+    bool b = a->extract(indices, n, [path UTF8String], prefixComponents, pc);
+    delete[] indices;
+    delete[] prefixComponents;
     if (_error == null) {
-        block(null);
+        block(b ? null : ZGOutOfMemoryError()); // TODO: ZGInternalError()
     } else {
         NSMutableDictionary *details = [NSMutableDictionary dictionary];
         [details setValue: _error forKey: NSLocalizedDescriptionKey];
@@ -840,7 +916,5 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
         block(err);
     }
 }
-
-
 
 @end

@@ -27,7 +27,7 @@ public:
     P7Z(Delegate* d);
     virtual ~P7Z() { close(); };
     bool open(const char* archiveName);
-    bool extract(int* indices, int n, const char* dest);
+    bool extract(int* indices, int n, const char* dest, const char* removePathComponents[], int pathComponentsCount);
     void close();
 
     int  getNumberOfArchiveProperties();
@@ -61,8 +61,6 @@ public:
         _FILE_ATTRIBUTE_VIRTUAL             = 0x10000
     };
     
-//  static void foo(void* context, const char *utf8, void (*bar)(void*, const char*));
-
 private:
     bool reportException(int e);
     bool reportException(const char* e);

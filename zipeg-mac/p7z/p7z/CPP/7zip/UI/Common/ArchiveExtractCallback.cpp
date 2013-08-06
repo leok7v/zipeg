@@ -39,19 +39,20 @@ void CArchiveExtractCallback::Init(
   _unpTotal = 1;
   _packTotal = packSize;
   _overwriteMode = NExtract::NOverwriteMode::kAskBefore;
-    
+  _pathMode = NExtract::NPathMode::kCurrentPathnames;
   _extractCallback2 = extractCallback2;
   _compressProgress.Release();
   _extractCallback2.QueryInterface(IID_ICompressProgressInfo, &_compressProgress);
 
   LocalProgressSpec->Init(extractCallback2, true);
-  LocalProgressSpec->SendProgress = false;
-
+  LocalProgressSpec->SendProgress = true;
  
   _removePathParts = removePathParts;
   _arc = arc;
   _directoryPath = directoryPath;
   NFile::NName::NormalizeDirPathPrefix(_directoryPath);
+  NumFolders = NumFiles = UnpackSize = 0;
+  CrcSum = 0;
 }
 
 STDMETHODIMP CArchiveExtractCallback::SetTotal(UInt64 size)
@@ -220,6 +221,12 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
 
     UStringVector pathParts;
     SplitPathToParts(fullPath, pathParts);
+      for (int i = 0; i < pathParts.Size(); i++) {
+          printf("pathParts[%d]=%ls\n", i, (LPCTSTR)pathParts[i]);
+      }
+      for (int i = 0; i < _removePathParts.Size(); i++) {
+          printf("_removePathParts[%d]=%ls\n", i, (LPCTSTR)_removePathParts[i]);
+      }
     
     if (pathParts.IsEmpty())
       return E_FAIL;
@@ -233,9 +240,11 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
         numRemovePathParts = _removePathParts.Size();
         if (pathParts.Size() <= numRemovePathParts)
           return E_FAIL;
-        for (int i = 0; i < numRemovePathParts; i++)
+        for (int i = 0; i < numRemovePathParts; i++) {
+          printf("_removePathParts[%d]=%ls != pathParts[%d]=%ls\n", i, (LPCTSTR)_removePathParts[i], i, (LPCTSTR)pathParts[i]);
           if (_removePathParts[i].CompareNoCase(pathParts[i]) != 0)
             return E_FAIL;
+        }
         break;
       }
       case NExtract::NPathMode::kNoPathnames:
