@@ -221,13 +221,14 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
 
     UStringVector pathParts;
     SplitPathToParts(fullPath, pathParts);
+    /*
       for (int i = 0; i < pathParts.Size(); i++) {
           printf("pathParts[%d]=%ls\n", i, (LPCTSTR)pathParts[i]);
       }
       for (int i = 0; i < _removePathParts.Size(); i++) {
           printf("_removePathParts[%d]=%ls\n", i, (LPCTSTR)_removePathParts[i]);
       }
-    
+    */
     if (pathParts.IsEmpty())
       return E_FAIL;
     int numRemovePathParts = 0;
@@ -241,7 +242,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
         if (pathParts.Size() <= numRemovePathParts)
           return E_FAIL;
         for (int i = 0; i < numRemovePathParts; i++) {
-          printf("_removePathParts[%d]=%ls != pathParts[%d]=%ls\n", i, (LPCTSTR)_removePathParts[i], i, (LPCTSTR)pathParts[i]);
+          // printf("_removePathParts[%d]=%ls != pathParts[%d]=%ls\n", i, (LPCTSTR)_removePathParts[i], i, (LPCTSTR)pathParts[i]);
           if (_removePathParts[i].CompareNoCase(pathParts[i]) != 0)
             return E_FAIL;
         }

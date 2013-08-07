@@ -15,6 +15,8 @@
 		B322F07E17A613A500715C6D /* ZGToolbarDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B322F07D17A613A500715C6D /* ZGToolbarDelegate.m */; };
 		B322F08017A613E100715C6D /* license.txt in Resources */ = {isa = PBXBuildFile; fileRef = B322F07F17A613E100715C6D /* license.txt */; };
 		B322F08217A643E700715C6D /* save-64x64.png in Resources */ = {isa = PBXBuildFile; fileRef = B322F08117A643E700715C6D /* save-64x64.png */; };
+		B32A0B8917B2215500225F91 /* done.aiff in Resources */ = {isa = PBXBuildFile; fileRef = B32A0B8717B2215500225F91 /* done.aiff */; };
+		B32A0B8A17B2215500225F91 /* error.aiff in Resources */ = {isa = PBXBuildFile; fileRef = B32A0B8817B2215500225F91 /* error.aiff */; };
 		B32EB9C81798CEDA00D8A129 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9C41798CEDA00D8A129 /* MainMenu.xib */; };
 		B32EB9C91798CEDA00D8A129 /* ZGDocument.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9C61798CEDA00D8A129 /* ZGDocument.xib */; };
 		B32EB9DA1798E70E00D8A129 /* action-normal.png in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9CC1798E70E00D8A129 /* action-normal.png */; };
@@ -142,6 +144,8 @@
 		B322F07D17A613A500715C6D /* ZGToolbarDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGToolbarDelegate.m; sourceTree = "<group>"; };
 		B322F07F17A613E100715C6D /* license.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = license.txt; sourceTree = "<group>"; };
 		B322F08117A643E700715C6D /* save-64x64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "save-64x64.png"; path = "Resources/save-64x64.png"; sourceTree = "<group>"; };
+		B32A0B8717B2215500225F91 /* done.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; name = done.aiff; path = Resources/done.aiff; sourceTree = "<group>"; };
+		B32A0B8817B2215500225F91 /* error.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; name = error.aiff; path = Resources/error.aiff; sourceTree = "<group>"; };
 		B32EB9C51798CEDA00D8A129 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		B32EB9C71798CEDA00D8A129 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ZGDocument.xib; sourceTree = "<group>"; };
 		B32EB9CC1798E70E00D8A129 /* action-normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "action-normal.png"; path = "Resources/action-normal.png"; sourceTree = "<group>"; };
@@ -404,6 +408,8 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B32A0B8717B2215500225F91 /* done.aiff */,
+				B32A0B8817B2215500225F91 /* error.aiff */,
 				B3767AFF17AF978F00971CE4 /* folders-white.png */,
 				B3E87DAA17A95C6100B246B8 /* folders-blue.png */,
 				B322F08117A643E700715C6D /* save-64x64.png */,
@@ -621,6 +627,8 @@
 				B322F08217A643E700715C6D /* save-64x64.png in Resources */,
 				B3E87DAC17A95C6100B246B8 /* folders-blue.png in Resources */,
 				B3767B0017AF978F00971CE4 /* folders-white.png in Resources */,
+				B32A0B8917B2215500225F91 /* done.aiff in Resources */,
+				B32A0B8A17B2215500225F91 /* error.aiff in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

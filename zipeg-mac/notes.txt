@@ -1,3 +1,5 @@
+p7z:
+
 *. Compile Flags:
 
  ALLFLAGS=-m64 ${OPTFLAGS}   -DENV_MACOSX -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE  -D_REENTRANT -DENV_UNIX -DUNICODE -D_UNICODE -DBREAK_HANDLER $(LOCAL_FLAGS)
@@ -23,5 +25,8 @@ for the list of files to build. Get read of unused .cpp and .h files
    leaks <pid>
   for leaks detection.
 
+zipeg-ns/Resources/*.aiff
 
-
+* .wav to .aiff
+ffmpeg -i done.wav -f aiff  -acodec pcm_u8 -ar 8000  -ac 1 -ab 64k done.aiff
+ffmpeg -i done.wav -f aiff  -acodec pcm_u8 -ar 8000  -ac 1 -ab 64k done.aiff

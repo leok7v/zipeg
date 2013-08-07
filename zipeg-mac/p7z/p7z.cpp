@@ -392,13 +392,13 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
                                  
         virtual HRESULT SetTotal(UInt64 t) {
             total = t;
-            trace("total=%lld\n", total);
+            // trace("total=%lld\n", total);
             return S_OK;
         }
         
         virtual HRESULT SetCompleted(const UInt64 *completeValue) {
             completed = completeValue == 0 ? 0 : *completeValue;
-            trace("completeValue=%lld\n", completed);
+            // trace("completeValue=%lld\n", completed);
             ctx->delegate->progress(ctx, completed, total);
             return S_OK;
         }
@@ -422,8 +422,7 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
                 case NArchive::NExtract::NAskMode::kSkip: s = "skip"; break;
                 default: sprintf(buff, "askExtractMode=%d", askExtractMode); s = buff;
             }
-            trace("PrepareOperation: name=%ls isFolder=%d %s position=%lld\n", name, isFolder, s,
-                  position != null ? *position : 0);
+            // trace("PrepareOperation: name=%ls isFolder=%d %s position=%lld\n", name, isFolder, s, position != null ? *position : 0);
             return S_OK;
         }
                                  
@@ -453,7 +452,7 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
                     s = "CRCError"; break;
                 default: sprintf(buff, "result=%d", r); s = buff;
             }
-            trace("SetOperationResult: result=%s encrypted=%d\n", s, encrypted);
+            // trace("SetOperationResult: result=%s encrypted=%d\n", s, encrypted);
             return S_OK;
         }
 

@@ -87,7 +87,7 @@
     }
 }
 
-- (BOOL) outlineView:(NSOutlineView *) v shouldSelectItem: (id) item {
+- (BOOL) outlineView: (NSOutlineView*) v shouldSelectItem: (id) item {
     // don't allow special group nodes to be selected
     // NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)item;
     // trace(@"%@ = %d", i.name, ![self outlineView: v isGroupItem: item]);
@@ -183,6 +183,12 @@
 
 -(BOOL) outlineView: (NSOutlineView*) v shouldShowOutlineCellForItem: (id) i {
     return [self outlineView: v isGroupItem: i] ? false : true;
+}
+
+- (BOOL) outlineView: (NSOutlineView*) v shouldTrackCell: (NSCell*) c forTableColumn: (NSTableColumn*) tc item: (id)it {
+    // Normally, only selectable or selected cells can be tracked.
+    //  E.g. this allows you to have a button cell in a table which does not change the selection, but can still be clicked on and tracked.
+    return [self outlineView: v shouldSelectItem: it] || isEqual(it, [self selectedItem]);
 }
 
 - (BOOL) outlineView: (NSOutlineView *) v isGroupItem: (id) i {

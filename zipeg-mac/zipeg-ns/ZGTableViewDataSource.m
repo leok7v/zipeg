@@ -117,7 +117,7 @@
         NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
         [items addObject: it];
         NSURL* u =[NSURL fileURLWithPath:[[d path] stringByAppendingPathComponent: it.name] isDirectory: false];
-        trace(@"fileURL=%@", u);
+        // trace(@"fileURL=%@", u);
         [urls addObject: [[u path] lastPathComponent]];
         i = [rowIndexes indexGreaterThanIndex: i];
     }
@@ -131,23 +131,23 @@
                  forDraggedRowsWithIndexes: _document.tableView.selectedRowIndexes];
 }
 
-- (BOOL) tableView: (NSTableView *)tv writeRowsWithIndexes:(NSIndexSet*) rowIndexes
-     toPasteboard:(NSPasteboard*)pboard {
-    BOOL retval = NO;
-    NSUInteger i = [rowIndexes firstIndex];
+- (BOOL) tableView: (NSTableView*) v writeRowsWithIndexes: (NSIndexSet*) indices
+     toPasteboard:(NSPasteboard*) pb {
+    BOOL b = false;
+    NSUInteger i = [indices firstIndex];
     while (i != NSNotFound) {
         NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
-        [pboard declareTypes:@[NSFilesPromisePboardType, NSFilenamesPboardType, NSStringPboardType] owner:self];
-        if ([pboard setPropertyList:@[[it.name pathExtension]] forType:NSFilesPromisePboardType]) {
-            retval = YES;
+        [pb declareTypes: @[NSFilesPromisePboardType, NSFilenamesPboardType, NSStringPboardType] owner: self];
+        if ([pb setPropertyList: @[[it.name pathExtension]] forType: NSFilesPromisePboardType]) {
+            b = true;
         }
-        if ([pboard setString: it.name forType:NSStringPboardType]) {
-            retval = YES;
-            trace(@"%@", it.name);
+        if ([pb setString: it.name forType: NSStringPboardType]) {
+            b = true;
+            // trace(@"%@", it.name);
         }
-        i = [rowIndexes indexGreaterThanIndex: i];
+        i = [indices indexGreaterThanIndex: i];
     }
-    return retval;
+    return b;
 }
 
 @end

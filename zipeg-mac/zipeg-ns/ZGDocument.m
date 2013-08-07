@@ -273,20 +273,23 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     ov.selectionHighlightStyle = hs;
     assert(ov.outlineTableColumn == tc);
     assert(ov.tableColumns[0] == tc);
+    [ov setDraggingSourceOperationMask : NSDragOperationCopy forLocal: NO];
+    [ov setDraggingSourceOperationMask : NSDragOperationGeneric forLocal: YES];
+    [ov registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
     return ov;
 }
 
 static NSTableView* createTableView(NSRect r) {
-    NSTableView* _tableView = [[NSTableView alloc] initWithFrame: r];
-    _tableView.focusRingType = NSFocusRingTypeNone;
+    NSTableView* tv = [[NSTableView alloc] initWithFrame: r];
+    tv.focusRingType = NSFocusRingTypeNone;
     NSTableColumn* tableColumn = [NSTableColumn new];
     
-    [_tableView addTableColumn: tableColumn];
+    [tv addTableColumn: tableColumn];
     tableColumn.dataCell = [ZGImageAndTextCell new];
     tableColumn.minWidth = 92;
     tableColumn.maxWidth = 3000;
     tableColumn.editable = true;
-    assert(_tableView.tableColumns[0] == tableColumn);
+    assert(tv.tableColumns[0] == tableColumn);
     
     NSSortDescriptor *sd = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES
                                                           selector:@selector(localizedCaseInsensitiveCompare:)];
@@ -294,35 +297,34 @@ static NSTableView* createTableView(NSRect r) {
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
     for (int i = 1; i < 3; i++) {
         tableColumn = [NSTableColumn new];
-        [_tableView addTableColumn: tableColumn];
-        assert(_tableView.tableColumns[i] == tableColumn);
+        [tv addTableColumn: tableColumn];
+        assert(tv.tableColumns[i] == tableColumn);
         tableColumn.dataCell = [NSTextFieldCell new];
         tableColumn.minWidth = 92;
         tableColumn.maxWidth = 3000;
         tableColumn.editable = true;
     }
     
-    _tableView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    _tableView.allowsColumnReordering = true;
-    _tableView.allowsColumnResizing = true;
-    _tableView.allowsMultipleSelection = true;
-    _tableView.allowsColumnSelection = false;
-    _tableView.allowsEmptySelection = true; // otherwise deselectAll won't work
-    _tableView.allowsTypeSelect = true;
-    _tableView.usesAlternatingRowBackgroundColors = true;
+    tv.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    tv.allowsColumnReordering = true;
+    tv.allowsColumnResizing = true;
+    tv.allowsMultipleSelection = true;
+    tv.allowsColumnSelection = false;
+    tv.allowsEmptySelection = true; // otherwise deselectAll won't work
+    tv.allowsTypeSelect = true;
+    tv.usesAlternatingRowBackgroundColors = true;
     //  _tableView.menu = _tableRowContextMenu; // TODO:
     NSFont* font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
-    for (int i = 0; i < _tableView.tableColumns.count; i++) {
-        NSTableColumn* tc = _tableView.tableColumns[i];
+    for (int i = 0; i < tv.tableColumns.count; i++) {
+        NSTableColumn* tc = tv.tableColumns[i];
         NSTableHeaderCell* hc = tc.headerCell;
         hc.font = font;
     }
     
-    [_tableView setDraggingSourceOperationMask : NSDragOperationCopy forLocal: NO];
-    [_tableView setDraggingSourceOperationMask : NSDragOperationGeneric forLocal: YES];
-    // TODO: for now:
-    [_tableView registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
-    return _tableView;
+    [tv setDraggingSourceOperationMask : NSDragOperationCopy forLocal: NO];
+    [tv setDraggingSourceOperationMask : NSDragOperationGeneric forLocal: YES];
+    [tv registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
+    return tv;
 }
 
 - (void) setViewStyle: (int) s {
@@ -535,12 +537,18 @@ static NSTableView* createTableView(NSRect r) {
     assert(![NSThread isMainThread]);
     assert(_archive != null);
     [_archive extract: items to: url operation: op done: ^(NSError* error) {
-        if (error != null) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                               NSAlert* alert = [NSAlert alertWithError: error];
-                               [_sheet begin: alert done: ^(int rc) { } ];
-            });
-        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (error != null) {
+                [[NSSound soundNamed:@"error"] play];
+                NSAlert* alert = [NSAlert alertWithError: error];
+                [_sheet begin: alert done: ^(int rc) { } ];
+            } else {
+                // http://cocoathings.blogspot.com/2013/01/playing-system-sounds.html
+                // see: /System/Library/Sounds
+                // Basso Blow Bottle Frog Funk Glass Hero Morse Ping Pop Purr Sosumi Submarine Tink
+                [[NSSound soundNamed:@"done"] play];
+            }
+        });
     }];
 }
 
