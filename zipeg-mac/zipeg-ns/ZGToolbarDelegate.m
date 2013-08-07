@@ -15,9 +15,10 @@
 
 @implementation ZGToolbarDelegate
 
-static NSString* SaveId   = @"SaveId";
+static NSString* ExtractId   = @"ExtractId";
 static NSString* SearchId = @"SearchId";
 static NSString* ViewsId  = @"ViewsId";
+static NSString* NavsId  = @"NavId";
 
 - (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
@@ -115,8 +116,8 @@ static void addControl(NSSegmentedControl* sc, int ix, NSString* imageName, NSSt
     c.controlSize = NSRegularControlSize;
     NSImage* image = [NSImage imageNamed: imageName];
     assert(image != null);
-    image.size = NSMakeSize(32, 32);
-    [sc setWidth: image.size.width forSegment: ix];
+    // image.size = NSMakeSize(32, 32);
+    [sc setWidth: 24 forSegment: ix];
     [sc setImageScaling:NSImageScaleProportionallyUpOrDown forSegment: ix];
     [sc setImage: image forSegment: ix];
     [c  setToolTip: tooltip forSegment: ix];
@@ -167,8 +168,8 @@ static NSMenu* createSearchMenu() {
 
 - (NSToolbarItem*) toolbar: (NSToolbar*) toolbar itemForItemIdentifier: (NSString*) itemIdent willBeInsertedIntoToolbar:(BOOL) willBeInserted {
     NSToolbarItem* ti = null;
-    if ([itemIdent isEqual: SaveId]) {
-        ti = createButton(SaveId, @"Save", @"Save the Document", @"save-64x64.png", @selector(saveDocument:));
+    if ([itemIdent isEqual: ExtractId]) {
+        ti = createButton(ExtractId, @"Unpack", @"Extract Content of the Archive", @"play-n.png", @selector(saveDocument:));
         ti.target = self;
     } else if([itemIdent isEqual: SearchId]) {
         NSMenuItem* mi = createSearchPanelMenu(@"Search", @"Search Panel",
@@ -182,7 +183,7 @@ static NSMenu* createSearchMenu() {
         _searchFieldOutlet = [[NSSearchField alloc] initWithFrame:[_searchFieldOutlet frame]];
         ti = createSearch(SearchId, @"Search", @"Search Your Document", mi, _searchFieldOutlet);
         NSTextFieldCell* c = _searchFieldOutlet.cell;
-        c.placeholderString = @"Search Files by Name (e.g. \"Design*.psd\")";
+        c.placeholderString = @"To search start typing a word or phrase";
         _searchFieldOutlet.recentsAutosaveName = @"ZipegRecentSearches";
         NSSearchFieldCell* sc = _searchFieldOutlet.cell;
         sc.searchMenuTemplate = createSearchMenu();
@@ -197,6 +198,14 @@ static NSMenu* createSearchMenu() {
                                              @selector(viewStyleClicked:));
         NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
         sc.target = self;
+    } else if ([itemIdent isEqual: NavsId]) {
+        ti = createSegmentedControl(NavsId, @"Back", @"See folders you viewed previously",
+                                    @[@"prev.png", @"next.png"],
+                                    @[@"Previous", @"Next"],
+                                    @selector(navigationClicked:));
+        NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
+        sc.target = self;
+        sc.selectedSegment = -1;
     } else {
         assert(false);
 	ti = null;
@@ -215,15 +224,22 @@ static NSMenu* createSearchMenu() {
     // trace(@"selectedItem %@ %d", sender, ss);
 }
 
+- (void) navigationClicked: (id) sender {
+    NSSegmentedControl* sc = sender;
+    int ss = (int)sc.selectedSegment;
+    sc.selectedSegment = -1;
+    trace(@"Navigation: selectedItem %@ %d", sender, ss);
+}
+
 - (NSArray*) toolbarDefaultItemIdentifiers: (NSToolbar*) toolbar {
-    return @[SaveId, NSToolbarSeparatorItemIdentifier, ViewsId,
+    return @[ExtractId, NSToolbarSeparatorItemIdentifier, NavsId, NSToolbarSeparatorItemIdentifier, ViewsId,
              NSToolbarSeparatorItemIdentifier,
              NSToolbarFlexibleSpaceItemIdentifier,
              NSToolbarSpaceItemIdentifier, SearchId];
 }
 
 - (NSArray*) toolbarAllowedItemIdentifiers: (NSToolbar*) toolbar {
-    return @[SaveId, NSToolbarSeparatorItemIdentifier, ViewsId,
+    return @[ExtractId, NSToolbarSeparatorItemIdentifier, NavsId, NSToolbarSeparatorItemIdentifier, ViewsId,
              NSToolbarSeparatorItemIdentifier,
              NSToolbarFlexibleSpaceItemIdentifier,
              NSToolbarSpaceItemIdentifier, SearchId];
@@ -249,7 +265,7 @@ static NSMenu* createSearchMenu() {
     // Optional method:  This message is sent to us since we are the target of some toolbar item actions
     // (for example:  of the save items action)
     BOOL enable = false;
-    if ([[toolbarItem itemIdentifier] isEqual: SaveId]) {
+    if ([[toolbarItem itemIdentifier] isEqual: ExtractId]) {
 	// We will return true (ie  the button is enabled) only when the document is dirty and needs saving
 	enable = true; // _document.isDocumentEdited;
     } else if ([[toolbarItem itemIdentifier] isEqual: NSToolbarPrintItemIdentifier]) {
