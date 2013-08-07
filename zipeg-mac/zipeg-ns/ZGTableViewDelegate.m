@@ -58,6 +58,7 @@
 
 - (void) outlineViewSelectionDidChange {
     [_document.tableView reloadData];
+    [_document.tableView deselectAll: null];
     [self sizeToContent: _document.tableView];
 }
 
