@@ -1,4 +1,5 @@
 #import "ZGHeroView.h"
+#import "ZGDocument.h"
 
 @interface NSImage (Transform)
 - (NSImage*)imageRotatedByDegrees:(CGFloat)degrees ;
@@ -37,6 +38,7 @@
     NSImage* _leafs[4];
     NSImage* _images[200];
     int _index[200];
+    ZGDocument* __weak _document;
 }
 
 @end
@@ -46,11 +48,12 @@
 
 @implementation ZGHeroView
 
-- (id)initWithFrame:(NSRect)frame {
+- (id)initWithDocument: (ZGDocument*) doc andFrame:(NSRect)frame {
     self = [super initWithFrame:frame];
     // trace(@"initWithFrame %@", NSStringFromRect(self.frame));
     if (self != null) {
         alloc_count(self);
+        _document = doc;
         _leafs[0] = [NSImage imageNamed:@"leaf-0-64x64.png"];
         _leafs[1] = [NSImage imageNamed:@"leaf-1-64x64.png"];
         _leafs[2] = [NSImage imageNamed:@"leaf-2-64x64.png"];
@@ -113,7 +116,7 @@ static NSString* text = @"Drop Files Here";
 }
 
 - (void) drawRect: (NSRect) rect {
-    trace("%@", NSStringFromRect(rect));
+//  trace("%@", NSStringFromRect(rect));
     rect = self.bounds; // always paint complete view
     CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceGray();
     CGContextRef maskContext = CGBitmapContextCreate(null, self.bounds.size.width, self.bounds.size.height,
@@ -124,26 +127,26 @@ static NSString* text = @"Drop Files Here";
     [NSGraphicsContext setCurrentContext: maskGraphicsContext];
     [[NSColor lightGrayColor] setFill];
     CGContextFillRect(maskContext, rect);
-    NSColor* dark = [NSColor colorWithCalibratedWhite:0.1 alpha:1];
-    NSDictionary* b = @{NSFontAttributeName: [NSFont fontWithName:@"HelveticaNeue-Bold" size: 64],
-                        NSForegroundColorAttributeName: dark};
-    NSDictionary* w = @{NSFontAttributeName: [NSFont fontWithName:@"HelveticaNeue-Bold" size: 64],
-                        NSForegroundColorAttributeName: [NSColor lightGrayColor]};
-    NSRect r;
-    r.size = [text sizeWithAttributes: b];
-    r.origin.x = (rect.size.width - r.size.width) / 2;
-    r.origin.y = (rect.size.height - r.size.height) / 2;
-    r.origin.x++;
-    r.origin.y++;
-    [text drawInRect: r withAttributes: w];
-    [self drawBorder: r color: [NSColor lightGrayColor]];
-    r.origin.x--;
-    r.origin.y--;
-    [text drawInRect: r withAttributes: b];
-    [self drawBorder: r color: dark];
-
+    if (_document.isNew) {
+        NSColor* dark = [NSColor colorWithCalibratedWhite:0.1 alpha:1];
+        NSDictionary* b = @{NSFontAttributeName: [NSFont fontWithName:@"HelveticaNeue-Bold" size: 64],
+                            NSForegroundColorAttributeName: dark};
+        NSDictionary* w = @{NSFontAttributeName: [NSFont fontWithName:@"HelveticaNeue-Bold" size: 64],
+                            NSForegroundColorAttributeName: [NSColor lightGrayColor]};
+        NSRect r;
+        r.size = [text sizeWithAttributes: b];
+        r.origin.x = (rect.size.width - r.size.width) / 2;
+        r.origin.y = (rect.size.height - r.size.height) / 2;
+        r.origin.x++;
+        r.origin.y++;
+        [text drawInRect: r withAttributes: w];
+        [self drawBorder: r color: [NSColor lightGrayColor]];
+        r.origin.x--;
+        r.origin.y--;
+        [text drawInRect: r withAttributes: b];
+        [self drawBorder: r color: dark];
+    }
     [NSGraphicsContext restoreGraphicsState];
-    
     CGImageRef alphaMask = CGBitmapContextCreateImage(maskContext);
     CGContextRef windowContext = [[NSGraphicsContext currentContext] graphicsPort];
     [[NSColor whiteColor] setFill];

@@ -429,7 +429,7 @@ static NSTableView* createTableView(NSRect r) {
     _splitViewDelegate = [[ZGSplitViewDelegate alloc] initWithDocument: self];
     _splitView.delegate = _splitViewDelegate;
     _splitView.hidden = true;
-    _heroView = [[ZGHeroView alloc] initWithFrame: _contentView.bounds];
+    _heroView = [[ZGHeroView alloc] initWithDocument: self andFrame: _contentView.bounds];
     _heroView.autoresizingMask = kSizableWH;
     _heroView.hidden = !_isNew;
 
@@ -632,7 +632,10 @@ static NSTableView* createTableView(NSRect r) {
     NSString* __block password;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
-        _heroView.hidden = false;
+        // there are 2 points in time when we may be asked for password.
+        // during archive opening and during extraction. Do not show hero
+        // screen at the second scenario.
+        _heroView.hidden = _archive != null;
         NSString* prompt = [NSString stringWithFormat:@"Please enter archive password for archive\n«%@»",
                             [_url.path lastPathComponent]];
         NSString* info = @"Password has been set by the person who created this archive file.\n"
