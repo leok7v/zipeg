@@ -19,12 +19,10 @@
         _path.URL = u;
         _path.pathStyle = NSPathStyleStandard;
         _path.backgroundColor = [NSColor clearColor];
-        for (NSPathCell* c in _path.pathComponentCells) {
-            c.controlSize = NSSmallControlSize; // NSSmallControlSize
-        }
         NSPathCell* c = _path.cell;
-        c.placeholderString = @"You can drag folders here";
+        // c.placeholderString = @"You can drag folders here";
         c.controlSize = NSSmallControlSize; // NSSmallControlSize
+        c.font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
         _path.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
         _path.doubleAction = @selector(pathControlDoubleClick:);
         _path.delegate = self;

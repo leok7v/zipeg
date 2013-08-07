@@ -2,13 +2,13 @@
 #import "ZGToolbar.h"
 
 @interface ZGDocument : NSDocument<NSToolbarDelegate> {
-    
+
 }
 @property NSOutlineView* outlineView;
 @property NSTableView*   tableView;
 @property NSSplitView*   splitView;
 @property ZGToolbar*     toolbar;
-
+@property (nonatomic, readonly) BOOL isNew;
 
 @property (nonatomic, readonly, weak) NSWindow* window;
 @property (nonatomic, readonly) NSObject<ZGItemProtocol>* root;

@@ -41,8 +41,6 @@
 		B37E555E1793019400E54693 /* ZGOutlineViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = B37E555D1793019400E54693 /* ZGOutlineViewDataSource.m */; };
 		B39F1D271792485F00472FEF /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D291792485F00472FEF /* Credits.rtf */; };
 		B39F1D2A1792486C00472FEF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D2C1792486C00472FEF /* InfoPlist.strings */; };
-		B3AE839A17B29A51008F754D /* black-linen_@2X.png in Resources */ = {isa = PBXBuildFile; fileRef = B3AE839817B29A51008F754D /* black-linen_@2X.png */; };
-		B3AE839B17B29A51008F754D /* black-linen.png in Resources */ = {isa = PBXBuildFile; fileRef = B3AE839917B29A51008F754D /* black-linen.png */; };
 		B3BAB36E17936C9C006C4E75 /* ZG7zip.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3BAB36D17936C9C006C4E75 /* ZG7zip.mm */; };
 		B3BAB3711793CAB0006C4E75 /* ZGNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = B3BAB3701793CAB0006C4E75 /* ZGNumber.m */; };
 		B3BECD9F179A149300B07871 /* CharDistribution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD68179A149300B07871 /* CharDistribution.cpp */; };
@@ -187,8 +185,6 @@
 		B39F1D4F17924E9900472FEF /* HashMapS2L.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HashMapS2L.hpp; path = ../p7z/HashMapS2L.hpp; sourceTree = "<group>"; };
 		B39F1D5017924E9900472FEF /* NanoTime.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = NanoTime.hpp; path = ../p7z/NanoTime.hpp; sourceTree = "<group>"; };
 		B39F1D5617924F0700472FEF /* p7z.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = p7z.hpp; path = ../p7z/p7z.hpp; sourceTree = "<group>"; };
-		B3AE839817B29A51008F754D /* black-linen_@2X.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "black-linen_@2X.png"; path = "Resources/black-linen_@2X.png"; sourceTree = "<group>"; };
-		B3AE839917B29A51008F754D /* black-linen.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "black-linen.png"; path = "Resources/black-linen.png"; sourceTree = "<group>"; };
 		B3BAB36C17936C9B006C4E75 /* ZG7zip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZG7zip.h; sourceTree = "<group>"; };
 		B3BAB36D17936C9C006C4E75 /* ZG7zip.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ZG7zip.mm; sourceTree = "<group>"; };
 		B3BAB36F1793CAB0006C4E75 /* ZGNumber.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGNumber.h; sourceTree = "<group>"; };
@@ -391,8 +387,6 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B3AE839817B29A51008F754D /* black-linen_@2X.png */,
-				B3AE839917B29A51008F754D /* black-linen.png */,
 				B31A49BA17B2444600030DD5 /* next.png */,
 				B31A49BB17B2444600030DD5 /* play-n.png */,
 				B31A49BC17B2444600030DD5 /* play-p.png */,
@@ -588,8 +582,6 @@
 				B31A49BF17B2444600030DD5 /* play-n.png in Resources */,
 				B31A49C017B2444600030DD5 /* play-p.png in Resources */,
 				B31A49C117B2444600030DD5 /* prev.png in Resources */,
-				B3AE839A17B29A51008F754D /* black-linen_@2X.png in Resources */,
-				B3AE839B17B29A51008F754D /* black-linen.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

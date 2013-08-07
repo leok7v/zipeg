@@ -81,33 +81,81 @@
     [super setFrame:frameRect];
 }
 
-- (void)drawRect:(NSRect)dirtyRect {
+static NSString* text = @"Drop Files Here";
+
+- (void) drawImages: (NSRect) rect {
     // trace(@"drawRect %@", NSStringFromRect(dirtyRect));
-//  [[NSImage imageNamed:@"background.png"] drawInRect:dirtyRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1];
-// Passing NSZeroRect causes the entire image to draw.
-//  [_appIcon drawInRect:dirtyRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1]; // Passing NSZeroRect causes the entire image to draw.
     [NSGraphicsContext.currentContext saveGraphicsState];
     NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh;
     CGContextRef context = (CGContextRef) [NSGraphicsContext.currentContext graphicsPort];
     CGContextSetRGBFillColor(context, 0.227, 0.337, 0.251, 0.8);
-    CGContextFillRect(context, NSRectToCGRect(dirtyRect));
+    CGContextFillRect(context, NSRectToCGRect(rect));
     /* Your drawing code [NSImage drawAtPoint....]for the image goes here
      Also, if you need to lock focus when drawing, do it here.       */
     int dy = 0;
-    for (float y = dirtyRect.origin.y - 64; y < dirtyRect.size.height + 64; y += 20) {
+    for (float y = rect.origin.y - 64; y < rect.size.height + 64; y += 20) {
         int dx = _index[dy % countof(_index)];
-        for (float x = dirtyRect.origin.x - 64; x < dirtyRect.size.width + 64; x += 20) {
+        for (float x = rect.origin.x - 64; x < rect.size.width + 64; x += 20) {
             int ix = _index[dx % countof(_index)];
             NSImage* r = _images[ix];
-            [r drawInRect:NSMakeRect(x, dirtyRect.size.height - y, r.size.width, r.size.height) fromRect:NSZeroRect
+            [r drawInRect:NSMakeRect(x, rect.size.height - y, r.size.width, r.size.height) fromRect:NSZeroRect
                 operation:NSCompositeSourceOver fraction:1];
             dx++;
         }
         dy++;
     }
     [NSGraphicsContext.currentContext restoreGraphicsState];
-//  [super drawRect:dirtyRect];
-//  [_appIcon drawInRect:(NSRect)dstRect fromRect:(NSRect)srcRect operation:(NSCompositingOperation)op fraction:(CGFloat)delta];
+}
+
+- (void) drawRect: (NSRect) rect {
+    CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceGray();
+    CGContextRef maskContext = CGBitmapContextCreate(null, self.bounds.size.width, self.bounds.size.height,
+                                                        8, self.bounds.size.width, colorspace, 0);
+    CGColorSpaceRelease(colorspace);
+    NSGraphicsContext *maskGraphicsContext = [NSGraphicsContext graphicsContextWithGraphicsPort: maskContext flipped: false];
+    [NSGraphicsContext saveGraphicsState];
+    [NSGraphicsContext setCurrentContext: maskGraphicsContext];
+    [[NSColor lightGrayColor] setFill];
+    CGContextFillRect(maskContext, rect);
+    NSColor* dark = [NSColor colorWithCalibratedWhite:0.1 alpha:1];
+    NSDictionary* b = @{NSFontAttributeName: [NSFont fontWithName:@"HelveticaNeue-Bold" size: 64],
+                        NSForegroundColorAttributeName: dark};
+    NSDictionary* w = @{NSFontAttributeName: [NSFont fontWithName:@"HelveticaNeue-Bold" size: 64],
+                        NSForegroundColorAttributeName: [NSColor lightGrayColor]};
+    NSRect r;
+    r.size = [text sizeWithAttributes: b];
+    r.origin.x = (rect.size.width - r.size.width) / 2;
+    r.origin.y = (rect.size.height - r.size.height) / 2;
+    r.origin.x++;
+    r.origin.y++;
+    [text drawInRect: r withAttributes: w];
+    [self drawBorder: r color: [NSColor lightGrayColor]];
+    r.origin.x--;
+    r.origin.y--;
+    [text drawInRect: r withAttributes: b];
+    [self drawBorder: r color: dark];
+
+    [NSGraphicsContext restoreGraphicsState];
+    
+    CGImageRef alphaMask = CGBitmapContextCreateImage(maskContext);
+    CGContextRef windowContext = [[NSGraphicsContext currentContext] graphicsPort];
+    [[NSColor whiteColor] setFill];
+    CGContextFillRect(windowContext, rect);
+    CGContextSaveGState(windowContext);
+    CGContextClipToMask(windowContext, NSRectToCGRect(self.bounds), alphaMask);
+    [self drawImages: rect];
+    CGContextRestoreGState(windowContext);
+    CGImageRelease(alphaMask);
+}
+
+-(void) drawBorder: (NSRect) rect color: (NSColor*) color {
+    NSRect newRect = NSMakeRect(rect.origin.x - 10, rect.origin.y - 10, rect.size.width + 20, rect.size.height + 20);
+    NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect: newRect xRadius:10 yRadius:10];
+    [path setLineWidth: 10];
+    [color set];
+    CGFloat dash[] = { 42.0, 8.0 };
+    [path setLineDash: dash count: countof(dash) phase: 0.0];
+    [path stroke];
 }
 
 @end

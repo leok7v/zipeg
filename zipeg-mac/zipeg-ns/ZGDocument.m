@@ -17,7 +17,7 @@
 #import "ZGImages.h"
 #import "ZGApp.h"
 
-
+/* // TODO: (this is for layout debug and diagnostics) remove me
 @interface ZGRedBox : NSView @end
 
 @implementation ZGRedBox
@@ -27,44 +27,8 @@
     [super drawRect: r];
 }
 @end
-
-@interface ZGPatternBackgroundView : NSView {
-    NSColor* _backgroundColor;
-}
-@end
-
-@implementation ZGPatternBackgroundView
-
-- (id) initWithFrame:(NSRect) r {
-    self = [super initWithFrame: r];
-    if (self) {
-        self.autoresizingMask = kSizableWH | kSizableLR | kSizableTB;
-        self.autoresizesSubviews = true;
-        NSImage* i = [NSImage imageNamed:@"black-linen"];
-        assert(i != null);
-        _backgroundColor = [NSColor colorWithPatternImage: i];
-//      _backgroundColor = [NSColor clearColor];
-    }
-    return self;
-}
-
-/*
-- (void) drawRect: (NSRect) r {
-    NSRect b = self.bounds;
-    [NSColor.clearColor setFill];
-    NSRectFill(b);
-    [NSGraphicsContext.currentContext saveGraphicsState];
-    [NSGraphicsContext.currentContext setPatternPhase: NSMakePoint(0, self.frame.size.height)];
-    [_backgroundColor set];
-    b.origin.y += 30;
-    b.size.height -= 30;
-    NSRectFill(b);
-    [NSGraphicsContext.currentContext restoreGraphicsState];
-    [super drawRect: r];
-}
 */
 
-@end
 
 
 @interface ZGDocument() {
@@ -75,6 +39,7 @@
     id _clipViewFrameDidChangeObserver;
     id _clipViewBoundsDidChangeObserver;
     NSTableViewSelectionHighlightStyle _highlightStyle;
+    BOOL _isNew;
     uint64_t _timeToShowHeroView;
 }
 
@@ -104,6 +69,34 @@
 - (void) searchArchiveWithString: (NSString*) s forOperation: (NSOperation*) op done: (void(^)(BOOL)) block;
 
 @end
+
+@interface ZGBackPanel : NSView { ZGDocument* _document; } @end
+
+@implementation ZGBackPanel
+
+- (id) initWithDocument: (ZGDocument*) d andFrame:(NSRect) r {
+    self = [super initWithFrame: r];
+    if (self) { // it takes space to prevent titlebar with toolbar to over-draw
+        self.autoresizingMask = kSizableWH;
+        self.autoresizesSubviews = true;
+        _document = d;
+    }
+    return self;
+}
+/*
+- (void) drawRect: (NSRect) r {
+    if (_document.url == null) { // new document
+        [NSGraphicsContext.currentContext saveGraphicsState];
+        CGContextRef gc = (CGContextRef) [NSGraphicsContext.currentContext graphicsPort];
+        CGContextSetAlpha(gc, 0.5);
+        [NSGraphicsContext.currentContext restoreGraphicsState];
+    } else {
+        [super drawRect: r];
+    }
+}
+*/
+@end
+
 
 @interface OpenArchiveOperation : NSOperation {
     ZGDocument* __weak _document;
@@ -399,13 +392,14 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
-    // this is called after readFromURL
+    // setupDocumentWindow is called after readFromURL
+    _isNew = _url == null;
     _window = controller.window;
     assert(_window != null);
     _window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
     self.window = _window; // weak
     _contentView = _window.contentView;
-    _contentView.autoresizingMask = kSizableWH | kSizableLR | kSizableTB;
+    _contentView.autoresizingMask = kSizableWH;
     _contentView.autoresizesSubviews = true;
     assert(!_contentView.wantsLayer);
     // NSOutlineView backgrown drawing code is broken if content view wants layer (by my own experiments) and also:
@@ -435,9 +429,9 @@ static NSTableView* createTableView(NSRect r) {
     _splitViewDelegate = [[ZGSplitViewDelegate alloc] initWithDocument: self];
     _splitView.delegate = _splitViewDelegate;
     _splitView.hidden = true;
-    _heroView = [[ZGHeroView alloc] initWithFrame: _contentView.frame];
-    _heroView.autoresizingMask = kSizableWH | kSizableLR | kSizableTB;
-    _heroView.hidden = true;
+    _heroView = [[ZGHeroView alloc] initWithFrame: _contentView.bounds];
+    _heroView.autoresizingMask = kSizableWH;
+    _heroView.hidden = !_isNew;
 
     _toolbarDelegate = [[ZGToolbarDelegate alloc] initWithDocument: self];
     _toolbar = [ZGToolbar new];
@@ -469,14 +463,14 @@ static NSTableView* createTableView(NSRect r) {
             _clipViewFrameDidChangeObserver = removeObserver(_clipViewFrameDidChangeObserver);
         }
     );
-    if (_url != null) {
+    ZGBackPanel* background = [[ZGBackPanel alloc] initWithDocument: self andFrame: _contentView.frame];
+    _contentView.subviews = @[background];
+    background.subviews = @[_splitView, _destination, _heroView];
+    if (!_isNew) {
         _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
         OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
         [_operationQueue addOperation: operation];
     }
-    ZGPatternBackgroundView* background = [[ZGPatternBackgroundView alloc] initWithFrame: _contentView.frame];
-    _contentView.subviews = @[background];
-    background.subviews = @[_splitView, _destination, _heroView];
 }
 
 - (void) windowDidBecomeKey {
