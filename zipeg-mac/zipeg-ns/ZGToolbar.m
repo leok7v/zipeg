@@ -14,11 +14,11 @@
     self = [super initWithIdentifier: @"ZGToolbarId"];
     if (self != null) {
         alloc_count(self);
+        self.showsBaselineSeparator = false;
         self.allowsUserCustomization = true;
         self.autosavesConfiguration = true;
         self.sizeMode = NSToolbarSizeModeSmall;
-        self.showsBaselineSeparator = true;
-        self.displayMode = NSToolbarDisplayModeIconAndLabel; // NSToolbarDisplayModeIconOnly;
+        self.displayMode = NSToolbarDisplayModeIconAndLabel;
         self.sizeMode = NSToolbarSizeModeRegular;
     }
     return self;

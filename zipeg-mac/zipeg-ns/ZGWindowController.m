@@ -1,6 +1,8 @@
 #import "ZGWindowController.h"
 #import "ZGDocument.h"
 
+static NSString* ZGWindowAutosaveName = @"ZGWindow";
+
 @implementation ZGWindowController {
     NSPoint cascadePoint;
 }
@@ -29,7 +31,9 @@
         window.hasShadow = true;
         window.showsToolbarButton = true;
 
-        // window.frameAutosaveName = @""; // otherwise it will try to reopen all archives on startup
+        window.frameAutosaveName = ZGWindowAutosaveName; // otherwise it will try to reopen all archives on startup
+        window.frameUsingName = ZGWindowAutosaveName;
+        trace(@"w=%@ cv=%@", NSStringFromRect(window.frame), NSStringFromRect([window.contentView frame]));
         if (window.frame.size.width < window.minSize.width || window.frame.size.height < window.minSize.height) {
             [window setFrame: NSMakeRect(0, 0, window.minSize.width, window.minSize.height) display: true animate: false];
         }

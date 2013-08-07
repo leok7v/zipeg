@@ -13,8 +13,59 @@
 #import "ZGSheet.h"
 #import "ZGToolbar.h"
 #import "ZGToolbarDelegate.h"
+#import "ZGDestination.h"
 #import "ZGImages.h"
 #import "ZGApp.h"
+
+
+@interface ZGRedBox : NSView @end
+
+@implementation ZGRedBox
+- (void) drawRect: (NSRect) r {
+    [NSColor.redColor setFill];
+    NSRectFill(r);
+    [super drawRect: r];
+}
+@end
+
+@interface ZGPatternBackgroundView : NSView {
+    NSColor* _backgroundColor;
+}
+@end
+
+@implementation ZGPatternBackgroundView
+
+- (id) initWithFrame:(NSRect) r {
+    self = [super initWithFrame: r];
+    if (self) {
+        self.autoresizingMask = kSizableWH | kSizableLR | kSizableTB;
+        self.autoresizesSubviews = true;
+        NSImage* i = [NSImage imageNamed:@"black-linen"];
+        assert(i != null);
+        _backgroundColor = [NSColor colorWithPatternImage: i];
+//      _backgroundColor = [NSColor clearColor];
+    }
+    return self;
+}
+
+/*
+- (void) drawRect: (NSRect) r {
+    NSRect b = self.bounds;
+    [NSColor.clearColor setFill];
+    NSRectFill(b);
+    [NSGraphicsContext.currentContext saveGraphicsState];
+    [NSGraphicsContext.currentContext setPatternPhase: NSMakePoint(0, self.frame.size.height)];
+    [_backgroundColor set];
+    b.origin.y += 30;
+    b.size.height -= 30;
+    NSRectFill(b);
+    [NSGraphicsContext.currentContext restoreGraphicsState];
+    [super drawRect: r];
+}
+*/
+
+@end
+
 
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* _archive;
@@ -30,6 +81,7 @@
 @property (weak) NSView* contentView;
 @property ZGToolbarDelegate* toolbarDelegate;
 @property NSLevelIndicator* levelIndicator;
+@property ZGDestination* destination;
 @property NSMenu *tableRowContextMenu;
 
 @property NSTextFieldCell* textCell;
@@ -237,7 +289,7 @@ static NSSplitView* createSplitView(NSRect r, NSView* left, NSView* right) {
     NSSplitView* sv = [[NSSplitView alloc] initWithFrame: r];
     sv.vertical = true;
     sv.dividerStyle = NSSplitViewDividerStyleThin;
-    sv.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    sv.autoresizingMask = kSizableWH | kSizableLR;
     sv.autoresizesSubviews = true;
     sv.autosaveName = @"Zipeg Split View";
     sv.subviews = @[left, right];
@@ -249,7 +301,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     sv.documentView = v;
     sv.hasVerticalScroller = true;
     sv.hasHorizontalScroller = true;
-    sv.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    sv.autoresizingMask = kSizableWH;
     sv.autoresizesSubviews = true;
     return sv;
 }
@@ -257,7 +309,7 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
 static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightStyle hs) {
     NSOutlineView* ov = [[NSOutlineView alloc] initWithFrame: r];
     ov.focusRingType = NSFocusRingTypeNone;
-    ov.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    ov.autoresizingMask = kSizableWH;
     ov.allowsEmptySelection = true; // because of the sections (groups) collapse in Outline View
     ov.indentationMarkerFollowsCell = true;
     ov.indentationPerLevel = 16;
@@ -305,7 +357,7 @@ static NSTableView* createTableView(NSRect r) {
         tableColumn.editable = true;
     }
     
-    tv.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    tv.autoresizingMask = kSizableWH;
     tv.allowsColumnReordering = true;
     tv.allowsColumnResizing = true;
     tv.allowsMultipleSelection = true;
@@ -353,7 +405,7 @@ static NSTableView* createTableView(NSRect r) {
     _window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
     self.window = _window; // weak
     _contentView = _window.contentView;
-    _contentView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    _contentView.autoresizingMask = kSizableWH | kSizableLR | kSizableTB;
     _contentView.autoresizesSubviews = true;
     assert(!_contentView.wantsLayer);
     // NSOutlineView backgrown drawing code is broken if content view wants layer (by my own experiments) and also:
@@ -383,15 +435,12 @@ static NSTableView* createTableView(NSRect r) {
     _splitViewDelegate = [[ZGSplitViewDelegate alloc] initWithDocument: self];
     _splitView.delegate = _splitViewDelegate;
     _splitView.hidden = true;
-    _heroView = [[ZGHeroView alloc] initWithFrame: _splitView.frame];
-    _heroView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    _heroView = [[ZGHeroView alloc] initWithFrame: _contentView.frame];
+    _heroView.autoresizingMask = kSizableWH | kSizableLR | kSizableTB;
     _heroView.hidden = true;
-    _contentView.subviews = @[_splitView, _heroView];
 
-    _toolbar = [ZGToolbar new];
-    assert(_toolbar != null);
     _toolbarDelegate = [[ZGToolbarDelegate alloc] initWithDocument: self];
-    assert(_toolbarDelegate != null);
+    _toolbar = [ZGToolbar new];
     _toolbar.delegate = _toolbarDelegate; // weak reference
     _window.toolbar = _toolbar;
  
@@ -400,7 +449,12 @@ static NSTableView* createTableView(NSRect r) {
     //  assert(_levelIndicator != null);
     _levelIndicator.maxValue = 10000;
     _levelIndicator.intValue = 5000;
-
+    
+    NSRect dbounds = _contentView.bounds;
+    dbounds.origin.y = dbounds.size.height - 30;
+    dbounds.size.height = 30;
+    _destination = [[ZGDestination alloc] initWithFrame: dbounds];
+    
     NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
     clipView.postsFrameChangedNotifications = true;
     void (^sizeToContent)(NSNotification*) = ^(NSNotification* n) {
@@ -420,6 +474,9 @@ static NSTableView* createTableView(NSRect r) {
         OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
         [_operationQueue addOperation: operation];
     }
+    ZGPatternBackgroundView* background = [[ZGPatternBackgroundView alloc] initWithFrame: _contentView.frame];
+    _contentView.subviews = @[background];
+    background.subviews = @[_splitView, _destination, _heroView];
 }
 
 - (void) windowDidBecomeKey {
@@ -447,11 +504,11 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (BOOL)hasUnautosavedChanges {
-    return false;
+    return true;
 }
 
 - (BOOL) isDocumentEdited {
-    return false;
+    return true;
 }
 
 - (BOOL) documentCanClose {
@@ -479,41 +536,44 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (void)close {
-    NSTableColumn* tc = _tableView.tableColumns[0];
-    assert(tc != null);
-    [_operationQueue cancelAllOperations];
-    [_operationQueue waitUntilAllOperationsAreFinished];
-    _splitView.subviews = @[];
-    [_splitView removeFromSuperview];
-    _splitView = null;
-    [_heroView removeFromSuperview];
-    _heroView = null;
-    _outlineView = null;
-    _tableView = null;
-    if (_archive != null) {
-        [_archive close];
-        _archive = null;
-        _root = null;
+    // NSWindowController _windowDidClose will call us recursively from super :(
+    if (_splitView != null) {
+        NSTableColumn* tc = _tableView.tableColumns[0];
+        assert(tc != null);
+        [_operationQueue cancelAllOperations];
+        [_operationQueue waitUntilAllOperationsAreFinished];
+        _splitView.subviews = @[];
+        [_splitView removeFromSuperview];
+        _splitView = null;
+        [_heroView removeFromSuperview];
+        _heroView = null;
+        _outlineView = null;
+        _tableView = null;
+        _destination = null;
+        _contentView.subviews = @[];
+        if (_archive != null) {
+            [_archive close];
+            _archive = null;
+            _root = null;
+        }
+        [super close];
     }
-    [super close];
 }
 
-
-- (NSData *)dataOfType:(NSString *)typeName error:(NSError **)outError {
-    // Insert code here to write your document to data of the specified type.
-    // If outError != NULL, ensure that you create and set an appropriate
-    // error when returning nil.
-    // You can also choose to override -fileWrapperOfType:error:,
-    // -writeToURL:ofType:error:,
-    // or
-    // -writeToURL:ofType:forSaveOperation:originalContentsURL:error: instead.
-    NSException *exception = [NSException exceptionWithName:@"UnimplementedMethod"
-                                          reason:[NSString
-                                          stringWithFormat:@"%@ is unimplemented",
-                                          NSStringFromSelector(_cmd)] userInfo:nil];
-    @throw exception;
-    return nil;
+- (BOOL) writeToURL:(NSURL *)absoluteURL ofType:(NSString *)typeName error:(NSError **)outError {
+    [self runModalSavePanelForSaveOperation: NSSaveOperation
+                                   delegate: self
+                            didSaveSelector: @selector(document:didSave:block:)
+                                contextInfo: (__bridge void *)(^(){
+        trace(@"save");
+    })];
+    return true;
 }
+
+- (void) document: (NSDocument*) doc didSave: (BOOL) b block: (void (^)())block {
+    block();
+}
+
 
 - (BOOL) readFromURL:(NSURL *)absoluteURL ofType:(NSString *)typeName error:(NSError **)outError {
     return [self readFromURL:absoluteURL ofType:typeName encoding:(CFStringEncoding)-1 error:outError];
@@ -530,26 +590,6 @@ static NSTableView* createTableView(NSRect r) {
 
 - (BOOL) isEntireFileLoaded {
     return _archive != null;
-}
-
-- (void) extractItemsForOperation: (NSOperation*) op items: (NSArray*) items to: (NSURL*) url {
-    // This method is called on the background thread
-    assert(![NSThread isMainThread]);
-    assert(_archive != null);
-    [_archive extract: items to: url operation: op done: ^(NSError* error) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (error != null) {
-                [[NSSound soundNamed:@"error"] play];
-                NSAlert* alert = [NSAlert alertWithError: error];
-                [_sheet begin: alert done: ^(int rc) { } ];
-            } else {
-                // http://cocoathings.blogspot.com/2013/01/playing-system-sounds.html
-                // see: /System/Library/Sounds
-                // Basso Blow Bottle Frog Funk Glass Hero Morse Ping Pop Purr Sosumi Submarine Tink
-                [[NSSound soundNamed:@"done"] play];
-            }
-        });
-    }];
 }
 
 - (void) openArchiveForOperation: (NSOperation*) op {
@@ -579,6 +619,8 @@ static NSTableView* createTableView(NSRect r) {
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder:_outlineView];
             
+            // xxx
+            [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
         } else if (error != null) {
             _heroView.hidden = false;
             NSAlert* alert = [NSAlert alertWithError: error];
@@ -638,6 +680,26 @@ static NSTableView* createTableView(NSRect r) {
             _heroView.hidden = false;
         });
     }
+}
+
+- (void) extractItemsForOperation: (NSOperation*) op items: (NSArray*) items to: (NSURL*) url {
+    // This method is called on the background thread
+    assert(![NSThread isMainThread]);
+    assert(_archive != null);
+    [_archive extract: items to: url operation: op done: ^(NSError* error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (error != null) {
+                [[NSSound soundNamed:@"error"] play];
+                NSAlert* alert = [NSAlert alertWithError: error];
+                [_sheet begin: alert done: ^(int rc) { } ];
+            } else {
+                // http://cocoathings.blogspot.com/2013/01/playing-system-sounds.html
+                // see: /System/Library/Sounds
+                // Basso Blow Bottle Frog Funk Glass Hero Morse Ping Pop Purr Sosumi Submarine Tink
+                [[NSSound soundNamed:@"done"] play];
+            }
+        });
+    }];
 }
 
 - (BOOL) progressOnBackgroundThread: (long long)pos ofTotal:(long long)total {

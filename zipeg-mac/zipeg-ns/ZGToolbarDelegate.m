@@ -12,6 +12,41 @@
 @interface ZGValidatedViewToolbarItem : NSToolbarItem
 @end
 
+@interface ZGPanel : NSSavePanel  {
+    bool _asked;
+}
+@end
+
+@implementation ZGPanel
+
+- (id) init {
+    self = [super init];
+    if (self) {
+        _asked = false;
+    }
+    return self;
+}
+
+- (BOOL) isExpanded {
+    if (_asked) {
+        _asked = true;
+        return false;
+    } else {
+        return [super isExpanded];
+    }
+}
+
+- (IBAction)ok:(id)sender {
+    trace(@"OK");
+}
+
+- (IBAction)cancel:(id)sender {
+    trace(@"Cancel");
+}
+
+@end
+
+
 @implementation ZGToolbarDelegate
 
 static NSString* ExtractId   = @"ExtractId";
@@ -168,7 +203,7 @@ static NSMenu* createSearchMenu() {
 - (NSToolbarItem*) toolbar: (NSToolbar*) toolbar itemForItemIdentifier: (NSString*) itemIdent willBeInsertedIntoToolbar:(BOOL) willBeInserted {
     NSToolbarItem* ti = null;
     if ([itemIdent isEqual: ExtractId]) {
-        ti = createButton(ExtractId, @"Unpack", @"Extract Content of the Archive", @"play-n.png", @selector(saveDocument:));
+        ti = createButton(ExtractId, @"Unpack", @"Extract Content of the Archive", @"play-n.png", @selector(extract:));
         ti.target = self;
     } else if([itemIdent isEqual: SearchId]) {
         NSMenuItem* mi = createSearchPanelMenu(@"Search", @"Search Panel",
@@ -210,10 +245,6 @@ static NSMenu* createSearchMenu() {
 	ti = null;
     }
     return ti;
-}
-
-- (void) saveDocument: (id) sender {
-//  trace(@"saveDocument %@", sender);
 }
 
 - (void) viewStyleClicked: (id) sender {
@@ -273,6 +304,8 @@ static NSMenu* createSearchMenu() {
 	enable = _document.isEntireFileLoaded;
     } else if ([[toolbarItem itemIdentifier] isEqual: ViewsId]) {
 	enable = _document.isEntireFileLoaded;
+    } else if ([[toolbarItem itemIdentifier] isEqual: ExtractId]) {
+	enable = _document.root != null && _document.isEntireFileLoaded;
     }
     return enable;
 }
@@ -286,7 +319,7 @@ static NSMenu* createSearchMenu() {
     return enabled;
 }
 
-- (NSArray *) control: (NSControl*) control textView:(NSTextView*) textView completions: (NSArray*) words
+- (NSArray*) control: (NSControl*) control textView:(NSTextView*) textView completions: (NSArray*) words
  forPartialWordRange: (NSRange) charRange indexOfSelectedItem: (int*) index {
     NSMutableArray* keywords = [_searchFieldOutlet.recentSearches mutableCopy];
     // TODO: it might be cool to communicate with archive to get suggestions and add them on the fly.
@@ -306,6 +339,77 @@ static NSMenu* createSearchMenu() {
     }
     [matches sortUsingSelector:@selector(compare:)];
     return matches;
+}
+
+- (void) extract: (id) sender {
+    if (_document.root != null) {
+        NSOpenPanel* p = [NSOpenPanel openPanel];
+        p.title = @"title"; // not visible
+        p.prompt = @"propmt";
+        p.message = @"message";
+        p.nameFieldLabel = @"Folder: ";
+        NSString* s = _document.window.title;
+        // s is not absolute path: stringByDeletingLastPathComponent won't work (will return @""
+        int ix = [s lastIndexOf:@"."] ;
+        if (ix > 0) {
+            s = [s substringFrom: 0 to: ix];
+        }
+        p.nameFieldStringValue = [s stringByReplacingOccurrencesOfString:@"*" withString:@""];
+        p.allowsOtherFileTypes = true;
+        p.canCreateDirectories = true;
+        p.canChooseDirectories = true;
+        p.canChooseFiles = false;
+        p.allowsMultipleSelection = false;
+        /*
+         p.canChooseDirectories = true;
+         p.canChooseFiles = false;
+         p.allowsMultipleSelection = false;
+         */
+        NSButton* btn = [[NSButton alloc] initWithFrame: NSMakeRect(0, 0, 30, 30)];
+        btn.stringValue = @"Button";
+        p.accessoryView = btn;
+        [p beginSheetModalForWindow: _document.window completionHandler: ^(NSInteger result) {
+            trace(@"result %ld %@", result, p.directoryURL);
+            p.delegate = null;
+        }];
+    }
+}
+
+- (BOOL)panel: (id)sender shouldEnableURL:(NSURL*) url {
+    if (![url isFileReferenceURL]) {
+        return false;
+    }
+    BOOL d = false;
+    NSString* path = url.path;
+    BOOL b = [[NSFileManager defaultManager] fileExistsAtPath: path isDirectory: &d] && d;
+    trace("shouldEnableURL: %@ %d %d", path, d, b);
+    return b;
+}
+
+- (BOOL) panel: (id)sender validateURL:(NSURL*) url error:(NSError **)outError {
+    if (![url isFileReferenceURL]) {
+        return false;
+    }
+    BOOL d = false;
+    NSString* path = url.path;
+    BOOL b = [[NSFileManager defaultManager] fileExistsAtPath: path isDirectory: &d] && d;
+    trace("validateURL: %@ %d %d", path, d, b);
+    return b;
+}
+
+- (void)panel:(id)sender didChangeToDirectoryURL:(NSURL*) url {
+}
+
+- (NSString*) panel:(id)sender userEnteredFilename:(NSString*) filename confirmed:(BOOL)okFlag {
+    [NSApp endSheet: _document.window];
+    return filename;
+}
+
+- (void)panel:(id)sender willExpand:(BOOL)expanding {
+}
+
+- (void)panelSelectionDidChange:(id)sender {
+    
 }
 
 @end

@@ -1,6 +1,6 @@
 @class ZGDocument;
 
-@interface ZGToolbarDelegate : NSObject<NSToolbarDelegate, NSTextFieldDelegate>
+@interface ZGToolbarDelegate : NSObject<NSToolbarDelegate, NSTextFieldDelegate, NSOpenSavePanelDelegate>
 
 - (id) initWithDocument: (ZGDocument*) doc;
 

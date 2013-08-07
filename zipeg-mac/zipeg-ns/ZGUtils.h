@@ -18,6 +18,12 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v);
 FOUNDATION_EXPORT id addObserver(NSString* name, id object, void(^block)(NSNotification*));
 FOUNDATION_EXPORT id removeObserver(id observer); // always returns null - see usages
 
+enum {
+    kSizableWH = NSViewWidthSizable | NSViewHeightSizable,
+    kSizableLR = NSViewMinXMargin   | NSViewMaxXMargin,
+    kSizableTB = NSViewMinYMargin   | NSViewMaxYMargin
+};
+
 FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 
 @interface NSString(ZGExtensions)
