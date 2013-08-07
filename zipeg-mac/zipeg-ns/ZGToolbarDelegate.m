@@ -110,7 +110,7 @@ static NSString* NavsId  = @"NavId";
 }
 
 static NSToolbarItem* createToolbarItem(NSString* id, NSString* label, NSString* tooltip) {
-    NSToolbarItem* ti = [[NSToolbarItem alloc] initWithItemIdentifier: id];
+    ZGValidatedViewToolbarItem* ti = [[ZGValidatedViewToolbarItem alloc] initWithItemIdentifier: id];
     ti.label = NSLocalizedString(label, @"");
     ti.paletteLabel = NSLocalizedString(label, @"");
     ti.toolTip = NSLocalizedString(tooltip, @"");
@@ -200,10 +200,12 @@ static NSMenu* createSearchMenu() {
     return m;
 }
 
-- (NSToolbarItem*) toolbar: (NSToolbar*) toolbar itemForItemIdentifier: (NSString*) itemIdent willBeInsertedIntoToolbar:(BOOL) willBeInserted {
+- (NSToolbarItem*) toolbar: (NSToolbar*) toolbar itemForItemIdentifier: (NSString*) itemIdent
+ willBeInsertedIntoToolbar: (BOOL) willBeInserted {
     NSToolbarItem* ti = null;
     if ([itemIdent isEqual: ExtractId]) {
-        ti = createButton(ExtractId, @"Unpack", @"Extract Content of the Archive", @"play-n.png", @selector(extract:));
+        ti = createButton(ExtractId, @"Unpack", @"Extract Content of the Archive",
+                          @"play-n.png", @selector(extract:));
         ti.target = self;
     } else if([itemIdent isEqual: SearchId]) {
         NSMenuItem* mi = createSearchPanelMenu(@"Search", @"Search Panel",
@@ -262,15 +264,16 @@ static NSMenu* createSearchMenu() {
 }
 
 - (NSArray*) toolbarDefaultItemIdentifiers: (NSToolbar*) toolbar {
-    return @[ExtractId, NSToolbarSeparatorItemIdentifier, NavsId, NSToolbarSeparatorItemIdentifier, ViewsId,
-             NSToolbarSeparatorItemIdentifier,
+    return @[ExtractId, NSToolbarSeparatorItemIdentifier,
+             NavsId, NSToolbarSeparatorItemIdentifier,
              NSToolbarFlexibleSpaceItemIdentifier,
              NSToolbarSpaceItemIdentifier, SearchId];
 }
 
 - (NSArray*) toolbarAllowedItemIdentifiers: (NSToolbar*) toolbar {
-    return @[ExtractId, NSToolbarSeparatorItemIdentifier, NavsId, NSToolbarSeparatorItemIdentifier, ViewsId,
-             NSToolbarSeparatorItemIdentifier,
+    return @[ExtractId, NSToolbarSeparatorItemIdentifier,
+             NavsId, NSToolbarSeparatorItemIdentifier,
+             ViewsId, NSToolbarSeparatorItemIdentifier,
              NSToolbarFlexibleSpaceItemIdentifier,
              NSToolbarSpaceItemIdentifier, SearchId];
 }
@@ -291,20 +294,24 @@ static NSMenu* createSearchMenu() {
     }
 }
 
-- (BOOL) validateToolbarItem: (NSToolbarItem*) toolbarItem {
-    // Optional method:  This message is sent to us since we are the target of some toolbar item actions
+- (BOOL) validateToolbarItem: (NSToolbarItem*) ti {
+    // Optional method:  This message is sent to us since
+    // we are the target of some toolbar item actions
     // (for example:  of the save items action)
     BOOL enable = false;
-    if ([[toolbarItem itemIdentifier] isEqual: ExtractId]) {
-	// We will return true (ie  the button is enabled) only when the document is dirty and needs saving
-	enable = true; // _document.isDocumentEdited;
-    } else if ([[toolbarItem itemIdentifier] isEqual: NSToolbarPrintItemIdentifier]) {
+    if ([[ti itemIdentifier] isEqual: ExtractId]) {
+	enable = !_document.isNew;
+    } else if ([[ti itemIdentifier] isEqual: NSToolbarPrintItemIdentifier]) {
 	enable = true;
-    } else if ([[toolbarItem itemIdentifier] isEqual: SearchId]) {
+    } else if ([[ti itemIdentifier] isEqual: SearchId]) {
 	enable = _document.isEntireFileLoaded;
-    } else if ([[toolbarItem itemIdentifier] isEqual: ViewsId]) {
-	enable = _document.isEntireFileLoaded;
-    } else if ([[toolbarItem itemIdentifier] isEqual: ExtractId]) {
+    } else if ([[ti itemIdentifier] isEqual: ViewsId]) {
+	enable = _document.isEntireFileLoaded && !_document.outlineView.isHidden;
+        if (!enable) {
+            NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
+            sc.selectedSegment = -1;
+        }
+    } else if ([[ti itemIdentifier] isEqual: ExtractId]) {
 	enable = _document.root != null && _document.isEntireFileLoaded;
     }
     return enable;

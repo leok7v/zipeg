@@ -81,10 +81,15 @@
     [super setFrame:frameRect];
 }
 
+- (BOOL) isOpaque {
+    return true;
+}
+
 static NSString* text = @"Drop Files Here";
 
 - (void) drawImages: (NSRect) rect {
-    // trace(@"drawRect %@", NSStringFromRect(dirtyRect));
+    // trace(@"drawRect %@", NSStringFromRect(rect));
+    rect = self.bounds; // always paint complete view
     [NSGraphicsContext.currentContext saveGraphicsState];
     NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh;
     CGContextRef context = (CGContextRef) [NSGraphicsContext.currentContext graphicsPort];
@@ -97,8 +102,8 @@ static NSString* text = @"Drop Files Here";
         int dx = _index[dy % countof(_index)];
         for (float x = rect.origin.x - 64; x < rect.size.width + 64; x += 20) {
             int ix = _index[dx % countof(_index)];
-            NSImage* r = _images[ix];
-            [r drawInRect:NSMakeRect(x, rect.size.height - y, r.size.width, r.size.height) fromRect:NSZeroRect
+            NSImage* i = _images[ix];
+            [i drawInRect:NSMakeRect(x, rect.size.height - y, i.size.width, i.size.height) fromRect:NSZeroRect
                 operation:NSCompositeSourceOver fraction:1];
             dx++;
         }
@@ -108,6 +113,8 @@ static NSString* text = @"Drop Files Here";
 }
 
 - (void) drawRect: (NSRect) rect {
+    trace("%@", NSStringFromRect(rect));
+    rect = self.bounds; // always paint complete view
     CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceGray();
     CGContextRef maskContext = CGBitmapContextCreate(null, self.bounds.size.width, self.bounds.size.height,
                                                         8, self.bounds.size.width, colorspace, 0);

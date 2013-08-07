@@ -9,7 +9,6 @@
 
 @implementation ZGToolbar
 
-
 - init {
     self = [super initWithIdentifier: @"ZGToolbarId"];
     if (self != null) {
@@ -28,5 +27,19 @@
     trace(@"%@", self);
     dealloc_count(self);
 }
+
+- (void) validateVisibleItems {
+    [super validateVisibleItems];
+    for (NSToolbarItem* ti in self.visibleItems) {
+        NSResponder* r = ti.view;
+        while (r != null) {
+            if ([r respondsToSelector: @selector(validateToolbarItem:)]) {
+                [r performSelector: @selector(validateToolbarItem:) withObject: ti];
+            }
+            r = r.nextResponder;
+        }
+    }
+}
+
 
 @end

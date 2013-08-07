@@ -466,7 +466,10 @@ static NSTableView* createTableView(NSRect r) {
     ZGBackPanel* background = [[ZGBackPanel alloc] initWithDocument: self andFrame: _contentView.frame];
     _contentView.subviews = @[background];
     background.subviews = @[_splitView, _destination, _heroView];
-    if (!_isNew) {
+    if (_isNew) {
+        // TODO: how to make document modified without this hack?
+        [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
+    } else {
         _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
         OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
         [_operationQueue addOperation: operation];
@@ -498,11 +501,11 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (BOOL)hasUnautosavedChanges {
-    return true;
+    return _isNew;
 }
 
 - (BOOL) isDocumentEdited {
-    return true;
+    return _isNew;
 }
 
 - (BOOL) documentCanClose {
@@ -599,7 +602,7 @@ static NSTableView* createTableView(NSRect r) {
     if (!b) {
         a = null;
     }
-    ZGDocument* __block doc = self;
+    ZGDocument* __block __weak that = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
         if (a != null) {
@@ -612,13 +615,10 @@ static NSTableView* createTableView(NSRect r) {
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder:_outlineView];
-            
-            // xxx
-            [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
         } else if (error != null) {
             _heroView.hidden = false;
             NSAlert* alert = [NSAlert alertWithError: error];
-            [doc.sheet begin: alert done: ^(int rc) { [_window performClose: null]; } ];
+            [that.sheet begin: alert done: ^(int rc) { [_window performClose: null]; } ];
         } else {
             // error == null - aborted by user
             [_window performClose: _window];
@@ -672,6 +672,7 @@ static NSTableView* createTableView(NSRect r) {
         _timeToShowHeroView = 0;
         dispatch_async(dispatch_get_main_queue(), ^{
             _heroView.hidden = false;
+            _heroView.needsDisplay = true;
         });
     }
 }
@@ -717,12 +718,12 @@ static NSTableView* createTableView(NSRect r) {
     if (_archive == null) {
         return;
     }
-    ZGDocument* __block doc = self;
+    ZGDocument* __block __weak that = self;
     SearchArchiveOperation* op = [[SearchArchiveOperation alloc]
       initWithDocument: self searchString: s
         done: (^(BOOL found){
             assert([NSThread isMainThread]);
-            [doc reloadData];
+            [that reloadData];
             if (_searchTextColor == null && _toolbarDelegate.searchFieldOutlet != null) {
                  _searchTextColor = _toolbarDelegate.searchFieldOutlet.textColor;
             }
