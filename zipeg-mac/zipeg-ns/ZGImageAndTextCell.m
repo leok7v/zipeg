@@ -33,8 +33,8 @@
     dealloc_count(self);
 }
 
-- (id) copyWithZone: (NSZone *)zone {
-    ZGImageAndTextCell *cell = (ZGImageAndTextCell *)[super copyWithZone:zone];
+- (id) copyWithZone: (NSZone*) zone {
+    ZGImageAndTextCell* cell = (ZGImageAndTextCell*) [super copyWithZone: zone];
     cell.image = self.image;
     alloc_count(cell);
     return cell;
@@ -50,24 +50,23 @@
     return frame;
 }
 
-- (void)editWithFrame: (NSRect) f inView: (NSView*) view editor: (NSText*) ed delegate: (id) d event: (NSEvent*) e {
+- (void)editWithFrame: (NSRect) f inView: (NSView*) view editor: (NSText*) ed
+             delegate: (id) d event: (NSEvent*) e {
     NSRect textFrame = [self titleRectForBounds: f];
     [super editWithFrame: textFrame inView: view editor: ed delegate: d event: e];
 }
 
-- (void)selectWithFrame: (NSRect) f inView: (NSView*) v editor: (NSText*) ed delegate: (id) d start: (NSInteger) s length:(NSInteger) len {
+- (void) selectWithFrame: (NSRect) f inView: (NSView*) v editor: (NSText*) ed
+                delegate: (id) d start: (NSInteger) s length:(NSInteger) len {
     NSRect b = [self titleRectForBounds:f];
     [super selectWithFrame: b inView: v editor: ed delegate: d start: s length: len];
 }
 
-- (void)drawWithFrame: (NSRect) f inView: (NSView *) v {
+- (void) drawWithFrame: (NSRect) f inView: (NSView*)  v {
     bool ov = [v isKindOfClass:NSOutlineView.class];
     int imageOriginYOffset = kImageOriginYOffset + 1 * ov;
     int textOriginYOffset = kTextOriginYOffset + 0 * ov;
     assert(self.image != nil);
-    if (self.image == null) {
-        // trace(@"drawWithFrame %@ no image", self.stringValue);
-    }
     if (self.image) {
         NSSize isz = [self.image size];
         NSRect ifr;
@@ -79,21 +78,19 @@
         ifr.origin.x += kImageOriginXOffset;
         ifr.origin.y += imageOriginYOffset;
         ifr.size = isz;
-        [self.image drawInRect:ifr fromRect:NSZeroRect operation: NSCompositeSourceOver
-                      fraction:1.0 respectFlipped: true hints: null];
+        [self.image drawInRect: ifr fromRect: NSZeroRect operation: NSCompositeSourceOver
+                      fraction: 1.0 respectFlipped: true hints: null];
     }
     f.origin.x += kTextOriginXOffset;
     f.origin.y += textOriginYOffset;
-    // trace(@"%@ cellFrame=%@ newCellFrame=%@", [self stringValue], NSStringFromRect(cellFrame), NSStringFromRect(newCellFrame));
-    // trace(@"background color = %@", self.backgroundColor);
     [super drawWithFrame: f inView: v];
 }
 
-- (NSSize)cellSize {
+- (NSSize) cellSize {
     NSSize cs = [super cellSize];
-    NSSize ts = [[self attributedStringValue] size];
+    NSSize ts = [self.attributedStringValue size];
     cs.width = MAX(cs.width, ts.width + kTextOriginXOffset);
-    cs.width += [self.image size].width + kImageOriginXOffset;
+    cs.width += self.image.size.width + kImageOriginXOffset;
     return cs;
 }
 
@@ -114,7 +111,7 @@
     dealloc_count(self);
 }
 
-- (id) copyWithZone: (NSZone *)zone {
+- (id) copyWithZone: (NSZone*) zone {
     ZGSectionCell* cell = (ZGSectionCell*) [super copyWithZone: zone];
     alloc_count(cell);
     return cell;
@@ -124,7 +121,7 @@
     return NSZeroRect;
 }
 
-- (void)drawWithFrame: (NSRect) f inView:(NSView *) v {
+- (void)drawWithFrame: (NSRect) f inView:(NSView*) v {
 }
 
 - (NSSize)cellSize {
@@ -132,37 +129,3 @@
 }
 
 @end
-
-/*
-
-@implementation ZGSectionCell 
-
-- (id) init {
-    self = [super init];
-    if (self != null) {
-        alloc_count(self);
-        self.textColor = [NSColor disabledControlTextColor];
-        self.font = [NSFont systemFontOfSize: NSFont.systemFontSize];
-    }
-    return self;
-}
-
-- (void) dealloc {
-    dealloc_count(self);
-}
-
-- (id) copyWithZone: (NSZone *)zone {
-    ZGSectionCell* cell = (ZGSectionCell*) [super copyWithZone: zone];
-    alloc_count(cell);
-    return cell;
-}
-
-- (void)drawWithFrame: (NSRect) f inView:(NSView *) v {
-    f.origin.x -= kTextOriginXOffset + 1;
-    f.origin.y -= 2;
-    [super drawWithFrame: f inView: v];
-}
-
-@end
-
-*/
