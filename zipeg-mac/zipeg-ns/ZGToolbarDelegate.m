@@ -6,7 +6,6 @@
     NSSearchField* _searchFieldOutlet;
     NSToolbarItem* _activeSearchItem;
     id _windowWillCloseObserver;
-    BOOL completePosting;
 }
 @end
 
@@ -307,15 +306,6 @@ static NSMenu* createSearchMenu() {
     }
     [matches sortUsingSelector:@selector(compare:)];
     return matches;
-}
-
-- (void) controlTextDidChange: (NSNotification *) n {
-    NSTextView* textView = n.userInfo[@"NSFieldEditor"];
-    if (!completePosting) {	// prevent calling "complete" too often
-        completePosting = true;
-        [textView complete: null];
-        completePosting = false;
-    }
 }
 
 @end
