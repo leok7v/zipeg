@@ -18,6 +18,11 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v);
 FOUNDATION_EXPORT id addObserver(NSString* name, id object, void(^block)(NSNotification*));
 FOUNDATION_EXPORT id removeObserver(id observer); // always returns null - see usages
 
+FOUNDATION_EXPORT BOOL responds(id o, SEL sel);
+FOUNDATION_EXPORT id call(id o, SEL sel);
+FOUNDATION_EXPORT id call1(id o, SEL sel, id p);
+FOUNDATION_EXPORT id call2(id o, SEL sel, id p1, id p2);
+
 enum {
     kSizableWH = NSViewWidthSizable | NSViewHeightSizable,
     kSizableLR = NSViewMinXMargin   | NSViewMaxXMargin,

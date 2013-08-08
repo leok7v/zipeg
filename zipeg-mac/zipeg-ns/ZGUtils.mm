@@ -5,11 +5,11 @@
 #import "ZGItemProtocol.h"
 #import "ZGDocument.h"
 
-FOUNDATION_EXPORT uint64_t timestamp(const char* label) {
+uint64_t timestamp(const char* label) {
     return NanoTime::timestamp(label);
 }
 
-FOUNDATION_EXPORT uint64_t nanotime() {
+uint64_t nanotime() {
     return NanoTime::time();
 }
 
@@ -17,7 +17,7 @@ FOUNDATION_EXPORT uint64_t nanotime() {
 
 static HashMapS2L map(500, NOT_A_VALUE);
 
-FOUNDATION_EXPORT uint64_t alloc_count(id i) {
+uint64_t alloc_count(id i) {
     @synchronized (ZGUtils.class) {
         NSObject* o = (NSObject*)i;
         const char* cn = [NSStringFromClass(o.class) cStringUsingEncoding: NSUTF8StringEncoding];
@@ -30,7 +30,7 @@ FOUNDATION_EXPORT uint64_t alloc_count(id i) {
     }
 }
 
-FOUNDATION_EXPORT uint64_t dealloc_count(id i) {
+uint64_t dealloc_count(id i) {
     @synchronized (ZGUtils.class) {
         NSObject* o = (NSObject*)i;
         const char* cn = [NSStringFromClass(o.class) cStringUsingEncoding: NSUTF8StringEncoding];
@@ -42,7 +42,7 @@ FOUNDATION_EXPORT uint64_t dealloc_count(id i) {
     }
 }
 
-FOUNDATION_EXPORT void trace_allocs() {
+void trace_allocs() {
     @synchronized (ZGUtils.class) {
         int n = map.getCapacity();
         for (int i = 0; i < n; i++) {
@@ -65,17 +65,32 @@ FOUNDATION_EXPORT void trace_allocs() {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 
-static id getBySelector(id o, SEL sel) {
+BOOL responds(id o, SEL sel) {
+    return [o respondsToSelector: sel];
+}
+
+id call(id o, SEL sel) {
     return [o respondsToSelector: sel] ? [o performSelector: sel] : nil;
 }
 
+id call1(id o, SEL sel, id p) {
+    return [o respondsToSelector: sel] ? [o performSelector: sel withObject: p] : nil;
+}
+
+id call2(id o, SEL sel, id p1, id p2) {
+    return [o respondsToSelector: sel] ? [o performSelector: sel withObject: p1 withObject: p2] : nil;
+}
+
 #pragma clang diagnostic pop
+
+static id getBySelector(id o, SEL sel) {
+    return responds(o, sel) ? call(o, sel) : nil;
+}
 
 static NSString* debugDescription(id o, SEL sel) {
     id s = [getBySelector(o, sel) debugDescription];
     return s ? s : @"";
 }
-
 
 static void _dumpViews(NSView* v, int level) {
     if (v == null) {
@@ -109,22 +124,22 @@ static void _dumpViews(NSView* v, int level) {
     }
 }
 
-FOUNDATION_EXPORT void dumpViews(NSView* v) {
+void dumpViews(NSView* v) {
     _dumpViews(v, 0);
 }
 
-FOUNDATION_EXPORT id addObserver(NSString* n, id o, void(^b)(NSNotification*)) {
+id addObserver(NSString* n, id o, void(^b)(NSNotification*)) {
     assert(n != null && b != null);
     return [NSNotificationCenter.defaultCenter addObserverForName: n object: o
             queue: NSOperationQueue.mainQueue usingBlock: b];
 }
 
-FOUNDATION_EXPORT id removeObserver(id observer) {
+id removeObserver(id observer) {
     [NSNotificationCenter.defaultCenter removeObserver: observer];
     return null;
 }
 
-FOUNDATION_EXPORT void dumpAllViews() {
+void dumpAllViews() {
     NSDocumentController* dc = NSDocumentController.sharedDocumentController;
     NSArray* docs = dc.documents;
     if (docs != null && docs.count > 0) {
@@ -139,7 +154,7 @@ FOUNDATION_EXPORT void dumpAllViews() {
     }
 }
 
-FOUNDATION_EXPORT void subtreeDescription(NSView* v) {
+void subtreeDescription(NSView* v) {
     NSLog(@"%@", [v performSelector: @selector(_subtreeDescription)]);
 }
 
