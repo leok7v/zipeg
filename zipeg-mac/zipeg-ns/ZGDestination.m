@@ -71,7 +71,7 @@
         _label = createLabel(4, @"Unpack ", font, r); // tailing space is important
         _ask = createPopUpButton(@[@"asking ", @"always "], font, r, _label.frame);
         _to = createLabel(_ask.frame.origin.x + _ask.frame.size.width, @" to folder: ", font, r);
-        _disclosure = createButton(@"", font, r, _to.frame);
+        _disclosure = createButton(@"W", font, r, _to.frame);
         _pathControl = createPathControl(font, r, _disclosure.frame);
         _pathControl.action = @selector(pathControlSingleClick:);
         _pathControl.target = self;
@@ -118,30 +118,20 @@ static NSTextField* createLabel(int x, NSString* text, NSFont* font, NSRect r) {
     return label;
 }
 /*
+ TODO: magic - by the type of the documents in the archive choose most appropriate directory
+       and add it as MenuItem.cell rendered item to the menu
+ NSUserDirectory,
+ NSDocumentDirectory,
+ NSDesktopDirectory,
+ NSDownloadsDirectory
+ NSMoviesDirectory
+ NSMusicDirectory
+ NSPicturesDirectory
+ NSSharedPublicDirectory
 
- NSUserDirectory,                        // user home directories (Users)
- NSDocumentationDirectory,               // documentation (Documentation)
- NSDocumentDirectory,                    // documents (Documents)
- NSDesktopDirectory = 12,                // location of user's desktop
- NSDownloadsDirectory NS_ENUM_AVAILABLE(10_5, 2_0) = 15,              // location of the user's "Downloads" directory
- NSMoviesDirectory NS_ENUM_AVAILABLE(10_6, 4_0) = 17,                 // location of user's Movies directory (~/Movies)
- NSMusicDirectory NS_ENUM_AVAILABLE(10_6, 4_0) = 18,                  // location of user's Music directory (~/Music)
- NSPicturesDirectory NS_ENUM_AVAILABLE(10_6, 4_0) = 19,               // location of user's Pictures directory (~/Pictures)
- NSSharedPublicDirectory NS_ENUM_AVAILABLE(10_6, 4_0) = 21,           // location of user's Public sharing directory (~/Public)
-
- NSApplicationDirectory = 1,             // supported applications (Applications)
- NSAllApplicationsDirectory = 100,       // all directories where applications can occur
- NSAdminApplicationDirectory,            // system and network administration applications (Administration)
-
-typedef NS_OPTIONS(NSUInteger, NSSearchPathDomainMask) {
-    NSUserDomainMask = 1,       // user's home directory --- place to install user's personal items (~)
-    NSLocalDomainMask = 2,      // local to the current machine --- place to install items available to everyone on this machine (/Library)
-    NSNetworkDomainMask = 4,    // publically available location in the local area network --- place to install items available on the network (/Network)
-    NSSystemDomainMask = 8,     // provided by Apple, unmodifiable (/System)
-    NSAllDomainsMask = 0x0ffff  // all domains: all of the above and future items
-};
-
-FOUNDATION_EXPORT NSArray *NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory directory, NSSearchPathDomainMask domainMask, BOOL expandTilde);
+ NSApplicationDirectory
+ NSAdminApplicationDirectory
+ NSAllApplicationsDirectory // multiple
 */
 
 
