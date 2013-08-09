@@ -51,7 +51,9 @@ static NSSearchPathDirectory dirs[] = {
         NSInteger tag = popup.selectedItem.tag;
         tag = (tag + 1) % popup.menu.itemArray.count;
         [popup selectItemWithTag: tag]; // flip in place w/o menu
+        trace(@"%@=%ld", popup.selectedItem.title, tag);
         call1(self.target, self.action, self);
+        // DO NOT call: [popup sizeToFit]; // it makes controls too wide!
         return false;
     } else {
         return [super trackMouse: e inRect: r ofView: btn untilMouseUp: up];
@@ -64,6 +66,7 @@ static NSSearchPathDirectory dirs[] = {
     ZGDocument* __weak _document;
     NSFont* _font;
     NSTextField* _label;
+    NSPopUpButton* _selected;
     NSPopUpButton* _ask;
     NSTextField* _to;
     NSPopUpButton* _disclosure;
@@ -82,19 +85,20 @@ static NSSearchPathDirectory dirs[] = {
         self.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
         self.autoresizesSubviews = true;
         _font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
-        _label = createLabel(4, @"", _font, r); // tailing space is important
-        _ask = createAskButton(@[@"Ask to ", @"Always "], _font, r, _label.frame);
-        _to = createLabel(_ask.frame.origin.x + _ask.frame.size.width, @" unpack to folder:", _font, r);
+        _label = createLabel(4, @" ", _font, r); // tailing space is important
+        _ask = createAskButton(@[@"ask to ", @"always "], _font, r, _label.frame);
+        _selected = createAskButton(@[@"unpack selected ", @"unpack all "], _font, r, _ask.frame);
+        _to = createLabel(_selected.frame.origin.x + _selected.frame.size.width, @" files to the folder:", _font, r);
         _disclosure = createDirsButton(@"M", _font, r, _to.frame);
         _pathControl = createPathControl(_font, r, _disclosure.frame);
         _pathControl.action = @selector(pathControlSingleClick:);
         _pathControl.target = self;
-        self.subviews = @[_label, _ask, _pathControl, _disclosure, _to];
         _pathControl.delegate = self;
         _disclosure.target = self;
         _disclosure.action = @selector(disclosurePressed:);
         self.postsBoundsChangedNotifications = true;
         [_pathControl addObserver: self forKeyPath: @"URL" options: 0 context: null];
+        self.subviews = @[_label, _selected, _ask, _pathControl, _disclosure, _to];
     }
     return self;
 }
@@ -114,6 +118,10 @@ static NSSearchPathDirectory dirs[] = {
 
 - (BOOL) isAsking {
     return _ask.selectedItem.tag == 0;
+}
+
+- (BOOL) isSelected {
+    return _selected.selectedItem.tag == 0;
 }
 
 - (NSURL*) URL {
@@ -241,7 +249,6 @@ static NSPopUpButton* createAskButton(NSArray* texts, NSFont* font, NSRect r, NS
     btn.focusRingType = NSFocusRingTypeNone;
     btn.menu = m;
     ZGAskButtonCell* bc = [[ZGAskButtonCell alloc] initWithMenu: m];
-    //NSPopUpButtonCell* bc = btn.cell;
     btn.cell = bc;
     bc.arrowPosition = NSPopUpArrowAtBottom;
     bc.preferredEdge = NSMaxYEdge;
