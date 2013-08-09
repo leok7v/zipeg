@@ -4,6 +4,7 @@
 @interface ZGDocument : NSDocument<NSToolbarDelegate> {
 
 }
+@property NSURL* url;
 @property NSOutlineView* outlineView;
 @property NSTableView*   tableView;
 @property NSSplitView*   splitView;

@@ -1,4 +1,5 @@
 #import "ZGHeroView.h"
+#import "ZGApp.h"
 #import "ZGDocument.h"
 
 @interface NSImage (Transform)
@@ -54,24 +55,6 @@
     if (self != null) {
         alloc_count(self);
         _document = doc;
-        _leafs[0] = [NSImage imageNamed:@"leaf-0-64x64.png"];
-        _leafs[1] = [NSImage imageNamed:@"leaf-1-64x64.png"];
-        _leafs[2] = [NSImage imageNamed:@"leaf-2-64x64.png"];
-        _leafs[3] = [NSImage imageNamed:@"leaf-3-64x64.png"];
-        // http://stackoverflow.com/questions/1359060/how-can-i-load-an-nsimage-representation-of-the-icon-for-my-application
-        NSString* appPath = [[NSBundle mainBundle] bundlePath];
-        _appIcon = [[NSWorkspace sharedWorkspace] iconForFile:appPath];
-        for (int i = 0; i < countof(_images); i++) {
-            int degree = arc4random_uniform(360);
-            int size = 32 + arc4random_uniform(32);
-            NSImage* img = arc4random_uniform(100) < 3 ? _appIcon : _leafs[arc4random_uniform(4)];
-            img.size = NSMakeSize(size, size);
-            if (img == _appIcon) {
-                degree = degree / 4 - 45;
-            }
-            _images[i] = [img imageRotatedByDegrees:degree];
-            _index[i] = arc4random_uniform(countof(_images));
-        }
     }
     return self;
 }
@@ -88,9 +71,32 @@
     return true;
 }
 
+- (void) prepareImages {
+    assert(_appIcon == null);
+    _appIcon = [ZGApp appIcon32x32];
+    _leafs[0] = [NSImage imageNamed:@"leaf-0-64x64.png"];
+    _leafs[1] = [NSImage imageNamed:@"leaf-1-64x64.png"];
+    _leafs[2] = [NSImage imageNamed:@"leaf-2-64x64.png"];
+    _leafs[3] = [NSImage imageNamed:@"leaf-3-64x64.png"];
+    for (int i = 0; i < countof(_images); i++) {
+        int degree = arc4random_uniform(360);
+        int size = 32 + arc4random_uniform(32);
+        NSImage* img = arc4random_uniform(100) < 3 ? _appIcon : _leafs[arc4random_uniform(4)];
+        img.size = NSMakeSize(size, size);
+        if (img == _appIcon) {
+            degree = degree / 4 - 45;
+        }
+        _images[i] = [img imageRotatedByDegrees:degree];
+        _index[i] = arc4random_uniform(countof(_images));
+    }
+}
+
 static NSString* text = @"Drop Files Here";
 
 - (void) drawImages: (NSRect) rect {
+    if (_appIcon == null) {
+        [self prepareImages];
+    }
     // trace(@"drawRect %@", NSStringFromRect(rect));
     rect = self.bounds; // always paint complete view
     [NSGraphicsContext.currentContext saveGraphicsState];

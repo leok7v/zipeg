@@ -29,8 +29,6 @@
 @end
 */
 
-
-
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* _archive;
     NSObject<ZGItemProtocol>* _root;
@@ -57,7 +55,6 @@
 @property ZGSplitViewDelegate* splitViewDelegate;
 @property NSColor* searchTextColor;
 @property NSOperationQueue* operationQueue;
-@property NSURL* url;
 @property CFStringEncoding encoding;
 @property NSString* typeName;
 @property NSError* error;

@@ -34,6 +34,36 @@ static NSWindow* __weak window;
     window = null;
 }
 
+static NSImage* _appIcon;
+static NSImage* _appIcon16x16;
+static NSImage* _appIcon32x32;
+
+static void loadIcons() {
+    if (_appIcon32x32 == null) {
+        // http://stackoverflow.com/questions/1359060/how-can-i-load-an-nsimage-representation-of-the-icon-for-my-application
+        _appIcon = [NSWorkspace.sharedWorkspace iconForFile: NSBundle.mainBundle.bundlePath];
+        _appIcon32x32 = [_appIcon copy];
+        _appIcon32x32.size = NSMakeSize(32, 32);
+        _appIcon16x16 = [_appIcon copy];
+        _appIcon16x16.size = NSMakeSize(16, 16);
+    }
+}
+
++ (NSImage*) appIcon {
+    loadIcons();
+    return _appIcon;
+}
+
++ (NSImage*) appIcon16x16 {
+    loadIcons();
+    return _appIcon16x16;
+}
+
++ (NSImage*) appIcon32x32 {
+    loadIcons();
+    return _appIcon32x32;
+}
+
 - (void) sendEvent: (NSEvent*) e  {
     // trace(@"%@", e);
     // Ctrl+Z will dump useful stats:
@@ -56,6 +86,9 @@ static NSWindow* __weak window;
 
 - (void) terminate: (id) sender {
     NSLog(@"\nZGApp -terminate\n");
+    _appIcon = null;
+    _appIcon16x16 = null;
+    _appIcon32x32 = null;
     trace_allocs();
     [super terminate: sender];
 }
