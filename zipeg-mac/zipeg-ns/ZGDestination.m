@@ -117,23 +117,6 @@ static NSTextField* createLabel(int x, NSString* text, NSFont* font, NSRect r) {
     label.frame = lr;
     return label;
 }
-/*
- TODO: magic - by the type of the documents in the archive choose most appropriate directory
-       and add it as MenuItem.cell rendered item to the menu
- NSUserDirectory,
- NSDocumentDirectory,
- NSDesktopDirectory,
- NSDownloadsDirectory
- NSMoviesDirectory
- NSMusicDirectory
- NSPicturesDirectory
- NSSharedPublicDirectory
-
- NSApplicationDirectory
- NSAdminApplicationDirectory
- NSAllApplicationsDirectory // multiple
-*/
-
 
 static NSPathControl* createPathControl(NSFont* font, NSRect r, NSRect lr) {
     NSRect pr = r;
@@ -142,7 +125,7 @@ static NSPathControl* createPathControl(NSFont* font, NSRect r, NSRect lr) {
     pr.origin.y = lr.origin.y;
     pr.size.height = lr.size.height;
     NSPathControl* _pathControl = [[NSPathControl alloc] initWithFrame: pr];
-    NSArray* path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true);
+    NSArray* path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSAllDomainsMask, true);
     NSString* s = path != null && path.count > 0 && [path[0] isKindOfClass: NSString.class] ?
                   (NSString*)path[0] : @"~/Documents";
     NSURL* u = [[NSURL alloc] initFileURLWithPath: s isDirectory: true];
@@ -160,9 +143,10 @@ static NSPathControl* createPathControl(NSFont* font, NSRect r, NSRect lr) {
     return _pathControl;
 }
 
-static void insertMenuItem(NSMenu* m, NSString* title, int tag) {
+static void insertMenuItem(NSMenu* m, NSString* title, NSImage* image, int tag) {
     NSMenuItem *it = [[NSMenuItem alloc] initWithTitle: NSLocalizedString(title, @"") action: null keyEquivalent:@""];
     it.tag = tag;
+    it.image = image;
     [m insertItem: it atIndex: m.itemArray.count];
 }
 
@@ -176,7 +160,7 @@ static NSPopUpButton* createPopUpButton(NSArray* texts, NSFont* font, NSRect r, 
     int tag = 0;
     int w = 20;
     for (NSString* s in texts) {
-        insertMenuItem(m, s, tag++);
+        insertMenuItem(m, s, null, tag++);
         NSSize sz = [s sizeWithAttributes: a];
         w = MAX(w, sz.width);
     }
@@ -213,10 +197,33 @@ static NSButton* createButton(NSString* label, NSFont* font, NSRect r, NSRect lr
     bc.controlTint = NSBlueControlTint;
     bc.font = font;
     bc.bordered = false;
-    btn.enabled = true;
+    btn.menu = [NSMenu new];
+    NSSearchPathDirectory dirs[] = {
+        NSDocumentDirectory,
+        NSDesktopDirectory,
+        NSDownloadsDirectory,
+        NSMoviesDirectory,
+        NSMusicDirectory,
+        NSPicturesDirectory,
+        NSSharedPublicDirectory
+    };
+    insertMenuItem(btn.menu, @"", null, -1);
+    NSURL* u = [[NSURL alloc] initFileURLWithPath: NSHomeDirectory() isDirectory: true];
+    NSImage* image = [NSWorkspace.sharedWorkspace iconForFile: [u path]];
+    image.size = NSMakeSize(16, 16);
+    insertMenuItem(btn.menu, [[u path] lastPathComponent], image, 0);
+    for (int i = 0; i < countof(dirs); i++) {
+        NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[i], NSAllDomainsMask, true);
+        if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
+            u = [[NSURL alloc] initFileURLWithPath: path[0] isDirectory: true];
+            NSString* p = [u path];
+            NSImage *image = [NSWorkspace.sharedWorkspace iconForFile: p];
+            image.size = NSMakeSize(16, 16);
+            insertMenuItem(btn.menu, [p lastPathComponent], image, i + 1);
+        }
+    }
     return btn;
 }
-
 
 - (void) drawRect: (NSRect) r {
     NSColor* t = [NSColor colorWithCalibratedRed: .92 green: .95 blue: .97 alpha: 1];
@@ -233,19 +240,17 @@ static NSButton* createButton(NSString* label, NSFont* font, NSRect r, NSRect lr
     trace(@"%ld", _ask.selectedItem.tag);
 }
 
-///////////////////////////////////////////
+/* NSPathControl deligates */
 
 - (void) pathControlSingleClick: (id) sender {
     _pathControl.URL = _pathControl.clickedPathComponentCell.URL;
 }
 
-
-- (void) pathControlDoubleClick :(id)sender {
+- (void) pathControlDoubleClick : (id)sender {
     if (_pathControl.clickedPathComponentCell != null) {
         [NSWorkspace.sharedWorkspace openURL: _pathControl.URL];
     }
 }
-
 
 - (void) pathControl: (NSPathControl*) pc willDisplayOpenPanel: (NSOpenPanel*) op {
     [ZGApp modalWindowToSheet: op for: _document.window];
@@ -257,7 +262,7 @@ static NSButton* createButton(NSString* label, NSFont* font, NSRect r, NSRect lr
     op.prompt = NSLocalizedString(@"Choose", @""); // this is localized by OS X to .ru
 }
 
-- (void)menuItemAction:(id)sender {
+- (void)menuItemAction: (id) sender {
     NSURL* url = _pathControl.clickedPathComponentCell.URL;
     url = url != null ? url : _pathControl.URL;
     if (url != null) {
@@ -268,8 +273,7 @@ static NSButton* createButton(NSString* label, NSFont* font, NSRect r, NSRect lr
     }
 }
 
-// Delegate method on NSPathControl (as NSPathStylePopUp) that determines what popup menu will look like.  In our case we add "Reveal in Finder".
-- (void)pathControl: (NSPathControl*) pathControl willPopUpMenu: (NSMenu*) menu {
+- (void) pathControl: (NSPathControl*) pathControl willPopUpMenu: (NSMenu*) menu {
     if (false) { // self.useCustomPath)
         // Because we have a custom path, remove the "Choose..." and separator menu items.
         [menu removeItemAtIndex:0];
@@ -284,71 +288,47 @@ static NSButton* createButton(NSString* label, NSFont* font, NSRect r, NSRect lr
     }
 }
 
-#pragma mark - Custom path support
-
 /*
- // Shows how to create a custom generated path for NSPathControl.
-- (IBAction)toggleUseCustomPath:(id)sender
-{
-    if (self.useCustomPath)
-    {
-        // User checked the "Custom Path" checkbox: create an array of custom cells and pass to the path control.
-        NSArray * pathComponentArray = [self pathComponentArray];
-        [self.pathControl setPathComponentCells:pathComponentArray];
-    }
-    else
-    {
-        // User unchecked the "Custom Path" checkbox: remove the custom path items (if any) by setting an empty array.
-        NSArray *emptyArray = [[NSMutableArray alloc] init];
-        [self.pathControl setPathComponentCells:emptyArray];
-    }
+ TODO: magic - by the type of the documents in the archive choose most appropriate directory
+ and add it as MenuItem.cell rendered item to the menu
+ NSUserDirectory,
+ NSDocumentDirectory,
+ NSDesktopDirectory,
+ NSDownloadsDirectory
+ NSMoviesDirectory
+ NSMusicDirectory
+ NSPicturesDirectory
+ NSSharedPublicDirectory
 
-    // Update the user interface.
-    [self.pathSetButton setEnabled:!self.useCustomPath];
-    [self updateExplainText]; // Update the explanation text to show the user how they can reveal the path component.
-}
-*/
+ NSApplicationDirectory
+ NSAdminApplicationDirectory
+ NSAllApplicationsDirectory // multiple
+ */
 
-// Assemble a set of custom cells to display into an array to pass to the path control.
-- (NSArray *) pathComponentArray {
-    NSMutableArray *pathComponentArray = [[NSMutableArray alloc] init];
-    NSURL *URL;
-    NSPathComponentCell *componentCell;
-    // Use utility method to obtain a NSPathComponentCell based on icon, title and URL.
-    URL = [NSURL URLWithString:@"http://www.apple.com"];
-    componentCell = [self componentCellForType:kAppleLogoIcon withTitle:@"Apple" URL:URL];
-    [pathComponentArray addObject:componentCell];
-    URL = [NSURL URLWithString:@"http://www.apple.com/macosx/"];
-    componentCell = [self componentCellForType:kInternetLocationNewsIcon withTitle:@"OS X" URL:URL];
-    [pathComponentArray addObject:componentCell];
-    URL = [NSURL URLWithString:@"http://developer.apple.com/macosx/"];
-    componentCell = [self componentCellForType:kGenericURLIcon withTitle:@"Developer" URL:URL];
-    [pathComponentArray addObject:componentCell];
-    URL = [NSURL URLWithString:@"http://developer.apple.com/cocoa/"];
-    componentCell = [self componentCellForType:kHelpIcon withTitle:@"Cocoa" URL:URL];
+- (NSArray*) pathComponentArray {
+    NSMutableArray* pathComponentArray = [NSMutableArray new];
+    NSPathComponentCell* componentCell;
+    NSURL* u = [NSURL URLWithString: @"http://www.zipeg.com"];
+    componentCell = [self componentCellForType: kAppleLogoIcon withTitle: @"Zipeg" url: u];
     [pathComponentArray addObject:componentCell];
     return pathComponentArray;
 }
 
- // This method is used by pathComponentArray to create a NSPathComponent cell based on icon, title and URL information. Each path component needs an icon, URL and title.
-- (NSPathComponentCell *)componentCellForType:(OSType)withIconType withTitle:(NSString *)title URL:(NSURL *)url {
-    NSPathComponentCell *componentCell = [[NSPathComponentCell alloc] init];
-    NSImage *iconImage = [[NSWorkspace sharedWorkspace] iconForFileType:NSFileTypeForHFSTypeCode(withIconType)];
-    [componentCell setImage:iconImage];
-    [componentCell setURL:url];
-    [componentCell setTitle:title];
-    return componentCell;
+- (NSPathComponentCell*) componentCellForType: (OSType) withIconType
+                                    withTitle: (NSString*) title
+                                          url: (NSURL*) url {
+    NSPathComponentCell* c = [NSPathComponentCell new];
+    c.image =  [NSWorkspace.sharedWorkspace iconForFileType: NSFileTypeForHFSTypeCode(withIconType)];
+    c.URL = url;
+    c.title = title;
+    return c;
 }
 
-#pragma mark - Drag and drop
-
-// This method is called when an item is dragged over the control. Return NSDragOperationNone to refuse the drop, or anything else to accept it.
-- (NSDragOperation)pathControl:(NSPathControl *)pathControl validateDrop:(id <NSDraggingInfo>)info {
+- (NSDragOperation) pathControl: (NSPathControl*) pc validateDrop: (id<NSDraggingInfo>) info {
     return NSDragOperationCopy;
 }
 
-// Implement this method to accept the dropped contents previously accepted from validateDrop:.  Get the new URL from the pasteboard and set it to the path control.
--(BOOL)pathControl:(NSPathControl *)pathControl acceptDrop:(id <NSDraggingInfo>)info {
+- (BOOL) pathControl: (NSPathControl*) pathControl acceptDrop: (id <NSDraggingInfo>)info {
     BOOL result = false;
     NSURL *URL = [NSURL URLFromPasteboard:[info draggingPasteboard]];
     if (URL != null) {
@@ -358,17 +338,10 @@ static NSButton* createButton(NSString* label, NSFont* font, NSRect r, NSRect lr
     return result;
 }
 
- // This method is called when a drag is about to begin. It shows how to customize dragging by preventing "volumes" from being dragged.
-- (BOOL) pathControl:(NSPathControl *)pathControl shouldDragPathComponentCell:(NSPathComponentCell *)pathComponentCell withPasteboard:(NSPasteboard *)pasteboard {
-    BOOL result = YES;
-    NSURL *URL = [pathComponentCell URL];
-    if ([URL isFileURL]) {
-        NSArray* pathPieces = [[URL path] pathComponents];
-        if ([pathPieces count] < 4) {
-            result = NO;	// Don't allow dragging volumes.
-        }
-    }
-    return result;
+- (BOOL) pathControl: (NSPathControl*) pc shouldDragPathComponentCell: (NSPathComponentCell*) pcc
+      withPasteboard: (NSPasteboard*)  pb {
+    NSURL* u = pcc.URL;
+    return u.isFileURL && u.path.pathComponents.count >= 4; // Don't allow dragging volumes.
 }
 
 @end

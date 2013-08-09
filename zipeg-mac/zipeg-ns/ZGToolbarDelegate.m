@@ -144,11 +144,12 @@ static NSToolbarItem* createSearch(NSString* id, NSString* label, NSString* tool
     return ti;
 }
 
-static void addControl(NSSegmentedControl* sc, int ix, NSString* imageName, NSString* tooltip) {
+static void addControl(NSSegmentedControl* sc, int ix, NSObject* imageObj, NSString* tooltip) {
     NSSegmentedCell* c = sc.cell;
     c.trackingMode = NSSegmentSwitchTrackingSelectOne;
     c.controlSize = NSRegularControlSize;
-    NSImage* image = [NSImage imageNamed: imageName];
+    NSImage* image = [imageObj isKindOfClass: NSImage.class] ?
+                     (NSImage*)imageObj : [NSImage imageNamed: (NSString*) imageObj];
     assert(image != null);
     // image.size = NSMakeSize(32, 32);
     [sc setWidth: 24 forSegment: ix];
@@ -161,16 +162,16 @@ static void addControl(NSSegmentedControl* sc, int ix, NSString* imageName, NSSt
 }
 
 static NSToolbarItem* createSegmentedControl(NSString* id, NSString* label, NSString* tooltip,
-                                             NSArray* imageNames,
+                                             NSArray* imageObjects,
                                              NSArray* imageLabels,
                                              SEL sel) {
     NSToolbarItem* ti = createToolbarItem(id, label, tooltip);
     // see: https://github.com/cocos2d/CocosBuilder/blob/master/CocosBuilder/ccBuilder/MainToolbarDelegate.m
     NSSegmentedControl* sc = [[NSSegmentedControl alloc] initWithFrame: NSMakeRect(0, 0, 80, 20)];
-    sc.segmentCount = imageNames.count;
+    sc.segmentCount = imageObjects.count;
     sc.segmentStyle = NSSegmentStyleTexturedRounded;
-    for (int i = 0; i < imageNames.count; i++) {
-        addControl(sc, i, imageNames[i], imageLabels[i]);
+    for (int i = 0; i < imageObjects.count; i++) {
+        addControl(sc, i, imageObjects[i], imageLabels[i]);
     }
     sc.action = sel;
     sc.selectedSegment = 0;
@@ -235,8 +236,11 @@ static NSMenu* createSearchMenu() {
         NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
         sc.target = self;
     } else if ([itemIdent isEqual: NavsId]) {
+        // NSImage* back = [NSWorkspace.sharedWorkspace iconForFileType: NSFileTypeForHFSTypeCode(kBackwardArrowIcon)];
+        // NSImage* next = [NSWorkspace.sharedWorkspace iconForFileType: NSFileTypeForHFSTypeCode(kForwardArrowIcon)];
         ti = createSegmentedControl(NavsId, @"Back", @"See folders you viewed previously",
                                     @[@"prev.png", @"next.png"],
+                                    // @[back, next], // TODO: looks like Shit. Why?
                                     @[@"Previous", @"Next"],
                                     @selector(navigationClicked:));
         NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
