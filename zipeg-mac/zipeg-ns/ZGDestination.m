@@ -1,5 +1,6 @@
 #import "ZGDestination.h"
-
+#import "ZGDocument.h"
+#import "ZGApp.h"
 
 #define kHorizontalGap 10
 
@@ -51,6 +52,7 @@
 
 
 @implementation ZGDestination {
+    ZGDocument* __weak _document;
     NSPathControl* _pathControl;
     NSTextField* _label;
     NSPopUpButton* _ask;
@@ -58,17 +60,18 @@
     NSButton* _disclosure;
 }
 
-- (id) initWithFrame: (NSRect) r {
+- (id) initWithFrame: (NSRect) r for: (ZGDocument*) doc {
     self = [super initWithFrame: r];
     if (self) {
         alloc_count(self);
+        _document = doc;
         self.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
         self.autoresizesSubviews = true;
         NSFont* font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
         _label = createLabel(4, @"Unpack ", font, r); // tailing space is important
         _ask = createPopUpButton(@[@"asking ", @"always "], font, r, _label.frame);
         _to = createLabel(_ask.frame.origin.x + _ask.frame.size.width, @" to folder: ", font, r);
-        _disclosure = createButton(@"xxx", font, r, _to.frame);
+        _disclosure = createButton(@"", font, r, _to.frame);
         _pathControl = createPathControl(font, r, _disclosure.frame);
         _pathControl.action = @selector(pathControlSingleClick:);
         _pathControl.target = self;
@@ -243,12 +246,10 @@ static NSButton* createButton(NSString* label, NSFont* font, NSRect r, NSRect lr
 ///////////////////////////////////////////
 
 - (void) pathControlSingleClick: (id) sender {
-    // Select that chosen component of the path. (shorten path)
     _pathControl.URL = _pathControl.clickedPathComponentCell.URL;
 }
 
 
-// This method is the "double-click" action for the control. Becaure we are a standard or navigation style we ask for the control's path component.
 - (void) pathControlDoubleClick :(id)sender {
     if (_pathControl.clickedPathComponentCell != null) {
         [NSWorkspace.sharedWorkspace openURL: _pathControl.URL];
@@ -257,12 +258,13 @@ static NSButton* createButton(NSString* label, NSFont* font, NSRect r, NSRect lr
 
 
 - (void) pathControl: (NSPathControl*) pc willDisplayOpenPanel: (NSOpenPanel*) op {
+    [ZGApp modalWindowToSheet: op for: _document.window];
     op.allowsMultipleSelection = false;
     op.canChooseDirectories = true;
     op.canChooseFiles = false;
     op.resolvesAliases = true;
-    op.title = NSLocalizedString(@"Choose a file", @"Open panel title");
-    op.prompt = NSLocalizedString(@"Choose", @"Open panel prompt for 'Choose a file'");
+    op.title = NSLocalizedString(@"Zipeg: Choose a folder to unpack to", @"");
+    op.prompt = NSLocalizedString(@"Choose", @""); // this is localized by OS X to .ru
 }
 
 - (void)menuItemAction:(id)sender {

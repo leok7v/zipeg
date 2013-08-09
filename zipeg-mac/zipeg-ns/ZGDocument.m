@@ -447,7 +447,7 @@ static NSTableView* createTableView(NSRect r) {
     NSRect dbounds = _contentView.bounds;
     dbounds.origin.y = dbounds.size.height - 30;
     dbounds.size.height = 30;
-    _destination = [[ZGDestination alloc] initWithFrame: dbounds];
+    _destination = [[ZGDestination alloc] initWithFrame: dbounds for: self];
     
     NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
     clipView.postsFrameChangedNotifications = true;

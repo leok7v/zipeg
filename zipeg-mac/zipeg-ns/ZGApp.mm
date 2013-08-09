@@ -1,10 +1,37 @@
 #import "ZGApp.h"
 #import "ZGDocument.h"
 
+static NSWindow* __weak sheet;
+static NSWindow* __weak window;
+
 @implementation ZGApp
+
++ (void) modalWindowToSheet: (NSWindow*) s for: (NSWindow*) w {
+    sheet = s;
+    window = w;
+}
 
 - (void)run {
     [super run];
+}
+
+- (NSInteger) runModalForWindow: (NSWindow*) s {
+    if (s == sheet) { // this is a bit of a hack but it works
+        [self beginSheet: s
+          modalForWindow:(NSWindow*) window
+           modalDelegate:self
+          didEndSelector:@selector(didEndSelector:) contextInfo: null];
+        NSInteger r = [super runModalForWindow: s];
+        [NSApp endSheet: s];
+        return r;
+    } else {
+        return [super runModalForWindow: s];
+    }
+}
+
+- (void) didEndSelector: (id) sender {
+    sheet = null;
+    window = null;
 }
 
 - (void) sendEvent: (NSEvent*) e  {
