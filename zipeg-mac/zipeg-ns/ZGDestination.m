@@ -206,7 +206,7 @@ static NSPathControl* createPathControl(NSFont* font, NSRect r, NSRect lr) {
     NSPathControl* pc = [[NSPathControl alloc] initWithFrame: pr];
     NSArray* path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSAllDomainsMask, true);
     NSString* s = path != null && path.count > 0 && [path[0] isKindOfClass: NSString.class] ?
-                  (NSString*)path[0] : @"~/Documents";
+                  (NSString*)path[0] : @"~/Desktop";
     NSURL* u = [[NSURL alloc] initFileURLWithPath: s isDirectory: true];
     pc.URL = u;
     pc.pathStyle = NSPathStyleStandard;

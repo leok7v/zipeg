@@ -16,7 +16,7 @@
         degrees -= 360;
     }
     NSSize rotatedSize = NSMakeSize(self.size.height, self.size.width);
-    NSImage* rotatedImage = [[NSImage alloc] initWithSize:rotatedSize];
+    NSImage* rotatedImage = [[NSImage alloc] initWithSize: rotatedSize];
     NSAffineTransform* transform = [NSAffineTransform transform] ;
     [transform translateXBy:  self.size.width / 2 yBy: self.size.height / 2] ;
     [transform rotateByDegrees: degrees];
@@ -49,8 +49,8 @@
 
 @implementation ZGHeroView
 
-- (id)initWithDocument: (ZGDocument*) doc andFrame:(NSRect)frame {
-    self = [super initWithFrame:frame];
+- (id) initWithDocument: (ZGDocument*) doc andFrame:(NSRect)frame {
+    self = [super initWithFrame: frame];
     // trace(@"initWithFrame %@", NSStringFromRect(self.frame));
     if (self != null) {
         alloc_count(self);
@@ -63,7 +63,7 @@
     dealloc_count(self);
 }
 
-- (void) setFrame:(NSRect)frameRect {
+- (void) setFrame: (NSRect) frameRect {
     [super setFrame:frameRect];
 }
 
@@ -86,7 +86,7 @@
         if (img == _appIcon) {
             degree = degree / 4 - 45;
         }
-        _images[i] = [img imageRotatedByDegrees:degree];
+        _images[i] = [img imageRotatedByDegrees: degree];
         _index[i] = arc4random_uniform(countof(_images));
     }
 }
@@ -112,8 +112,8 @@ static NSString* text = @"Drop Files Here";
         for (float x = rect.origin.x - 64; x < rect.size.width + 64; x += 20) {
             int ix = _index[dx % countof(_index)];
             NSImage* i = _images[ix];
-            [i drawInRect:NSMakeRect(x, rect.size.height - y, i.size.width, i.size.height) fromRect:NSZeroRect
-                operation:NSCompositeSourceOver fraction:1];
+            [i drawInRect: NSMakeRect(x, rect.size.height - y, i.size.width, i.size.height) fromRect: NSZeroRect
+                operation: NSCompositeSourceOver fraction:1];
             dx++;
         }
         dy++;
@@ -146,7 +146,7 @@ static NSString* text = @"Drop Files Here";
         r.origin.x++;
         r.origin.y++;
         [text drawInRect: r withAttributes: w];
-        [self drawBorder: r color: [NSColor lightGrayColor]];
+        [self drawBorder: r color: NSColor.lightGrayColor];
         r.origin.x--;
         r.origin.y--;
         [text drawInRect: r withAttributes: b];
@@ -154,8 +154,8 @@ static NSString* text = @"Drop Files Here";
     }
     [NSGraphicsContext restoreGraphicsState];
     CGImageRef alphaMask = CGBitmapContextCreateImage(maskContext);
-    CGContextRef windowContext = [[NSGraphicsContext currentContext] graphicsPort];
-    [[NSColor whiteColor] setFill];
+    CGContextRef windowContext = NSGraphicsContext.currentContext.graphicsPort;
+    [NSColor.whiteColor setFill];
     CGContextFillRect(windowContext, rect);
     CGContextSaveGState(windowContext);
     CGContextClipToMask(windowContext, NSRectToCGRect(self.bounds), alphaMask);
@@ -167,7 +167,7 @@ static NSString* text = @"Drop Files Here";
 -(void) drawBorder: (NSRect) rect color: (NSColor*) color {
     NSRect newRect = NSMakeRect(rect.origin.x - 10, rect.origin.y - 10, rect.size.width + 20, rect.size.height + 20);
     NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect: newRect xRadius:10 yRadius:10];
-    [path setLineWidth: 10];
+    path.lineWidth = 10;
     [color set];
     CGFloat dash[] = { 42.0, 8.0 };
     [path setLineDash: dash count: countof(dash) phase: 0.0];
