@@ -73,7 +73,7 @@
 
 - (void) prepareImages {
     assert(_appIcon == null);
-    _appIcon = [ZGApp appIcon32x32];
+    _appIcon = ZGApp.appIcon32x32;
     _leafs[0] = [NSImage imageNamed:@"leaf-0-64x64.png"];
     _leafs[1] = [NSImage imageNamed:@"leaf-1-64x64.png"];
     _leafs[2] = [NSImage imageNamed:@"leaf-2-64x64.png"];

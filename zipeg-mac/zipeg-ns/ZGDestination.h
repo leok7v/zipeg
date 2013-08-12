@@ -5,6 +5,7 @@
 - (id) initWithFrame: (NSRect) r for: (ZGDocument*) d;
 - (BOOL) isAsking;
 - (BOOL) isSelected;
+- (BOOL) isNextToArchive;
 - (NSURL*) URL;
 - (void) progress: (int64_t) pos of: (int64_t) total; // -1, -1 hide
 

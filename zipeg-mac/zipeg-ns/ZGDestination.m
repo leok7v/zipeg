@@ -51,7 +51,7 @@ static NSSearchPathDirectory dirs[] = {
         NSInteger tag = popup.selectedItem.tag;
         tag = (tag + 1) % popup.menu.itemArray.count;
         [popup selectItemWithTag: tag]; // flip in place w/o menu
-        trace(@"%@=%ld", popup.selectedItem.title, tag);
+        // trace(@"%@=%ld", popup.selectedItem.title, tag);
         call1(self.target, self.action, self);
         // DO NOT call: [popup sizeToFit]; // it makes controls too wide!
         return false;
@@ -71,6 +71,7 @@ static NSSearchPathDirectory dirs[] = {
     NSTextField* _to;
     NSPopUpButton* _disclosure;
     NSPathControl* _pathControl;
+    NSPathComponentCell* _nextToArchivePathComponentCell;
     NSMenuItem* _nextToArchiveMenuItem;
     NSURL* _nextToArchiveURL;
 
@@ -82,6 +83,12 @@ static NSSearchPathDirectory dirs[] = {
         alloc_count(self);
         _document = doc;
         _nextToArchiveURL = [NSURL URLWithString: @"http://www.zipeg.com"];
+        _nextToArchivePathComponentCell = [NSPathComponentCell new];
+        _nextToArchivePathComponentCell.image = ZGApp.appIcon16x16;
+        _nextToArchivePathComponentCell.URL   = _nextToArchiveURL;
+        _nextToArchivePathComponentCell.title = @"next to archive";
+        _nextToArchivePathComponentCell.state = NSOffState;
+        _nextToArchivePathComponentCell.font  = _font;
         self.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
         self.autoresizesSubviews = true;
         _font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
@@ -124,6 +131,10 @@ static NSSearchPathDirectory dirs[] = {
     return _selected.selectedItem.tag == 0;
 }
 
+- (BOOL) isNextToArchive {
+    return isEqual(_pathControl.URL, _nextToArchiveURL);
+}
+
 - (NSURL*) URL {
     return _pathControl.URL;
 }
@@ -133,14 +144,17 @@ static NSSearchPathDirectory dirs[] = {
 }
 
 - (void) disclosurePressed: (id) sender {
-    trace(@"%ld", _disclosure.selectedItem.tag);
-    if (_disclosure.selectedItem.tag == -1) {
+    int tag = (int)_disclosure.selectedItem.tag;
+    // trace(@"%d", tag);
+    if (tag < 0) {
         _pathControl.URL = [[NSURL alloc] initFileURLWithPath: NSHomeDirectory() isDirectory: true];
-    } else {
-        NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[_disclosure.selectedItem.tag], NSAllDomainsMask, true);
+    } else if (tag < countof(dirs)) {
+        NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[tag], NSAllDomainsMask, true);
         if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
             _pathControl.URL = [[NSURL alloc] initFileURLWithPath: path[0] isDirectory: true];
         }
+    } else {
+        [self nextToArchive: _disclosure];
     }
 }
 
@@ -160,8 +174,10 @@ static NSSearchPathDirectory dirs[] = {
     if (w > r.size.width) {
         r.size.width = w;
     }
-    if (r.origin.x + r.size.width > self.frame.size.width / 2) {
-        r.size.width = self.frame.size.width / 2 - r.origin.x;
+    // in the future I may want to reduce the maxWidth to 50% if I figure out what to use the rest of the space for
+    int maxWidth = self.frame.size.width; // self.frame.size.width / 2;
+    if (r.origin.x + r.size.width > maxWidth) {
+        r.size.width = maxWidth - r.origin.x;
     }
     _pathControl.frame = r;
 
@@ -292,6 +308,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
             insertMenuItem(btn.menu, [p lastPathComponent], image, i);
         }
     }
+    insertMenuItem(btn.menu, @"next to archive", ZGApp.appIcon16x16, countof(dirs));
     return btn;
 }
 
@@ -342,10 +359,11 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
 }
 
 - (void) nextToArchive: (id) sender {
-    _pathControl.pathComponentCells = [self pathComponentArray];
+    _pathControl.pathComponentCells = @[_nextToArchivePathComponentCell];
     [self pathControlSizeToFit];
 }
 
+/* TODO: no need anymore
 - (NSArray*) pathComponentArray {
     NSMutableArray* pathComponentArray = [NSMutableArray new];
     NSURL* u = [NSURL URLWithString: @"http://www.zipeg.com"];
@@ -363,13 +381,14 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     c.font  = _font;
     return c;
 }
+*/
 
 - (void) pathControl: (NSPathControl*) pc willPopUpMenu: (NSMenu*) m {
     if (_nextToArchiveMenuItem == null) {
         NSString* title = NSLocalizedString(@"next to archive", @"");
         NSMenuItem* mi = [[NSMenuItem alloc] initWithTitle:title action: @selector(nextToArchive:) keyEquivalent:@""];
         mi.target = self;
-        mi.image = [ZGApp appIcon16x16];
+        mi.image = ZGApp.appIcon16x16;
         _nextToArchiveMenuItem = mi;
     }
     BOOL found = false;
