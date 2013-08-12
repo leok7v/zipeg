@@ -323,6 +323,9 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
             case NOverwriteAnswer::kAutoRename:
               _overwriteMode = NExtract::NOverwriteMode::kAutoRename;
               break;
+            case NOverwriteAnswer::kAutoRenameAll:
+              _overwriteMode = NExtract::NOverwriteMode::kAutoRenameExisting;
+              break;
             default:
               return E_FAIL;
           }

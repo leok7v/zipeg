@@ -623,9 +623,58 @@ static NSTableView* createTableView(NSRect r) {
     });
 }
 
-- (NSString*) askForPasswordFromBackgroundThread {
+- (void) extract {
+    mkdir("/tmp/foo", 0700);
+    NSURL* u = [NSURL fileURLWithPath: @"/tmp/foo" isDirectory: true];
+    [self extract: null to: u];
+}
+
+- (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+                                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
+
     assert(![NSThread isMainThread]);
-    dispatch_semaphore_t password_semaphore = dispatch_semaphore_create(0);
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    int __block answer;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        assert([NSThread isMainThread]);
+        NSString*   name = [NSString stringWithUTF8String: fromName];
+        NSAlert*   alert = [NSAlert new];
+        [alert addButtonWithTitle: @"Keep Both"];
+        [alert addButtonWithTitle: @"Yes"];
+        [alert addButtonWithTitle: @"No"];
+        [alert addButtonWithTitle: @"Cancel"];
+        [alert setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
+        [alert setInformativeText: @"Overwritten files are placed into Trash Bin"];
+        alert.alertStyle = NSInformationalAlertStyle;
+        NSButton* applyToAll = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 100, 24)];
+        applyToAll.title = @"Apply to All";
+        applyToAll.buttonType = NSSwitchButton;
+        [applyToAll sizeToFit];
+        alert.accessoryView = applyToAll;
+        [self.sheet begin: alert
+                     done: ^(int rc) {
+                         if (rc == NSAlertFirstButtonReturn) {
+                             answer = applyToAll.state == NSOffState ? kAutoRename : kAutoRenameAll;
+                         } else if (rc == NSAlertSecondButtonReturn) {
+                             answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
+                         } else if (rc == NSAlertThirdButtonReturn) {
+                             answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
+                         } else {
+                             answer = kCancel;
+                         }
+                         alert.accessoryView = null;
+                         dispatch_semaphore_signal(sema);
+                     }];
+    });
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    dispatch_release(sema);
+    sema = null;
+    return answer;
+}
+
+- (NSString*) askOnBackgroundThreadForPassword {
+    assert(![NSThread isMainThread]);
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
     NSString* __block password;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
@@ -637,17 +686,18 @@ static NSTableView* createTableView(NSRect r) {
                             [_url.path lastPathComponent]];
         NSString* info = @"Password has been set by the person who created this archive file.\n"
           "If you don`t know the password please contact that person.";
-        NSAlert *alert = [NSAlert alertWithMessageText: prompt
+        NSAlert* alert = [NSAlert alertWithMessageText: prompt
                                          defaultButton: @"OK"
                                        alternateButton: @"Cancel"
                                            otherButton: null
                              informativeTextWithFormat: @"%@", info];
+        alert.alertStyle = NSInformationalAlertStyle;
         NSTextField* password_input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 300, 24)];
         password_input.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin | NSViewMinXMargin;
         NSCell* cell = password_input.cell;
         cell.usesSingleLineMode = true;
         password_input.stringValue = @"";
-        [alert setAccessoryView:password_input];
+        alert.accessoryView = password_input;
         dumpAllViews();
         [self.sheet begin: alert
             done: ^(int rc) {
@@ -657,13 +707,13 @@ static NSTableView* createTableView(NSRect r) {
                 } else {
                     password = @"";
                 }
-                [alert setAccessoryView: null];
-                dispatch_semaphore_signal(password_semaphore);
+                alert.accessoryView = null;
+                dispatch_semaphore_signal(sema);
             }];
     });
-    dispatch_semaphore_wait(password_semaphore, DISPATCH_TIME_FOREVER);
-    dispatch_release(password_semaphore);
-    password_semaphore = null;
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    dispatch_release(sema);
+    sema = null;
     return password;
 }
 
@@ -763,24 +813,11 @@ static NSTableView* createTableView(NSRect r) {
 - (void) extract: (NSArray*) items to: (NSURL*) url {
     ExtractItemsOperation *operation = [[ExtractItemsOperation alloc] initWithDocument: self items: items to: url];
     [_operationQueue addOperation: operation];
-
-/*
-    // TODO: extact file here and wrtie to fileURL
-    double delayInSeconds = 2.0;
-    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        trace(@"writeFile=%@", fileURL);
-        NSMutableData* data = [NSMutableData dataWithLength: 4096];
-        NSError* e = [NSError new];
-        [data writeToURL:fileURL options: NSAtomicWrite error: &e];
-    });
-    trace(@"fileURL=%@", fileURL);
-    return fileURL;
-*/ 
 }
 
-- (void) pasteboard:(NSPasteboard *) pasteboard provideDataForType: (NSString*) type {
+- (void) pasteboard: (NSPasteboard*) pasteboard provideDataForType: (NSString*) type {
     // This method will be called to provide data for NSFilenamesPboardType
+    trace(@"");
 /*
     if ([type isEqualToString:NSFilenamesPboardType]) {
         int draggedRow = 1;

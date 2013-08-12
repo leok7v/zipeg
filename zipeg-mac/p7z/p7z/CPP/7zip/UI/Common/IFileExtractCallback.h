@@ -10,12 +10,13 @@ namespace NOverwriteAnswer
 {
   enum EEnum
   {
-    kYes,
+    kYes,       // ORDER IS VERY IMPORTANT. DO NOT CHANGE!
     kYesToAll,
     kNo,
     kNoToAll,
-    kAutoRename,
-    kCancel
+    kAutoRename, // just one file
+    kCancel,
+    kAutoRenameAll
   };
 }
 

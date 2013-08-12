@@ -47,6 +47,8 @@ struct D;
 - (BOOL) isLeafFolder: (int) index;
 - (BOOL) isFolder: (int) index;
 - (void) error: (const char*) text;
+- (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+                      to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;
 - (const wchar_t*) password;
 
 @end
@@ -188,6 +190,11 @@ struct D : P7Z::Delegate {
         [delegate error: text];
     }
     virtual const wchar_t* password(P7Z*) { return [delegate password]; }
+    virtual const int askOverwrite(P7Z*, const char* fromName, int64_t fromTime, int64_t fromSize,
+                                         const char* toName,   int64_t toTime,   int64_t toSize) {
+        return [delegate askOverwriteFrom: fromName time: fromTime size: fromSize
+                                       to: toName time: toTime size: toSize];
+    }
     virtual bool progress(P7Z*, int64_t pos, int64_t total) {
         return [delegate progress:pos ofTotal:total];
     }
@@ -657,9 +664,10 @@ static NSString* starifyMultipartRAR(NSString* s) {
             // TODO: NSUnderlyingErrorKey does nothing. Investigate later...
             NSError* e = [NSError errorWithDomain: ZGAppErrorDomain
                                              code: ZGArchiverError
-                                         userInfo:@{NSLocalizedDescriptionKey: _error }];
-            *err = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileReadCorruptFileError
-                                   userInfo:@{NSFilePathErrorKey:_archiveFilePath, NSUnderlyingErrorKey: e
+                                         userInfo: @{ NSLocalizedDescriptionKey: _error }
+                         ];
+            *err = [NSError errorWithDomain: NSCocoaErrorDomain code: NSFileReadCorruptFileError
+                                   userInfo: @{NSFilePathErrorKey: _archiveFilePath, NSUnderlyingErrorKey: e
                     }];
         }
     } @finally {
@@ -775,9 +783,17 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     _error = [NSString stringWithUTF8String: message];
 }
 
+
+- (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+                      to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
+    return [document askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+                                              to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize];
+}
+
+
 - (const wchar_t*) password {
     if (!_password || _password.length == 0) {
-        _password = [document askForPasswordFromBackgroundThread];
+        _password = [document askOnBackgroundThreadForPassword];
     }
     if (_password) {
         NSInteger n = _password.length;
@@ -900,7 +916,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
             block(ZGOutOfMemoryError());
             return;
         }
-        n = [self collectChildren:itms to: indices position: 0 size: max];
+        n = [self collectChildren: itms to: indices position: 0 size: max];
     }
     _error = null;
     bool b = a->extract(indices, n, [path UTF8String], prefixComponents, pc);
@@ -911,7 +927,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     } else {
         NSMutableDictionary *details = [NSMutableDictionary dictionary];
         [details setValue: _error forKey: NSLocalizedDescriptionKey];
-        [details setValue:url forKey: NSURLErrorKey];
+        [details setValue: url forKey: NSURLErrorKey];
         NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile userInfo: details];
         block(err);
     }

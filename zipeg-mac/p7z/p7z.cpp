@@ -408,7 +408,22 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
                                      const wchar_t *newName,
                                      const FILETIME *newTime, const UInt64 *newSize,
                                      Int32 *answer) {
-            *answer = NOverwriteAnswer::kAutoRename;
+            AString from;
+            if (!ConvertUnicodeToUTF8(existName, from)) {
+                throw "bad file name";
+            }
+            AString to;
+            if (!ConvertUnicodeToUTF8(newName, to)) {
+                throw "bad file name";
+            }
+            int64_t fromTime = existTime == null ? 0 :
+              (((int64_t)existTime->dwHighDateTime) << 32) | existTime->dwHighDateTime;
+            int64_t toTime = newTime == null ? 0 :
+              (((int64_t)newTime->dwHighDateTime) << 32) | newTime->dwHighDateTime;
+            int64_t fromSize = existSize == null ? 0 : (int64_t)*existSize;
+            int64_t toSize = newSize == null ? 0 : (int64_t)*newSize;
+            *answer = ctx->delegate->askOverwrite(ctx, from, fromTime, fromSize, to, toTime, toSize);
+            // *answer = NOverwriteAnswer::kAutoRename;
             return S_OK;
         }
                                  

@@ -12,9 +12,20 @@ public:
         const wchar_t* str; // do not cache it. Only valid during iterate
         Value() : kind(0), num(0), str(null) {}
     };
+    enum {
+        kYes = 0,       // ORDER IS VERY IMPORTANT. DO NOT CHANGE!  see:
+        kYesToAll = 1,  // IFileExtractCallback.h NOverwriteAnswer::EEnum consts
+        kNo = 2,
+        kNoToAll = 3,
+        kAutoRename = 4,
+        kCancel = 5,
+        kAutoRenameAll = 6
+    };
     struct Delegate {
         virtual void error(const char* error) = 0; // exception text is reported here
         virtual const wchar_t* password(P7Z*) = 0;
+        virtual const int askOverwrite(P7Z*, const char* fromName, int64_t fromTime, int64_t fromSize,
+                                             const char* toName, int64_t toTime, int64_t toSize) = 0;
         virtual bool progress(P7Z*, int64_t pos, int64_t total) = 0; // true means carry on
         virtual bool progressFile(P7Z*, int64_t fileno, int64_t files) = 0; // true means carry on
         virtual bool cancel(P7Z*) = 0; // true means cancel, false - carry on

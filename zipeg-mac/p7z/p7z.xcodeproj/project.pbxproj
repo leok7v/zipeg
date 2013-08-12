@@ -318,7 +318,6 @@
 		B305981F178385D800A8A991 /* client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = client.h; sourceTree = "<group>"; };
 		B318AD4F1787FF34000B49B1 /* HashMapS2L.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HashMapS2L.cpp; sourceTree = "<group>"; };
 		B318AD501787FF34000B49B1 /* HashMapS2L.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HashMapS2L.hpp; sourceTree = "<group>"; };
-		B318AD531788BD53000B49B1 /* notes.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = notes.txt; sourceTree = "<group>"; };
 		B319FFC11784447F00EA825F /* DllExports2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DllExports2.cpp; sourceTree = "<group>"; };
 		B332D7FE178130A00089145F /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		B35F510D178100210021A620 /* libp7z.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libp7z.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -957,7 +956,6 @@
 				B3A5D5C21783EDB600D78792 /* NanoTime.hpp */,
 				B3A5D5C11783EDB500D78792 /* NanoTime.cpp */,
 				B39F1D4017924C6F00472FEF /* unused */,
-				B318AD531788BD53000B49B1 /* notes.txt */,
 				B35F511D178115540021A620 /* Frameworks */,
 				B35F510E178100210021A620 /* Products */,
 			);
