@@ -1,3 +1,8 @@
+@interface NSApplication (SheetAdditions)
+
+- (void) beginSheet: (NSWindow*) s modalForWindow: (NSWindow*) w didEndBlock: (void (^)(NSInteger rc)) block;
+
+@end
 
 @interface ZGApp : NSApplication
 
@@ -8,4 +13,3 @@
 + (NSImage*) appIcon32x32;
 
 @end
-

@@ -1,5 +1,7 @@
 #import "ZGSheet.h"
 
+// TODO: remove all of this. See ZGApp and ZGProgress 
+
 @interface ZGSheet() {
 @public
     NSWindow* __weak _window;

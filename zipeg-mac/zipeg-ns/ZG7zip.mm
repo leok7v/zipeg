@@ -33,10 +33,12 @@ struct D;
     NSMutableArray* _props;
     NSOperation* _op;
     ZGDocument* __weak document;
-    int pathIndex; // in pnames
-    int items;
-    int folders;
-    int properties;
+    int _pathIndex; // in pnames
+    int _numberOfItems;
+    int _numberOfFolders;
+    int _properties;
+    int64_t _open_total;
+    int64_t _open_progress;
 }
 
 - (BOOL) isFiltered;
@@ -226,7 +228,7 @@ struct D : P7Z::Delegate {
         if (d) {
             a = new P7Z(d);
         }
-        pathIndex = -1;
+        _pathIndex = -1;
     }
     return self;
 }
@@ -246,7 +248,7 @@ struct D : P7Z::Delegate {
 - (void) close {
     // trace(@"");
     if (a != null) {
-        trace("folders %d items %d", folders, items);
+        trace("folders %d items %d", _numberOfFolders, _numberOfItems);
         a->close();
     }
     delete a; a = null;
@@ -264,9 +266,17 @@ static bool ignore(const NSString* pathname) {
            [pathname hasPrefix:@"__MACOSX/"] || [pathname rangeOfString:@"/__MACOSX/"].location != NSNotFound;
 }
 
+static void reportProgress(ZG7zip* z, int ix) {
+    z->_open_progress++;
+    if (ix % 100 == 0 && z->_open_progress < z->_open_total) {
+        [z progressFile: z->_open_progress ofTotal: z->_open_total];
+    }
+}
+
+
 - (BOOL) buildTree {
-    folders = 0;
-    for (int i = 0; i < items; i++) {
+    _numberOfFolders = 0;
+    for (int i = 0; i < _numberOfItems; i++) {
         if (i % 100 == 0 && self.isCancelled) {
             return false;
         }
@@ -290,14 +300,15 @@ static bool ignore(const NSString* pathname) {
             if (isFolder) {
                 [_isFolders setBit:i to:true];
                 [_isLeafFolders setBit:i to:true];
-                folders++;
+                _numberOfFolders++;
             }
             _items[pathname] = item;
         } else {
             console(@"duplicate file \"%@\" ignored", pathname);
         }
+        reportProgress(self, i);
     }
-    for (int i = 0; i < items; i++) {
+    for (int i = 0; i < _numberOfItems; i++) {
         if (i % 100 == 0 && self.isCancelled) {
             return false;
         }
@@ -329,7 +340,7 @@ static bool ignore(const NSString* pathname) {
                     return false;
                 }
                 _items[parentComponents] = p;
-                folders++;
+                _numberOfFolders++;
             }
             item.parent = p;
             // trace(@"0x%016llX.parent:=0x%016llX %@ -> %@", (unsigned long long)item, (unsigned long long)p, p.name, item.name);
@@ -339,8 +350,10 @@ static bool ignore(const NSString* pathname) {
             item = p;
             pathname = parentComponents;
         }
+        reportProgress(self, i);
     }
     // because of synthetic parents _items can have more elements than the rest
+    int i = 0;
     for (NSString* pathname in _items) {
         if (ignore(pathname)) {
             continue;
@@ -349,6 +362,8 @@ static bool ignore(const NSString* pathname) {
         assert(item != null);
         assert(item.parent != null);
         [(ZG7zipItem*)item.parent addChild:item];
+        i++;
+        reportProgress(self, i);
     }
     if (self.isCancelled) {
         return false;
@@ -358,6 +373,7 @@ static bool ignore(const NSString* pathname) {
         ZG7zipItem *second = (ZG7zipItem*)s;
         return [first.name compare: second.name];
     };
+    i = 0;
     for (NSString* pathname in _items) {
         if (ignore(pathname)) {
             continue;
@@ -367,6 +383,8 @@ static bool ignore(const NSString* pathname) {
             continue;
         }
         [item.children sortUsingComparator: c];
+        i++;
+        reportProgress(self, i);
     }
     [_root.children sortUsingComparator: c];
     return !self.isCancelled;
@@ -392,7 +410,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
         return;
     }
     BOOL __block b = false;
-    int in = items;
+    int in = _numberOfItems;
     ZGBitset* isFilteredOut = null;
     if (!filterText || filterText.length == 0) {
         _filterText = null;
@@ -422,10 +440,10 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
             opts |= NSRegularExpressionSearch;
         }
         _filterText = filterText;
-        isFilteredOut = [ZGBitset bitsetWithCapacity: items];
+        isFilteredOut = [ZGBitset bitsetWithCapacity: _numberOfItems];
         b = isFilteredOut != null;
         [isFilteredOut fill];
-        for (int i = 0; b && i < items; i++) {
+        for (int i = 0; b && i < _numberOfItems; i++) {
             if (i % 100 == 0 && op.isCancelled) {
                 b = false;
             } else {
@@ -459,7 +477,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
             trace("search done");
             assert([NSThread isMainThread]);
             bool found = true;
-            if (in == items) {
+            if (in == _numberOfItems) {
                 _filterText = null;
                 [_isFilteredOut clear];
                 found = false; // not found
@@ -497,11 +515,11 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 }
 
 - (int) numberOfItems {
-    return items;
+    return _numberOfItems;
 }
 
 - (int) numberOfFolders {
-    return folders;
+    return _numberOfFolders;
 }
 
 static struct { const char* name; CFStringEncoding enc; } kEncodingsMap [] = {
@@ -632,15 +650,15 @@ static NSString* starifyMultipartFilename(NSString* s) {
         _op = op;
         b = a->open([_archiveFilePath UTF8String]) && a->getNumberOfItems() > 0 && a->getNumberOfProperties() > 0;
         if (b) {
-            items = a->getNumberOfItems();
-            properties = a->getNumberOfProperties();
-            _isFilteredOut = [ZGBitset bitsetWithCapacity:items];
-            _isFolders = [ZGBitset bitsetWithCapacity:items];
-            _isLeafFolders = [ZGBitset bitsetWithCapacity:items];
-            _items = [NSMutableDictionary dictionaryWithCapacity:items * 3 / 2];
-            _paths = [NSMutableArray arrayWithCapacity:items];
-            _props = [NSMutableArray arrayWithCapacity:items];
-            _pnames = [NSMutableArray arrayWithCapacity:properties];
+            _numberOfItems = a->getNumberOfItems();
+            _properties = a->getNumberOfProperties();
+            _isFilteredOut = [ZGBitset bitsetWithCapacity:_numberOfItems];
+            _isFolders = [ZGBitset bitsetWithCapacity:_numberOfItems];
+            _isLeafFolders = [ZGBitset bitsetWithCapacity:_numberOfItems];
+            _items = [NSMutableDictionary dictionaryWithCapacity:_numberOfItems * 3 / 2];
+            _paths = [NSMutableArray arrayWithCapacity:_numberOfItems];
+            _props = [NSMutableArray arrayWithCapacity:_numberOfItems];
+            _pnames = [NSMutableArray arrayWithCapacity:_properties];
             if (!_isFolders || !_isLeafFolders || !_isFilteredOut || !_items || !_paths || !_pnames || !_props) {
                 a->close();
                 *err = ZGOutOfMemoryError();
@@ -650,6 +668,8 @@ static NSString* starifyMultipartFilename(NSString* s) {
             if (b) {
                 CFStringEncoding encoding = [self detectEncoding];
                 a->setCodePage(encoding);
+                _open_total = _numberOfItems * 5; // I do about 5 passes through
+                _open_progress = 0;
                 b = a->iterateAllItems();
                 if (b) {
                     b = [self buildTree];
@@ -715,23 +735,23 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 }
 
 - (BOOL) itemProperties: (int) itemIndex names: (const char*[]) names values: (P7Z::Value*[])values {
-    NSMutableDictionary* dic = [[NSMutableDictionary alloc] initWithCapacity: properties * 3 / 2];
+    NSMutableDictionary* dic = [NSMutableDictionary dictionaryWithCapacity: _properties * 3 / 2];
     if (itemIndex == 0) {
-        for (int i = 0; i < properties; i++) {
+        for (int i = 0; i < _properties; i++) {
             _pnames[i] = [NSString stringWithUTF8String:names[i]];
-            if (pathIndex < 0 && [_pnames[i] isEqualToString:@"Path"]) {
-                pathIndex = i;
+            if (_pathIndex < 0 && [_pnames[i] isEqualToString:@"Path"]) {
+                _pathIndex = i;
             }
         }
-        if (pathIndex < 0) {
+        if (_pathIndex < 0) {
             return false;
         }
     }
     int codePage = a->getCodePage();
     NSString* path = null;
-    for (int i = 0; i < properties; i++) {
+    for (int i = 0; i < _properties; i++) {
         NSObject *o = p7zValueToObject(*values[i]);
-        if (i == pathIndex) {
+        if (i == _pathIndex) {
             if (codePage >= 0) {
                 const char* name = a->getItemName(itemIndex);
                 if (name) {
@@ -764,6 +784,8 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     }
     _paths[itemIndex] = path;
     _props[itemIndex] = dic;
+
+    reportProgress(self, itemIndex);
 /*
     if (itemIndex < 10) {
         NSMutableString* s = [NSMutableString new];
@@ -780,6 +802,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 */ 
     return !self.isCancelled;
 }
+
 
 - (void) error: (const char*) message {
     _error = [NSString stringWithUTF8String: message];
@@ -818,12 +841,12 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return L"";
 }
 
-- (BOOL) progress:(long long)pos ofTotal:(long long)total {
+- (BOOL) progress: (long long) pos ofTotal: (long long) total {
     assert(![NSThread isMainThread]);
     return [document progressOnBackgroundThread: pos ofTotal: total] && !self.isCancelled;
 }
 
-- (BOOL) progressFile:(long long)fileno ofTotal:(long long)totalNumberOfFiles {
+- (BOOL) progressFile:(long long) fileno ofTotal: (long long)totalNumberOfFiles {
     assert(![NSThread isMainThread]);
     return [document progressFileOnBackgroundThread: fileno ofTotal: totalNumberOfFiles] && !self.isCancelled;
 }

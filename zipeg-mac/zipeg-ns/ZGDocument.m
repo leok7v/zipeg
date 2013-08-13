@@ -42,7 +42,6 @@
     NSTableViewSelectionHighlightStyle _highlightStyle;
     BOOL _isNew;
     uint64_t _timeToShowHeroView;
-    NSMutableDictionary* _renameMap;
 }
 
 @property (weak) NSView* contentView;
@@ -465,6 +464,7 @@ static NSTableView* createTableView(NSRect r) {
         // TODO: how to make document modified without this hack?
         [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
     } else {
+        [_progress begin: _window];
         _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
         OpenArchiveOperation *operation = [OpenArchiveOperation.alloc initWithDocument: self];
         [_operationQueue addOperation: operation];
@@ -490,12 +490,12 @@ static NSTableView* createTableView(NSRect r) {
     [_tableViewDelegate sizeToContent: _tableView];
 }
 
-+ (BOOL)autosavesInPlace {
++ (BOOL) autosavesInPlace {
     // this is for autosaving documents like text files... see NSDocumentController -setAutosavingDelay:
     return false;
 }
 
-- (BOOL)hasUnautosavedChanges {
+- (BOOL) hasUnautosavedChanges {
     return _isNew;
 }
 
@@ -507,7 +507,7 @@ static NSTableView* createTableView(NSRect r) {
     if (_operationQueue.operations.count > 0) {
         // TODO: replace with Presenter and dismiss when all ops are done
         NSBeginInformationalAlertSheet(
-            @"Operation is in Progress", @"OK",@"Cancel",@"",
+            @"Operation is in Progress", @"OK", @"Cancel", @"",
             _window,
             self, // modalDelegate
             @selector(closeDidEnd:returnCode:contextInfo:),
@@ -552,7 +552,7 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (BOOL) writeToURL:(NSURL *)absoluteURL ofType:(NSString *)typeName error:(NSError **)outError {
+- (BOOL) writeToURL:(NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
     [self runModalSavePanelForSaveOperation: NSSaveOperation
                                    delegate: self
                             didSaveSelector: @selector(document:didSave:block:)
@@ -567,11 +567,11 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 
-- (BOOL) readFromURL:(NSURL *)absoluteURL ofType:(NSString *)typeName error:(NSError **)outError {
+- (BOOL) readFromURL: (NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
     return [self readFromURL:absoluteURL ofType:typeName encoding:(CFStringEncoding)-1 error:outError];
 }
 
-- (BOOL) readFromURL:(NSURL *)absoluteURL ofType:(NSString *)typeName encoding: (CFStringEncoding) encoding
+- (BOOL) readFromURL: (NSURL*) absoluteURL ofType: (NSString*) typeName encoding: (CFStringEncoding) encoding
         error:(NSError **)error {
     // this is called before window is created or setup
     _url = absoluteURL;
@@ -600,6 +600,7 @@ static NSTableView* createTableView(NSRect r) {
     ZGDocument* __block __weak that = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
+        [_progress end];
         if (a != null) {
             _archive = a;
             // _archive = ZGFileSystem.new;
@@ -690,7 +691,7 @@ static NSTableView* createTableView(NSRect r) {
                                            otherButton: null
                              informativeTextWithFormat: @"%@", info];
         alert.alertStyle = NSInformationalAlertStyle;
-        NSTextField* password_input = [NSTextField.alloc initWithFrame:NSMakeRect(0, 0, 300, 24)];
+        NSTextField* password_input = [NSTextField.alloc initWithFrame: NSMakeRect(0, 0, 300, 24)];
         password_input.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin | NSViewMinXMargin;
         NSCell* cell = password_input.cell;
         cell.usesSingleLineMode = true;
@@ -730,7 +731,6 @@ static NSTableView* createTableView(NSRect r) {
     assert(_archive != null);
     [_archive extract: items to: url operation: op done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            _renameMap = null;
             if (error != null) {
                 [[NSSound soundNamed: @"error"] play];
                 NSAlert* alert = [NSAlert alertWithError: error];
@@ -748,8 +748,13 @@ static NSTableView* createTableView(NSRect r) {
 - (BOOL) progressOnBackgroundThread: (long long)pos ofTotal:(long long)total {
     assert(![NSThread isMainThread]);
     // TODO: connect to progress bar(s)
-    // trace(@"%llu of %llu", pos, total);
+    trace(@"%llu of %llu", pos, total);
     [self checkTimeToShowHeroView];
+    if (0 <= pos && pos <= total) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _progress.progress = (double)pos / (double)total;
+        });
+    }
     return true; // TODO: may read the state of cancel button even from background thread
 }
 
@@ -758,6 +763,11 @@ static NSTableView* createTableView(NSRect r) {
     // TODO: connect to progress bar(s)
     // trace(@"%llu of %llu", fileno, totalNumberOfFiles);
     [self checkTimeToShowHeroView];
+    if (0 <= fileno && fileno <= totalNumberOfFiles) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _progress.progress = (double)fileno / (double)totalNumberOfFiles;
+        });
+    }
     return true; // TODO: may read the state of cancel button even from background thread
 }
 
@@ -923,17 +933,8 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
 
 - (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
     if (!dnd) {
-/*
-        ZGProgress* p = ZGProgress.new;
-        [self.sheet begin: p
-                     done: ^(int rc) {
-                         // nothing
-                         [NSApp stopModal];
-                     }];
-        [NSApp runModalForWindow: p];
-*/
         NSInteger r = [self askOverwrite: @"test"];
-        trace(@"%ld", r);
+        console(@"%ld", r);
         [self sortOverwrite: items to: url];
     }
     ExtractItemsOperation *operation = [ExtractItemsOperation.alloc initWithDocument: self items: items to: url];

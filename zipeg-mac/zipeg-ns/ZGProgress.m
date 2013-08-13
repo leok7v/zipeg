@@ -1,13 +1,27 @@
 #import "ZGProgress.h"
+#import "ZGApp.h"
 
+@class ZGProgressBar;
+
+@interface ZGProgress() {
+    NSView* __weak _contentView;
+    ZGProgressBar* _progressBar;
+    NSTextField* _text;
+    NSButton* _cancel;
+    NSButton* _proceed;
+    int _count;
+}
+- (void) setupProgressBar;
+- (void) setupCancelContinue;
+@end
 
 @interface ZGProgressBar : NSView {
-    float progress;
+    @public float _progress;
     NSImage* _cancel_n;
     NSImage* _cancel_p;
     NSImage* __weak _cancel;
+    NSRect _cancel_rect;
 }
-
 @end
 
 
@@ -16,7 +30,7 @@
 - (id) init {
     self = super.init;
     if (self != null) {
-        progress = 0.5;
+        alloc_count(self);
         _cancel_n = [[NSImage imageNamed: @"stop-n"] copy];
         _cancel_n.size = NSMakeSize(18, 18);
         _cancel_p = [[NSImage imageNamed: @"stop-p"] copy];
@@ -26,16 +40,35 @@
     return self;
 }
 
+
+- (void) dealloc {
+    dealloc_count(self);
+}
+
+- (void) setProgress: (float) v {
+    assert(0 <= v && v <= 1);
+    _progress = MIN(MAX(0, v), 1);
+    self.needsDisplay = true;
+}
+
 - (BOOL) mouseDownCanMoveWindow {
     return false;
 }
 
 - (void) mouseDown: (NSEvent*) e {
-    _cancel = _cancel_p;
-    self.needsDisplay = true;
+    NSPoint pt = [self convertPoint: e.locationInWindow fromView: self.window.contentView];
+    if (NSPointInRect(pt, _cancel_rect)) {
+        _cancel = _cancel_p;
+        self.needsDisplay = true;
+    }
 }
 
 - (void)mouseUp: (NSEvent*) e {
+    NSPoint pt = [self convertPoint: e.locationInWindow fromView: self.window.contentView];
+    if (NSPointInRect(pt, _cancel_rect)) {
+        ZGProgress* pg = (ZGProgress*)self.window;
+        [pg setupCancelContinue];
+    }
     _cancel = _cancel_n;
     self.needsDisplay = true;
 }
@@ -82,7 +115,7 @@
     [g drawInRect: p angle: 90];
 
 
-    CGFloat w = p.size.width * progress;
+    CGFloat w = p.size.width * _progress;
     c0 = [NSColor colorWithCalibratedRed: .48 green: .57 blue: .69 alpha: 1];
     c1 = [NSColor colorWithCalibratedRed: .83 green: .87 blue: .91 alpha: 1];
     g = [NSGradient.alloc initWithStartingColor: c1 endingColor: c0];
@@ -92,6 +125,8 @@
     [g drawInRect: NSMakeRect(p.origin.x, p.origin.y, w, p.size.height / 2) angle: 90];
 
     NSPoint pt = {p.origin.x + p.size.width + 5, p.origin.y - (_cancel.size.height - p.size.height) / 2};
+    _cancel_rect.origin = pt;
+    _cancel_rect.size = _cancel.size;
     [_cancel drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
 }
 
@@ -112,31 +147,118 @@
 @end
 
 
-@interface ZGProgress() {
-    NSView* __weak _contentView;
-    ZGProgressBar* _progressBar;
-}
-
-@end
-
-
 @implementation ZGProgress
+
+@synthesize progress;
 
 - (id) init {
     self = super.init;
     if (self != null) {
         alloc_count(self);
-        NSSize size = NSMakeSize(400, 90);
-        self.minSize = size;
-        self.maxSize = size;
-        [self setFrame: NSMakeRect(0, 0, size.width, size.height) display: true animate: false];
+        [self setupProgressBar];
+    }
+    return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
+}
+
+- (float) progress {
+    return _progressBar->_progress;
+}
+
+- (void) setProgress: (float) v {
+    assert(0 <= v && v <= 1);
+    v = MIN(MAX(0, v), 1);
+    _progressBar.progress = v;
+}
+
+- (void) begin: (NSWindow*) w {
+    assert([NSThread isMainThread]);
+    assert(_count == 0);
+    _count++;
+    [NSApp beginSheet: self modalForWindow: w didEndBlock:^(NSInteger rc) {
+        trace(@"");
+    }];
+}
+
+- (void) end {
+    assert([NSThread isMainThread]);
+    assert(_count == 1);
+    _count--;
+    [NSApp endSheet: self];
+    [self orderOut: null];
+}
+
+- (void) setupProgressBar {
+    NSSize size = NSMakeSize(400, 90);
+    self.minSize = size;
+    self.maxSize = size;
+    [self setFrame: NSMakeRect(0, 0, size.width, size.height) display: true animate: true];
+    if (_contentView == null) {
         _contentView = self.contentView;
         _contentView.alphaValue = 1;
         _progressBar = ZGProgressBar.new;
-        _progressBar.frame = NSMakeRect(10, size.height - 80, size.width - 20, 50);
-        _contentView.subviews = @[_progressBar];
     }
-    return self;
+    _progressBar.frame = NSMakeRect(10, size.height - 60, size.width - 20, 50);
+    _contentView.subviews = @[_progressBar];
+}
+
+- (void) setupCancelContinue {
+    NSSize size = NSMakeSize(400, 90 + 30);
+    self.minSize = size;
+    self.maxSize = size;
+    _progressBar.frame = NSMakeRect(10, size.height - 60, size.width - 20, 50);
+    [self setFrame: NSMakeRect(0, 0, size.width, size.height) display: true animate: true];
+
+    NSFont* font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize];
+    if (_text == null) {
+        _text    = createTextField(font, @"An operation is still in progress. Do you want to cancel it?", 10, 40);
+        _proceed = createButton(font, @"Continue", 10, 10);
+        _cancel  = createButton(font, @" Stop ", _proceed.frame.origin.x + _proceed.frame.size.width + 10, 10);
+        _cancel.keyEquivalent = @"\r";
+    }
+    self.defaultButtonCell = _cancel.cell; // make ENTER in window to press this button
+    [self makeFirstResponder: _cancel];
+    _contentView.subviews = @[_progressBar, _cancel, _proceed, _text];
+    _cancel.target = self;
+    _proceed.target = self;
+    _proceed.action = @selector(proceed:);
+}
+
+- (void) proceed : (id) sender {
+    [self setupProgressBar];
+}
+
+
+static NSButton* createButton(NSFont* font, NSString* title, int x, int y) {
+    NSButton* btn = NSButton.new;
+    btn.title = NSLocalizedString(title, @"");
+    btn.frame = NSMakeRect(0, 10, 300, 10);
+    btn.buttonType = NSMomentaryPushInButton;
+    NSButtonCell* bc = btn.cell;
+    bc.bezelStyle = NSTexturedRoundedBezelStyle;
+    bc.highlightsBy = NSPushInCellMask;
+    bc.controlTint = NSBlueControlTint;
+    bc.focusRingType = NSFocusRingTypeDefault; // NSFocusRingTypeNone;
+    bc.bordered = true;
+    bc.font = font;
+    btn.frame = NSMakeRect(x, y, 100, NSFont.smallSystemFontSize);
+    [btn sizeToFit];
+    return btn;
+}
+
+static NSTextField* createTextField(NSFont* font, NSString* s, int x, int y) {
+    NSTextField* tf = NSTextField.new;
+    tf.editable = false;
+    tf.stringValue = NSLocalizedString(s, @"");
+    tf.frame = NSMakeRect(x, y, 300, NSFont.smallSystemFontSize);
+    tf.drawsBackground = false;
+    tf.bordered = false;
+    tf.enabled = false;
+    [tf sizeToFit];
+    return tf;
 }
 
 @end

@@ -4,6 +4,26 @@
 static NSWindow* __weak sheet;
 static NSWindow* __weak window;
 
+@implementation NSApplication (SheetAdditions)
+
+- (void) beginSheet: (NSWindow*) s modalForWindow: (NSWindow*) w didEndBlock: (void (^)(NSInteger rc)) block {
+    [self beginSheet: s
+      modalForWindow: w
+       modalDelegate: self
+      didEndSelector: @selector(blockSheetDidEnd:returnCode:contextInfo:)
+         contextInfo: (Block_copy((__bridge void *)block))];
+}
+
+- (void) blockSheetDidEnd:(NSWindow*) sheet returnCode: (NSInteger)rc contextInfo: (void*) ctx {
+    void (^block)(NSInteger rc) = (__bridge void (^)(NSInteger rc))ctx;
+    assert(block != null);
+    block(rc);
+    Block_release(block);
+}
+
+@end
+
+
 @implementation ZGApp
 
 + (void) modalWindowToSheet: (NSWindow*) s for: (NSWindow*) w {
@@ -34,6 +54,7 @@ static NSWindow* __weak window;
     window = null;
 }
 
+
 static NSImage* _appIcon;
 static NSImage* _appIcon16x16;
 static NSImage* _appIcon32x32;
@@ -41,7 +62,7 @@ static NSImage* _appIcon32x32;
 static void loadIcons() {
     if (_appIcon32x32 == null) {
         // http://stackoverflow.com/questions/1359060/how-can-i-load-an-nsimage-representation-of-the-icon-for-my-application
-        _appIcon = [NSWorkspace.sharedWorkspace iconForFile: NSBundle.mainBundle.bundlePath];
+        _appIcon = [NSWorkspace.sharedWorkspace iconForFile: NSBundle.mainBundle.bundlePath].copy;
         _appIcon32x32 = _appIcon.copy;
         _appIcon32x32.size = NSMakeSize(32, 32);
         _appIcon16x16 = _appIcon.copy;

@@ -74,14 +74,15 @@ static NSString* NavsId  = @"NavId";
 }
 
 - (void) searchUsingToolbarSearchField:(id) sender {
-    NSString *s = ((NSTextField*)_activeSearchItem.view).stringValue;
-    [(NSTextField*)_activeSearchItem.view validateEditing];
+    NSTextField* tf = (NSTextField*)_activeSearchItem.view;
+    NSString *s = tf.stringValue;
+    [tf validateEditing];
     [_document search: s];
 }
 
 - (void) searchMenuFormRepresentationClicked:(id) sender {
-    [[_document.window toolbar] setDisplayMode: NSToolbarDisplayModeIconOnly];
-    [_document.window makeFirstResponder:[_activeSearchItem view]];
+    _document.window.toolbar.displayMode = NSToolbarDisplayModeIconOnly;
+    [_document.window makeFirstResponder: _activeSearchItem.view];
 }
 
 - (void) searchUsingSearchPanel:(id) sender {
@@ -119,7 +120,7 @@ static NSToolbarItem* createToolbarItem(NSString* id, NSString* label, NSString*
 
 static NSToolbarItem* createButton(NSString* id, NSString* label, NSString* tooltip, NSString* imageName, SEL sel) {
     NSToolbarItem* ti = createToolbarItem(id, label, tooltip);
-    ti.image = [NSImage imageNamed: imageName];
+    ti.image = [[NSImage imageNamed: imageName] copy];
     ti .action = sel;
     return ti;
 }
@@ -149,7 +150,7 @@ static void addControl(NSSegmentedControl* sc, int ix, NSObject* imageObj, NSStr
     c.trackingMode = NSSegmentSwitchTrackingSelectOne;
     c.controlSize = NSRegularControlSize;
     NSImage* image = [imageObj isKindOfClass: NSImage.class] ?
-                     (NSImage*)imageObj : [NSImage imageNamed: (NSString*) imageObj];
+                     (NSImage*)imageObj : [[NSImage imageNamed: (NSString*) imageObj] copy];
     assert(image != null);
     // image.size = NSMakeSize(32, 32);
     [sc setWidth: 24 forSegment: ix];
@@ -220,7 +221,7 @@ static NSMenu* createSearchMenu() {
         _searchFieldOutlet = [[NSSearchField alloc] initWithFrame:[_searchFieldOutlet frame]];
         ti = createSearch(SearchId, @"Search", @"Search Your Document", mi, _searchFieldOutlet);
         NSTextFieldCell* c = _searchFieldOutlet.cell;
-        c.placeholderString = @"To search start typing a word or phrase";
+        c.placeholderString = @"To search start typing part of a filename";
         _searchFieldOutlet.recentsAutosaveName = @"ZipegRecentSearches";
         NSSearchFieldCell* sc = _searchFieldOutlet.cell;
         sc.searchMenuTemplate = createSearchMenu();
@@ -262,9 +263,9 @@ static NSMenu* createSearchMenu() {
 
 - (void) navigationClicked: (id) sender {
     NSSegmentedControl* sc = sender;
-    int ss = (int)sc.selectedSegment;
+    // int ss = (int)sc.selectedSegment;
     sc.selectedSegment = -1;
-    trace(@"Navigation: selectedItem %@ %d", sender, ss);
+    // trace(@"Navigation: selectedItem %@ %d", sender, ss);
 }
 
 - (NSArray*) toolbarDefaultItemIdentifiers: (NSToolbar*) toolbar {

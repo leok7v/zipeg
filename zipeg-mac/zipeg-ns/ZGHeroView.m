@@ -74,10 +74,10 @@
 - (void) prepareImages {
     assert(_appIcon == null);
     _appIcon = ZGApp.appIcon32x32;
-    _leafs[0] = [NSImage imageNamed:@"leaf-0-64x64.png"];
-    _leafs[1] = [NSImage imageNamed:@"leaf-1-64x64.png"];
-    _leafs[2] = [NSImage imageNamed:@"leaf-2-64x64.png"];
-    _leafs[3] = [NSImage imageNamed:@"leaf-3-64x64.png"];
+    _leafs[0] = [[NSImage imageNamed:@"leaf-0-64x64.png"] copy];
+    _leafs[1] = [[NSImage imageNamed:@"leaf-1-64x64.png"] copy];
+    _leafs[2] = [[NSImage imageNamed:@"leaf-2-64x64.png"] copy];
+    _leafs[3] = [[NSImage imageNamed:@"leaf-3-64x64.png"] copy];
     for (int i = 0; i < countof(_images); i++) {
         int degree = arc4random_uniform(360);
         int size = 32 + arc4random_uniform(32);
