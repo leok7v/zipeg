@@ -47,7 +47,6 @@
 
 @property (weak) NSView* contentView;
 @property ZGToolbarDelegate* toolbarDelegate;
-@property NSLevelIndicator* levelIndicator;
 @property ZGDestination* destination;
 @property NSMenu *tableRowContextMenu;
 
@@ -64,6 +63,7 @@
 @property NSError* error;
 @property ZGHeroView* heroView;
 @property ZGSheet* sheet;
+@property ZGProgress* progress;
 
 - (void) openArchiveForOperation: (NSOperation*) op;
 - (void) extractItemsForOperation: (NSOperation*) op items: (NSArray*) items to: (NSURL*) url;
@@ -173,7 +173,7 @@
 }
 
 - (id) init {
-    self = [[super init] ctor];
+    self = [super.init ctor];
     return self;
 }
 
@@ -199,11 +199,10 @@
     if (self != null) {
         alloc_count(self);
         self.hasUndoManager = false;
-        _operationQueue = [NSOperationQueue new];
-        _operationQueue.maxConcurrentOperationCount = 1; // TODO: can it be 2?
+        _operationQueue = NSOperationQueue.new;
+        _operationQueue.maxConcurrentOperationCount = 1;
         _encoding = (CFStringEncoding)-1;
         _highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
-        // _highlightStyle = NSTableViewSelectionHighlightStyleRegular;
     }
     return self;
 }
@@ -222,7 +221,7 @@
 
 - (void) makeWindowControllers {
     assert(_operationQueue != null);
-    ZGWindowController* wc = [ZGWindowController new];
+    ZGWindowController* wc = ZGWindowController.new;
     [self addWindowController: wc];
     [self setupDocumentWindow: wc];
 }
@@ -232,10 +231,10 @@
         if (_highlightStyle != NSTableViewSelectionHighlightStyleSourceList) {
             _root = _archive.root;
         } else {
-            _root = [[ZGGenericItem alloc] initWithChild: _archive.root];
+            _root = [ZGGenericItem.alloc initWithChild: _archive.root];
         }
         if (_outlineViewDataSource == null) {
-            _outlineViewDataSource = [[ZGOutlineViewDataSource alloc] initWithDocument: self andRootItem: _root];
+            _outlineViewDataSource = [ZGOutlineViewDataSource.alloc initWithDocument: self andRootItem: _root];
         } else {
             [_outlineViewDelegate cancelDelayed];
             [_tableViewDelegate cancelDelayed];
@@ -252,7 +251,7 @@
             }
         }
         if (_tableViewDatatSource == null) {
-            _tableViewDatatSource = [[ZGTableViewDataSource alloc] initWithDocument: self];
+            _tableViewDatatSource = [ZGTableViewDataSource.alloc initWithDocument: self];
             _tableView.dataSource = _tableViewDatatSource;
         }
         [_tableView reloadData];
@@ -274,7 +273,7 @@
 }
 
 static NSSplitView* createSplitView(NSRect r, NSView* left, NSView* right) {
-    NSSplitView* sv = [[NSSplitView alloc] initWithFrame: r];
+    NSSplitView* sv = [NSSplitView.alloc initWithFrame: r];
     sv.vertical = true;
     sv.dividerStyle = NSSplitViewDividerStyleThin;
     sv.autoresizingMask = kSizableWH | kSizableLR;
@@ -285,7 +284,7 @@ static NSSplitView* createSplitView(NSRect r, NSView* left, NSView* right) {
 }
 
 static NSScrollView* createScrollView(NSRect r, NSView* v) {
-    NSScrollView* sv = [[NSScrollView alloc] initWithFrame: r];
+    NSScrollView* sv = [NSScrollView.alloc initWithFrame: r];
     sv.documentView = v;
     sv.hasVerticalScroller = true;
     sv.hasHorizontalScroller = true;
@@ -295,17 +294,17 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
 }
 
 static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightStyle hs) {
-    NSOutlineView* ov = [[NSOutlineView alloc] initWithFrame: r];
+    NSOutlineView* ov = [NSOutlineView.alloc initWithFrame: r];
     ov.focusRingType = NSFocusRingTypeNone;
     ov.autoresizingMask = kSizableWH;
     ov.allowsEmptySelection = true; // because of the sections (groups) collapse in Outline View
     ov.indentationMarkerFollowsCell = true;
     ov.indentationPerLevel = 16;
     ov.headerView = null;
-    NSTableColumn* tc = [NSTableColumn new];
+    NSTableColumn* tc = NSTableColumn.new;
     [ov addTableColumn: tc];
     ov.outlineTableColumn = tc;
-    ZGImageAndTextCell* c = [ZGImageAndTextCell new];
+    ZGImageAndTextCell* c = ZGImageAndTextCell.new;
     tc.dataCell = c;
     tc.minWidth = 92;
     tc.maxWidth = 3000;
@@ -320,12 +319,12 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
 }
 
 static NSTableView* createTableView(NSRect r) {
-    NSTableView* tv = [[NSTableView alloc] initWithFrame: r];
+    NSTableView* tv = [NSTableView.alloc initWithFrame: r];
     tv.focusRingType = NSFocusRingTypeNone;
-    NSTableColumn* tableColumn = [NSTableColumn new];
+    NSTableColumn* tableColumn = NSTableColumn.new;
     
     [tv addTableColumn: tableColumn];
-    tableColumn.dataCell = [ZGImageAndTextCell new];
+    tableColumn.dataCell = ZGImageAndTextCell.new;
     tableColumn.minWidth = 92;
     tableColumn.maxWidth = 3000;
     tableColumn.editable = true;
@@ -336,10 +335,10 @@ static NSTableView* createTableView(NSRect r) {
     tableColumn.sortDescriptorPrototype = sd;
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
     for (int i = 1; i < 3; i++) {
-        tableColumn = [NSTableColumn new];
+        tableColumn = NSTableColumn.new;
         [tv addTableColumn: tableColumn];
         assert(tv.tableColumns[i] == tableColumn);
-        tableColumn.dataCell = [NSTextFieldCell new];
+        tableColumn.dataCell = NSTextFieldCell.new;
         tableColumn.minWidth = 92;
         tableColumn.maxWidth = 3000;
         tableColumn.editable = true;
@@ -413,42 +412,39 @@ static NSTableView* createTableView(NSRect r) {
     tbounds.origin.y = 0;
     _outlineView = createOutlineView(tbounds, _highlightStyle);
     assert(_outlineView != null);
-    _outlineViewDelegate = [[ZGOutlineViewDelegate alloc] initWithDocument: self];;
+    _outlineViewDelegate = [ZGOutlineViewDelegate.alloc initWithDocument: self];
     _outlineView.delegate = _outlineViewDelegate;
     
     _tableView = createTableView(tbounds);
     assert(_tableView != null);
-    _tableViewDelegate = [[ZGTableViewDelegate alloc] initWithDocument: self];
+    _tableViewDelegate = [ZGTableViewDelegate.alloc initWithDocument: self];
     _tableView.delegate = _tableViewDelegate;
    
     _splitView = createSplitView(bounds,
                                  createScrollView(tbounds, _outlineView),
                                  createScrollView(tbounds, _tableView));
     assert(_splitView != null);
-    _splitViewDelegate = [[ZGSplitViewDelegate alloc] initWithDocument: self];
+    _splitViewDelegate = [ZGSplitViewDelegate.alloc initWithDocument: self];
     _splitView.delegate = _splitViewDelegate;
     _splitView.hidden = true;
-    _heroView = [[ZGHeroView alloc] initWithDocument: self andFrame: _contentView.bounds];
+    _heroView = [ZGHeroView.alloc initWithDocument: self andFrame: _contentView.bounds];
     _heroView.autoresizingMask = kSizableWH;
     _heroView.hidden = !_isNew;
 
-    _toolbarDelegate = [[ZGToolbarDelegate alloc] initWithDocument: self];
-    _toolbar = [ZGToolbar new];
+    _toolbarDelegate = [ZGToolbarDelegate.alloc initWithDocument: self];
+    _toolbar = ZGToolbar.new;
     _toolbar.delegate = _toolbarDelegate; // weak reference
     _window.toolbar = _toolbar;
  
-    _sheet = [[ZGSheet alloc] initWithWindow: controller.window];
+    _sheet = [ZGSheet.alloc initWithWindow: controller.window];
+    _progress = ZGProgress.new;
 
-    //  assert(_levelIndicator != null);
-    _levelIndicator.maxValue = 10000;
-    _levelIndicator.intValue = 5000;
-    
     NSRect dbounds = _contentView.bounds;
     dbounds.origin.y = dbounds.size.height - 30;
     dbounds.size.height = 30;
-    _destination = [[ZGDestination alloc] initWithFrame: dbounds for: self];
+    _destination = [ZGDestination.alloc initWithFrame: dbounds for: self];
     
-    NSClipView * clipView = [[_outlineView enclosingScrollView] contentView];
+    NSClipView * clipView = _outlineView.enclosingScrollView.contentView;
     clipView.postsFrameChangedNotifications = true;
     void (^sizeToContent)(NSNotification*) = ^(NSNotification* n) {
         [self sizeToContent];
@@ -462,7 +458,7 @@ static NSTableView* createTableView(NSRect r) {
             _clipViewFrameDidChangeObserver = removeObserver(_clipViewFrameDidChangeObserver);
         }
     );
-    ZGBackPanel* background = [[ZGBackPanel alloc] initWithDocument: self andFrame: _contentView.frame];
+    ZGBackPanel* background = [ZGBackPanel.alloc initWithDocument: self andFrame: _contentView.frame];
     _contentView.subviews = @[background];
     background.subviews = @[_splitView, _destination, _heroView];
     if (_isNew) {
@@ -470,7 +466,7 @@ static NSTableView* createTableView(NSRect r) {
         [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
     } else {
         _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
-        OpenArchiveOperation *operation = [[OpenArchiveOperation alloc] initWithDocument: self];
+        OpenArchiveOperation *operation = [OpenArchiveOperation.alloc initWithDocument: self];
         [_operationQueue addOperation: operation];
     }
 }
@@ -482,7 +478,7 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (void) firstResponderChanged {
-    NSResponder* fr = [[self.windowControllers[0] window] firstResponder];
+    NSResponder* fr = [self.windowControllers[0] window].firstResponder;
     // trace(@"first responder changed to %@", fr);
     if (fr == _tableView) {
         [_tableViewDelegate tableViewBecameFirstResponder: _tableView];
@@ -591,7 +587,7 @@ static NSTableView* createTableView(NSRect r) {
 - (void) openArchiveForOperation: (NSOperation*) op {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
-    NSObject<ZGItemFactory>* __block a = [ZG7zip new];
+    NSObject<ZGItemFactory>* __block a = ZG7zip.new;
     NSError* __block error;
     BOOL b = [a readFromURL: _url ofType: _typeName encoding: _encoding
                    document: self operation: (NSOperation*) op error: &error
@@ -606,14 +602,14 @@ static NSTableView* createTableView(NSRect r) {
         assert([NSThread isMainThread]);
         if (a != null) {
             _archive = a;
-            // _archive = [ZGFileSystem new];
+            // _archive = ZGFileSystem.new;
             [_window setTitle: a.root.name]; // the DnD of title icon will still show filename.part1.rar
             [self reloadData];
             _heroView.hidden = true;
             _timeToShowHeroView = 0;
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
-            [[self.windowControllers[0] window] makeFirstResponder:_outlineView];
+            [[self.windowControllers[0] window] makeFirstResponder: _outlineView];
         } else if (error != null) {
             _heroView.hidden = false;
             NSAlert* alert = [NSAlert alertWithError: error];
@@ -640,7 +636,7 @@ static NSTableView* createTableView(NSRect r) {
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
         NSString*   name = [NSString stringWithUTF8String: fromName];
-        NSAlert*   alert = [NSAlert new];
+        NSAlert*   alert = NSAlert.new;
         [alert addButtonWithTitle: @"Keep Both"];
         [alert addButtonWithTitle: @"Yes"];
         [alert addButtonWithTitle: @"No"];
@@ -648,7 +644,7 @@ static NSTableView* createTableView(NSRect r) {
         [alert setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
         [alert setInformativeText: @"Overwritten files are placed into Trash Bin"];
         alert.alertStyle = NSInformationalAlertStyle;
-        NSButton* applyToAll = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 100, 24)];
+        NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
         applyToAll.title = @"Apply to All";
         applyToAll.buttonType = NSSwitchButton;
         [applyToAll sizeToFit];
@@ -694,7 +690,7 @@ static NSTableView* createTableView(NSRect r) {
                                            otherButton: null
                              informativeTextWithFormat: @"%@", info];
         alert.alertStyle = NSInformationalAlertStyle;
-        NSTextField* password_input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 300, 24)];
+        NSTextField* password_input = [NSTextField.alloc initWithFrame:NSMakeRect(0, 0, 300, 24)];
         password_input.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin | NSViewMinXMargin;
         NSCell* cell = password_input.cell;
         cell.usesSingleLineMode = true;
@@ -736,7 +732,7 @@ static NSTableView* createTableView(NSRect r) {
         dispatch_async(dispatch_get_main_queue(), ^{
             _renameMap = null;
             if (error != null) {
-                [[NSSound soundNamed:@"error"] play];
+                [[NSSound soundNamed: @"error"] play];
                 NSAlert* alert = [NSAlert alertWithError: error];
                 [_sheet begin: alert done: ^(int rc) { } ];
             } else {
@@ -771,7 +767,7 @@ static NSTableView* createTableView(NSRect r) {
         return;
     }
     ZGDocument* __block __weak that = self;
-    SearchArchiveOperation* op = [[SearchArchiveOperation alloc]
+    SearchArchiveOperation* op = [SearchArchiveOperation.alloc
       initWithDocument: self searchString: s
         done: (^(BOOL found){
             assert([NSThread isMainThread]);
@@ -827,7 +823,7 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
 
 - (NSInteger) askOverwrite: (NSString*) name {
     assert([NSThread isMainThread]);
-    NSAlert*   alert = [NSAlert new];
+    NSAlert*   alert = NSAlert.new;
     [alert addButtonWithTitle: @"Cancel"];
     [alert addButtonWithTitle: @"No"];
     [alert addButtonWithTitle: @"Yes"];
@@ -835,7 +831,7 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
     [alert setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
     [alert setInformativeText: @"Overwritten files are placed into Trash Bin"];
     alert.alertStyle = NSInformationalAlertStyle;
-    NSButton* applyToAll = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 100, 24)];
+    NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
     applyToAll.title = @"Apply to All";
     applyToAll.buttonType = NSSwitchButton;
     [applyToAll sizeToFit];
@@ -864,7 +860,7 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
     NSString* destination = url.path;
     NSArray* items;
     if (itms == null) {  // TODO: remove false &&
-        NSMutableArray* a = [[NSMutableArray alloc] initWithCapacity: _archive.numberOfItems];
+        NSMutableArray* a = [[NSMutableArray.alloc initWithCapacity: _archive.numberOfItems];
         // these items will be in root-to-leafs order and thus do not need to be sorted
         addChildren(a, _archive.root);
         items = a;
@@ -927,6 +923,7 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
 
 - (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
     if (!dnd) {
+/*
         ZGProgress* p = ZGProgress.new;
         [self.sheet begin: p
                      done: ^(int rc) {
@@ -934,12 +931,12 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
                          [NSApp stopModal];
                      }];
         [NSApp runModalForWindow: p];
-
+*/
         NSInteger r = [self askOverwrite: @"test"];
         trace(@"%ld", r);
         [self sortOverwrite: items to: url];
     }
-    ExtractItemsOperation *operation = [[ExtractItemsOperation alloc] initWithDocument: self items: items to: url];
+    ExtractItemsOperation *operation = [ExtractItemsOperation.alloc initWithDocument: self items: items to: url];
     [_operationQueue addOperation: operation];
 }
 
@@ -947,12 +944,12 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
     // This method will be called to provide data for NSFilenamesPboardType
     trace(@"");
 /*
-    if ([type isEqualToString:NSFilenamesPboardType]) {
+    if ([type isEqualToString: NSFilenamesPboardType]) {
         int draggedRow = 1;
         NSObject<ZGItemProtocol>* it = [_tableViewDatatSource itemAtRow: draggedRow];
         NSURL *fileURL = [self extract: it to: [NSURL fileURLWithPath: NSTemporaryDirectory()]];
         if (fileURL) {
-            [pasteboard setPropertyList:@[[fileURL path]] forType:NSFilenamesPboardType];
+            pasteboard.propertyList = @[[fileURL.path forType:NSFilenamesPboardType]];
         }
     }
 */
