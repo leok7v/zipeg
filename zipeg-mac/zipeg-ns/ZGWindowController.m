@@ -60,10 +60,10 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
 - (NSRect) window:(NSWindow *) window willPositionSheet: (NSWindow*) sheet usingRect: (NSRect) rect {
     NSView* cv = (NSView*)window.contentView;
     NSView* cvs = (NSView*)cv.superview;
-    dumpViews(cvs);
+    // dumpAllViews();
     NSView* tbv = [cvs findViewByClassName: @"NSToolbarView"];
-    trace(@"willPositionSheet %@ window.frame=%@ toolbar=%@" , NSStringFromRect(rect),
-          NSStringFromRect(window.frame), NSStringFromRect(tbv.frame));
+    // trace(@"willPositionSheet %@ window.frame=%@ toolbar=%@" , NSStringFromRect(rect),
+    //                           NSStringFromRect(window.frame), NSStringFromRect(tbv.frame));
     rect.origin.y = tbv.frame.origin.y;
     return rect;
 }
