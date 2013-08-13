@@ -42,9 +42,9 @@ static void loadIcons() {
     if (_appIcon32x32 == null) {
         // http://stackoverflow.com/questions/1359060/how-can-i-load-an-nsimage-representation-of-the-icon-for-my-application
         _appIcon = [NSWorkspace.sharedWorkspace iconForFile: NSBundle.mainBundle.bundlePath];
-        _appIcon32x32 = [_appIcon copy];
+        _appIcon32x32 = _appIcon.copy;
         _appIcon32x32.size = NSMakeSize(32, 32);
-        _appIcon16x16 = [_appIcon copy];
+        _appIcon16x16 = _appIcon.copy;
         _appIcon16x16.size = NSMakeSize(16, 16);
     }
 }
