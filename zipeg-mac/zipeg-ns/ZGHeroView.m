@@ -166,7 +166,7 @@ static NSString* text = @"Drop Files Here";
 
 -(void) drawBorder: (NSRect) rect color: (NSColor*) color {
     NSRect newRect = NSMakeRect(rect.origin.x - 10, rect.origin.y - 10, rect.size.width + 20, rect.size.height + 20);
-    NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect: newRect xRadius:10 yRadius:10];
+    NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect: newRect xRadius: 10 yRadius: 10];
     path.lineWidth = 10;
     [color set];
     CGFloat dash[] = { 42.0, 8.0 };

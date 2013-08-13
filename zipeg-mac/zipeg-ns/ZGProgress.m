@@ -3,6 +3,9 @@
 
 @interface ZGProgressBar : NSView {
     float progress;
+    NSImage* _cancel_n;
+    NSImage* _cancel_p;
+    NSImage* __weak _cancel;
 }
 
 @end
@@ -14,8 +17,27 @@
     self = super.init;
     if (self != null) {
         progress = 0.5;
+        _cancel_n = [[NSImage imageNamed: @"stop-n"] copy];
+        _cancel_n.size = NSMakeSize(18, 18);
+        _cancel_p = [[NSImage imageNamed: @"stop-p"] copy];
+        _cancel_p.size = NSMakeSize(18, 18);
+        _cancel = _cancel_n;
     }
     return self;
+}
+
+- (BOOL) mouseDownCanMoveWindow {
+    return false;
+}
+
+- (void) mouseDown: (NSEvent*) e {
+    _cancel = _cancel_p;
+    self.needsDisplay = true;
+}
+
+- (void)mouseUp: (NSEvent*) e {
+    _cancel = _cancel_n;
+    self.needsDisplay = true;
 }
 
 - (void) drawRect: (NSRect) r {
@@ -35,11 +57,11 @@
         [path moveToPoint: NSMakePoint(1, y)];
         [path lineToPoint: NSMakePoint(r.size.width - 1, y)];
     }
-    NSColor* lc = [NSColor colorWithCalibratedRed: .92 green: .95 blue: .97 alpha: 1];
-    [lc set];
+    NSColor* c = [NSColor colorWithCalibratedRed: .92 green: .95 blue: .97 alpha: 1];
+    [c set];
     [path stroke];
 
-    NSColor* c = [NSColor colorWithCalibratedWhite: .90 alpha: 1];
+    c = [NSColor colorWithCalibratedWhite: .90 alpha: 1];
     [self drawBorder: NSMakeRect(0, 0, r.size.width, r.size.height - 2) color: c0 radius: 4];
     c = [NSColor colorWithCalibratedWhite: .16 alpha: 1];
     [self drawBorder: NSMakeRect(0, 1, r.size.width, r.size.height) color: c radius: 4];
@@ -49,8 +71,8 @@
     NSRect p = r;
     p.size.height = 6;
     p.origin.y += (r.size.height - p.size.height) / 2;
-    p.origin.x += 10;
-    p.size.width -= 20;
+    p.origin.x += 30;
+    p.size.width -= 60;
     c0 = [NSColor colorWithCalibratedWhite: .95 alpha: 1];
     [self drawBorder: NSMakeRect(p.origin.x, p.origin.y - 1, p.size.width, p.size.height + 1) color: c0 radius: 1];
 
@@ -68,6 +90,9 @@
     c1 = [NSColor colorWithCalibratedRed: .45 green: .52 blue: .62 alpha: 1];
     g = [NSGradient.alloc initWithStartingColor: c0 endingColor: c1];
     [g drawInRect: NSMakeRect(p.origin.x, p.origin.y, w, p.size.height / 2) angle: 90];
+
+    NSPoint pt = {p.origin.x + p.size.width + 5, p.origin.y - (_cancel.size.height - p.size.height) / 2};
+    [_cancel drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
 }
 
 - (void) drawBorder: (NSRect) rect color: (NSColor*) color radius: (CGFloat) r {

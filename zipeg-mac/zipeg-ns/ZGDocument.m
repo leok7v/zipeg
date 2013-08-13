@@ -16,6 +16,7 @@
 #import "ZGDestination.h"
 #import "ZGImages.h"
 #import "ZGApp.h"
+#import "ZGProgress.h"
 #include <sys/stat.h> // mkdir
 
 
@@ -926,6 +927,14 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
 
 - (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
     if (!dnd) {
+        ZGProgress* p = ZGProgress.new;
+        [self.sheet begin: p
+                     done: ^(int rc) {
+                         // nothing
+                         [NSApp stopModal];
+                     }];
+        [NSApp runModalForWindow: p];
+
         NSInteger r = [self askOverwrite: @"test"];
         trace(@"%ld", r);
         [self sortOverwrite: items to: url];

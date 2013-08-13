@@ -42,6 +42,8 @@
 		B39F1D271792485F00472FEF /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D291792485F00472FEF /* Credits.rtf */; };
 		B39F1D2A1792486C00472FEF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D2C1792486C00472FEF /* InfoPlist.strings */; };
 		B3B444B417BA41F4008D88A3 /* ZGProgress.m in Sources */ = {isa = PBXBuildFile; fileRef = B3B444B317BA41F4008D88A3 /* ZGProgress.m */; };
+		B3B444B717BA6088008D88A3 /* stop-n-32x32@2.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */; };
+		B3B444B817BA6088008D88A3 /* stop-p-32x32@2.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B444B617BA6088008D88A3 /* stop-p-32x32@2.png */; };
 		B3BAB36E17936C9C006C4E75 /* ZG7zip.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3BAB36D17936C9C006C4E75 /* ZG7zip.mm */; };
 		B3BAB3711793CAB0006C4E75 /* ZGNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = B3BAB3701793CAB0006C4E75 /* ZGNumber.m */; };
 		B3BECD9F179A149300B07871 /* CharDistribution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD68179A149300B07871 /* CharDistribution.cpp */; };
@@ -188,6 +190,8 @@
 		B39F1D5617924F0700472FEF /* p7z.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = p7z.hpp; path = ../p7z/p7z.hpp; sourceTree = "<group>"; };
 		B3B444B217BA41F4008D88A3 /* ZGProgress.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGProgress.h; sourceTree = "<group>"; };
 		B3B444B317BA41F4008D88A3 /* ZGProgress.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGProgress.m; sourceTree = "<group>"; };
+		B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "stop-n-32x32@2.png"; path = "Resources/stop-n-32x32@2.png"; sourceTree = "<group>"; };
+		B3B444B617BA6088008D88A3 /* stop-p-32x32@2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "stop-p-32x32@2.png"; path = "Resources/stop-p-32x32@2.png"; sourceTree = "<group>"; };
 		B3BAB36C17936C9B006C4E75 /* ZG7zip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZG7zip.h; sourceTree = "<group>"; };
 		B3BAB36D17936C9C006C4E75 /* ZG7zip.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ZG7zip.mm; sourceTree = "<group>"; };
 		B3BAB36F1793CAB0006C4E75 /* ZGNumber.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGNumber.h; sourceTree = "<group>"; };
@@ -392,6 +396,8 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */,
+				B3B444B617BA6088008D88A3 /* stop-p-32x32@2.png */,
 				B31A49BA17B2444600030DD5 /* next.png */,
 				B31A49BB17B2444600030DD5 /* play-n.png */,
 				B31A49BC17B2444600030DD5 /* play-p.png */,
@@ -587,6 +593,8 @@
 				B31A49BF17B2444600030DD5 /* play-n.png in Resources */,
 				B31A49C017B2444600030DD5 /* play-p.png in Resources */,
 				B31A49C117B2444600030DD5 /* prev.png in Resources */,
+				B3B444B717BA6088008D88A3 /* stop-n-32x32@2.png in Resources */,
+				B3B444B817BA6088008D88A3 /* stop-p-32x32@2.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

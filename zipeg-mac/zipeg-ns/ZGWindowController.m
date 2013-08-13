@@ -8,7 +8,7 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
 }
 
 - (id)init {
-    NSWindow* window = [NSWindow new];
+    NSWindow* window = NSWindow.new;
     self = [super initWithWindow: window];
     if (self) {
         alloc_count(self);
@@ -19,9 +19,9 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
         // see notes and link in AppDelegate
         window.delegate = self;
         self.shouldCloseDocument = true;
-        self.shouldCascadeWindows = true;
+        self.shouldCascadeWindows = true; // TODO: this does not work
         window.backingType = NSBackingStoreBuffered;
-        [window setOneShot: true];
+        window.oneShot = true;
         window.releasedWhenClosed = false; // this will crash close window with ARC if true
         window.styleMask = NSTitledWindowMask | NSClosableWindowMask |
                            NSMiniaturizableWindowMask | NSResizableWindowMask |
@@ -38,7 +38,6 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
             [window setFrame: NSMakeRect(0, 0, window.minSize.width, window.minSize.height) display: true animate: false];
         }
         [window addObserver:self forKeyPath:@"firstResponder" options: 0 context: null];
-
         [NSNotificationCenter.defaultCenter addObserver:self
                                                selector:@selector(windowDidBecomeKey:)
                                                    name:NSWindowDidBecomeKeyNotification
@@ -47,7 +46,8 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
                                                selector:@selector(windowDidResignKey:)
                                                    name:NSWindowDidResignKeyNotification
                                                  object:null];
-        cascadePoint = [window cascadeTopLeftFromPoint: cascadePoint]; // TODO: ??? may be it is in a wrong place. windowDidLoad is suggested place but it is not called for nib-less windows
+        cascadePoint = [window cascadeTopLeftFromPoint: cascadePoint];
+        // TODO: ??? may be it is in a wrong place. windowDidLoad is suggested place but it is not called for nib-less windows
     }
     return self;
 }
