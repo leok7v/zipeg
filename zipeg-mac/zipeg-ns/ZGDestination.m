@@ -168,7 +168,7 @@ static NSSearchPathDirectory dirs[] = {
 - (void) pathControlSizeToFit {
     [_pathControl sizeToFit];
     NSDictionary* a = @{NSFontAttributeName: _font};
-    NSString* label = [[_pathControl.URL path] lastPathComponent];
+    NSString* label = _pathControl.URL.path.lastPathComponent;
     int w = [label sizeWithAttributes: a].width;
     NSRect r = _pathControl.frame;
     if (w > r.size.width) {
@@ -295,9 +295,9 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     btn.menu = [NSMenu new];
     insertMenuItem(btn.menu, @"", null, -2);
     NSURL* u = [[NSURL alloc] initFileURLWithPath: NSHomeDirectory() isDirectory: true];
-    NSImage* image = [NSWorkspace.sharedWorkspace iconForFile: [u path]];
+    NSImage* image = [NSWorkspace.sharedWorkspace iconForFile: u.path];
     image.size = NSMakeSize(16, 16);
-    insertMenuItem(btn.menu, [[u path] lastPathComponent], image, -1); // Home
+    insertMenuItem(btn.menu, u.path.lastPathComponent, image, -1); // Home
     for (int i = 0; i < countof(dirs); i++) {
         NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[i], NSAllDomainsMask, true);
         if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
@@ -305,7 +305,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
             NSString* p = [u path];
             NSImage *image = [NSWorkspace.sharedWorkspace iconForFile: p];
             image.size = NSMakeSize(16, 16);
-            insertMenuItem(btn.menu, [p lastPathComponent], image, i);
+            insertMenuItem(btn.menu, p.lastPathComponent, image, i);
         }
     }
     insertMenuItem(btn.menu, @"next to archive", ZGApp.appIcon16x16, countof(dirs));
@@ -347,7 +347,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     if (url == _nextToArchiveURL) {
         url = _document.isNew ? null : _document.url;
         if (url != null) {
-            url = [[NSURL alloc] initFileURLWithPath: [[url path] stringByDeletingLastPathComponent]];
+            url = [[NSURL alloc] initFileURLWithPath: url.path.stringByDeletingLastPathComponent];
         }
     }
     if (url != null) {
@@ -417,7 +417,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
 
 - (BOOL) pathControl: (NSPathControl*) pathControl acceptDrop: (id <NSDraggingInfo>)info {
     BOOL result = false;
-    NSURL *URL = [NSURL URLFromPasteboard:[info draggingPasteboard]];
+    NSURL *URL = [NSURL URLFromPasteboard: info.draggingPasteboard];
     if (URL != null) {
         _pathControl.URL = URL;
         result = true;
