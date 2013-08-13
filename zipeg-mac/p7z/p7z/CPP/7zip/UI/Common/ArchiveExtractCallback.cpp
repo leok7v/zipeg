@@ -299,7 +299,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
           return S_OK;
         case NExtract::NOverwriteMode::kAskBefore:
         {
-          Int32 overwiteResult;
+          Int32 overwiteResult = -1;
           RINOK(_extractCallback2->AskOverwrite(
               fullProcessedPath, &fileInfo.MTime, &fileInfo.Size, fullPath,
               _fi.MTimeDefined ? &_fi.MTime : NULL,
