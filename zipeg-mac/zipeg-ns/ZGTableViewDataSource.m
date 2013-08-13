@@ -116,12 +116,12 @@
     while (i != NSNotFound) {
         NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
         [items addObject: it];
-        NSURL* u =[NSURL fileURLWithPath:[[d path] stringByAppendingPathComponent: it.name] isDirectory: false];
-        // trace(@"fileURL=%@", u);
-        [urls addObject: [[u path] lastPathComponent]];
+        NSURL* u =[NSURL fileURLWithPath:[d.path stringByAppendingPathComponent: it.name] isDirectory: false];
+        trace(@"it=%@ fileURL=%@", it.description, u);
+        [urls addObject: u.path.lastPathComponent];
         i = [rowIndexes indexGreaterThanIndex: i];
     }
-    [_document extract: items to: d];
+    [_document extract: items to: d DnD: true];
     return urls;
 }
 

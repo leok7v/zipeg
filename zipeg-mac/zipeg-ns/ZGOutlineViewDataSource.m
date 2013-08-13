@@ -124,9 +124,9 @@
     NSMutableArray *urls  = [[NSMutableArray alloc] initWithCapacity: items.count];
     for (NSObject<ZGItemProtocol>* it in items) {
         NSURL* u =[NSURL fileURLWithPath:[[d path] stringByAppendingPathComponent: it.name] isDirectory: false];
-        [urls addObject: [[u path] lastPathComponent]];
+        [urls addObject: u.path.lastPathComponent];
     }
-    [_document extract: items to: d];
+    [_document extract: items to: d DnD: true];
     return urls;
 }
 

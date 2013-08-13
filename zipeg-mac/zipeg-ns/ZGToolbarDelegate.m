@@ -311,9 +311,11 @@ static NSMenu* createSearchMenu() {
 	enable = _document.isEntireFileLoaded;
     } else if ([[ti itemIdentifier] isEqual: ViewsId]) {
 	enable = _document.isEntireFileLoaded && !_document.outlineView.isHidden;
+        NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
         if (!enable) {
-            NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
             sc.selectedSegment = -1;
+        } else {
+            sc.selectedSegment = _document.viewStyle;
         }
     } else if ([[ti itemIdentifier] isEqual: ExtractId]) {
 	enable = _document.root != null && _document.isEntireFileLoaded;
@@ -332,7 +334,7 @@ static NSMenu* createSearchMenu() {
 
 - (NSArray*) control: (NSControl*) control textView:(NSTextView*) textView completions: (NSArray*) words
  forPartialWordRange: (NSRange) charRange indexOfSelectedItem: (int*) index {
-    NSMutableArray* keywords = [_searchFieldOutlet.recentSearches mutableCopy];
+    NSMutableArray* keywords = _searchFieldOutlet.recentSearches.mutableCopy;
     // TODO: it might be cool to communicate with archive to get suggestions and add them on the fly.
     // may be yes, may be no - leave it for the future development.
     // [keywords addObjectsFromArray: @[@"Hello", @"World"]];
@@ -384,41 +386,40 @@ static NSMenu* createSearchMenu() {
     }
 }
 
-- (BOOL)panel: (id)sender shouldEnableURL:(NSURL*) url {
+- (BOOL) panel: (id) sender shouldEnableURL: (NSURL*) url {
     if (![url isFileReferenceURL]) {
         return false;
     }
     BOOL d = false;
     NSString* path = url.path;
-    BOOL b = [[NSFileManager defaultManager] fileExistsAtPath: path isDirectory: &d] && d;
+    BOOL b = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d] && d;
     trace("shouldEnableURL: %@ %d %d", path, d, b);
     return b;
 }
 
-- (BOOL) panel: (id)sender validateURL:(NSURL*) url error:(NSError **)outError {
+- (BOOL) panel: (id) sender validateURL: (NSURL*) url error: (NSError**) outError {
     if (![url isFileReferenceURL]) {
         return false;
     }
     BOOL d = false;
     NSString* path = url.path;
-    BOOL b = [[NSFileManager defaultManager] fileExistsAtPath: path isDirectory: &d] && d;
+    BOOL b = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d] && d;
     trace("validateURL: %@ %d %d", path, d, b);
     return b;
 }
 
-- (void)panel:(id)sender didChangeToDirectoryURL:(NSURL*) url {
+- (void)panel:(id) sender didChangeToDirectoryURL:(NSURL*) url {
 }
 
-- (NSString*) panel:(id)sender userEnteredFilename:(NSString*) filename confirmed:(BOOL)okFlag {
+- (NSString*) panel: (id) sender userEnteredFilename: (NSString*) filename confirmed: (BOOL) ok {
     [NSApp endSheet: _document.window];
     return filename;
 }
 
-- (void)panel:(id)sender willExpand:(BOOL)expanding {
+- (void) panel:(id)sender willExpand: (BOOL) expanding {
 }
 
-- (void)panelSelectionDidChange:(id)sender {
-    
+- (void) panelSelectionDidChange:(id)sender {
 }
 
 @end
