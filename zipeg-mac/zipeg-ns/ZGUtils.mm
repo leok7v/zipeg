@@ -5,6 +5,17 @@
 #import "ZGItemProtocol.h"
 #import "ZGDocument.h"
 
+id addObserver(NSString* n, id o, void(^b)(NSNotification*)) {
+    assert(n != null && b != null);
+    return [NSNotificationCenter.defaultCenter addObserverForName: n object: o
+                                                            queue: NSOperationQueue.mainQueue usingBlock: b];
+}
+
+id removeObserver(id observer) {
+    [NSNotificationCenter.defaultCenter removeObserver: observer];
+    return null;
+}
+
 uint64_t timestamp(const char* label) {
     return NanoTime::timestamp(label);
 }
@@ -126,17 +137,6 @@ static void _dumpViews(NSView* v, int level) {
 
 void dumpViews(NSView* v) {
     _dumpViews(v, 0);
-}
-
-id addObserver(NSString* n, id o, void(^b)(NSNotification*)) {
-    assert(n != null && b != null);
-    return [NSNotificationCenter.defaultCenter addObserverForName: n object: o
-            queue: NSOperationQueue.mainQueue usingBlock: b];
-}
-
-id removeObserver(id observer) {
-    [NSNotificationCenter.defaultCenter removeObserver: observer];
-    return null;
 }
 
 void dumpAllViews() {
