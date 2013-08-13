@@ -2,10 +2,6 @@
 
 @interface ZG7zipItem : NSObject<ZGItemProtocol>
 
-@property NSString *name;
-@property (nonatomic, readonly) NSMutableArray *children;
-@property (weak) NSObject<ZGItemProtocol> *parent;
-
 @end
 
 

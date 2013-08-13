@@ -1,4 +1,5 @@
 #import "ZG7zip.h"
+#import "ZGGenericItem.h"
 #import "ZGNumber.h"
 #import "ZGErrors.h"
 #import "ZGDate.h"
@@ -17,7 +18,7 @@ struct D;
 @interface ZG7zip() {
     NSString* _filterText;
     NSString* _archiveFilePath;
-    NSObject<ZGItemProtocol> *_root;
+    ZG7zipItem* _root;
     D* d;
     P7Z* a;
     NSString* _error;
@@ -50,12 +51,15 @@ struct D;
 - (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                       to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;
 - (const wchar_t*) password;
+- (NSString*) pathname: (int) index;
 
 @end
 
 static NSMutableArray *leafNode;
 
 @interface ZG7zipItem() {
+    NSString* _name;
+    NSObject<ZGItemProtocol>* __weak _parent;
     NSMutableArray *_children;
     NSMutableArray *_folderChildren;
     ZG7zip __weak *_archive;
@@ -66,18 +70,23 @@ static NSMutableArray *leafNode;
 
 @implementation ZG7zipItem
 
+@synthesize name = _name;
+@synthesize parent = _parent;
+
 + (void) initialize {
     assert(self == [ZG7zipItem class]);
     leafNode = [[NSMutableArray alloc] init];
 }
 
-- (id) initWith:(ZG7zip*) archive name: (NSString*) name index: (int) i isLeaf: (BOOL) leaf {
+- (id) initWith:(ZG7zip*) archive name: (NSString*) n index: (int) i isLeaf: (BOOL) leaf {
     self = [super init];
     if (self != null) {
         alloc_count(self);
         _archive = archive;
-        _name = name;
+        _name = n;
         _index = i;
+        // it is important that empty leaf folders do have empty _children arrays;
+        // this allows to distinguish them from files
         _children = leaf ? leafNode : [NSMutableArray new];
     }
     return self;
@@ -88,29 +97,24 @@ static NSMutableArray *leafNode;
     //  trace(@"");
 }
 
-- (void)addChild:(NSObject<ZGItemProtocol>*)child {
+- (void) addChild:(NSObject<ZGItemProtocol>*)child {
     assert(_children != leafNode);
     assert(child != self);
     [_children addObject:child];
 }
 
-- (NSString*)fullPath {
+- (NSString*) fullPath {
     assert(_parent != null); // cannot take fullPath of root
-    NSUInteger n = _name.length;
-    NSObject<ZGItemProtocol>* p = _parent;
-    while (p != null) {
-        n += p.name.length + 1;
-        p = p.parent;
+    if (_index >= 0) {
+        return [_archive pathname: _index];
+    } else {
+        return [ZGGenericItem fullPath: self];
     }
-    NSMutableString *s = [NSMutableString stringWithCapacity:n];
-    [s appendString:_name];
-    p = _parent;
-    while (p.name.length > 0) {
-        [s insertString:p.name atIndex:0];
-        p = p.parent;
-    }
-    //trace("fullPath=%@", s);
-    return s;
+}
+
+- (NSString*) description {
+    NSString* d = [NSString stringWithFormat: @"%@ index=%d name=%@ %@", [super description], _index, _name, self.fullPath];
+    return d;
 }
 
 static NSMutableArray* filterOut(ZG7zip* a, NSMutableArray* childs) {
@@ -135,7 +139,7 @@ static NSMutableArray* filterOut(ZG7zip* a, NSMutableArray* childs) {
     } else {
         NSMutableArray* c = [NSMutableArray arrayWithCapacity:n];
         for (ZG7zipItem* it in childs) {
-            if (it->_index < 0 || ![a isFilteredOut:it->_index]) {
+            if (it->_index < 0 || ![a isFilteredOut: it->_index]) {
                 [c addObject:it];
             }
         }
@@ -160,7 +164,7 @@ static NSMutableArray* filterOut(ZG7zip* a, NSMutableArray* childs) {
     } else if (_folderChildren == nil) {
         int n = 0;
         for (ZG7zipItem* it in _children) {
-            n += [_archive isFolder:it->_index];
+            n += [_archive isFolder: it->_index];
         }
         if (n == 0) {
             _folderChildren = leafNode;
@@ -218,7 +222,6 @@ struct D : P7Z::Delegate {
     self = [super init];
     if (self != null) {
         alloc_count(self);
-        _root = [[ZG7zipItem alloc] initWith:self name:@"" index:-1 isLeaf:false];
         d = new D(self);
         if (d) {
             a = new P7Z(d);
@@ -234,6 +237,10 @@ struct D : P7Z::Delegate {
         [self close];
     }
     dealloc_count(self);
+}
+
+- (NSString*) pathname: (int) i {
+    return _paths[i];
 }
 
 - (void) close {
@@ -276,7 +283,7 @@ static bool ignore(const NSString* pathname) {
             } else {
                 isFolder = [pathname hasSuffix:@"/"];
             }
-            ZG7zipItem* item = [[ZG7zipItem alloc] initWith:self name:[pathname lastPathComponent] index:i isLeaf:!isFolder];
+            ZG7zipItem* item = [[ZG7zipItem alloc] initWith: self name: pathname.lastPathComponent index: i isLeaf: !isFolder];
             if (item == null) {
                 return false;
             }
@@ -302,7 +309,7 @@ static bool ignore(const NSString* pathname) {
         assert(item != null);
         // NSArray* components = [pathname pathComponents]; might be faster
         for (;;) {
-            NSString* parentComponents =  [pathname stringByDeletingLastPathComponent];
+            NSString* parentComponents =  pathname.stringByDeletingLastPathComponent;
             if (item.parent != null) {
                 break;
             }
@@ -316,7 +323,7 @@ static bool ignore(const NSString* pathname) {
             // create "synthetic" parent for such folder with -1 as an index
             if (p == null) {
                 trace(@"creating synthetic parent for %@", parentComponents);
-                NSString* last = [parentComponents lastPathComponent];
+                NSString* last = parentComponents.lastPathComponent;
                 p = [[ZG7zipItem alloc] initWith: self name: last index: -1 isLeaf: false];
                 if (p == null) {
                     return false;
@@ -326,8 +333,8 @@ static bool ignore(const NSString* pathname) {
             }
             item.parent = p;
             // trace(@"0x%016llX.parent:=0x%016llX %@ -> %@", (unsigned long long)item, (unsigned long long)p, p.name, item.name);
-            if (p->_index >= 0 && (item->_index < 0 || [_isFolders isSet:item->_index])) {
-                [_isLeafFolders setBit:p->_index to:false];
+            if (p->_index >= 0 && (item->_index < 0 || [_isFolders isSet: item->_index])) {
+                [_isLeafFolders setBit: p->_index to: false];
             }
             item = p;
             pathname = parentComponents;
@@ -356,7 +363,7 @@ static bool ignore(const NSString* pathname) {
             continue;
         }
         ZG7zipItem* item = _items[pathname];
-        if (item->_index >= 0 && [_isFolders isSet:item->_index]) {
+        if (item->_index >= 0 && [_isFolders isSet: item->_index]) {
             continue;
         }
         [item.children sortUsingComparator: c];
@@ -427,10 +434,10 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
                 if ([pathname rangeOfString:_filterText options:opts].location != NSNotFound) {
                     while (it) {
                         if (it->_index >= 0) {
-                            if (![isFilteredOut isSet:it->_index]) {
+                            if (![isFilteredOut isSet: it->_index]) {
                                 break;
                             } else {
-                                [isFilteredOut setBit:it->_index to:false];
+                                [isFilteredOut setBit: it->_index to: false];
                                 in--;
                             }
                         }
@@ -571,7 +578,7 @@ static CFStringEncoding CHARDET_ENCODING_to_CFStringEncoding(const char* encodin
     return CHARDET_ENCODING_to_CFStringEncoding(encoding);
 }
 
-static NSString* starifyMultipartRAR(NSString* s) {
+static NSString* starifyMultipartFilename(NSString* s) {
     NSString* ext = [s pathExtension];
     // http://stackoverflow.com/questions/14928298/garbage-in-the-end-of-nsstring-on-xcode-after-stringbyreplacingcharactersinra
     if ([ext equalsIgnoreCase: @"rar"] || [ext equalsIgnoreCase: @"zip"] || [ext equalsIgnoreCase: @"7z"]) {
@@ -600,8 +607,6 @@ static NSString* starifyMultipartRAR(NSString* s) {
     assert(doc != null);
     assert(op != null);
     document = doc;
-//    [self password]; // TODO: messes up everything... :(
-    // trace(@"absoluteURL=%@ type=%@ enc=%ld", url, type, enc);
     if (self == null || a == null || d == null) {
         *err = ZGOutOfMemoryError();
         return false;
@@ -619,12 +624,14 @@ static NSString* starifyMultipartRAR(NSString* s) {
     // "/Users/leo/code/zipeg/test/attachment(password-123456).rar"
     // _archiveFilePath = @"/Users/leo/tmp/test-xp-zip 試験.zip";
     // _archiveFilePath = @"/Users/leo/tmp/Райкин-birthday-export-2013-06-24.zip";
+    NSString* rn = starifyMultipartFilename(_archiveFilePath.lastPathComponent);
+    _root = [[ZG7zipItem alloc] initWith: self name: rn index: -1 isLeaf: false];
+    assert(self.root != null);
     bool b = false;
     @try {
         _op = op;
         b = a->open([_archiveFilePath UTF8String]) && a->getNumberOfItems() > 0 && a->getNumberOfProperties() > 0;
         if (b) {
-            _root.name = starifyMultipartRAR([_archiveFilePath lastPathComponent]);
             items = a->getNumberOfItems();
             properties = a->getNumberOfProperties();
             _isFilteredOut = [ZGBitset bitsetWithCapacity:items];
@@ -647,11 +654,6 @@ static NSString* starifyMultipartRAR(NSString* s) {
                 if (b) {
                     b = [self buildTree];
                 }
-/*
-                mkdir("/tmp/foo", 0700);
-                int ix[] = {1};
-                a->extract(ix, -1, "/tmp/foo");
- */
             }
         } else {
             if (_error == null && _password != null) {
@@ -922,13 +924,17 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     bool b = a->extract(indices, n, [path UTF8String], prefixComponents, pc);
     delete[] indices;
     delete[] prefixComponents;
-    if (_error == null) {
+    if (_error == null && !b && self.isCancelled) {
+        NSError* err = [NSError errorWithDomain: NSCocoaErrorDomain code: NSUserCancelledError
+                                 userInfo: @{ NSFilePathErrorKey: _archiveFilePath }];
+        block(err);
+    } else if (_error == null) {
         block(b ? null : ZGOutOfMemoryError()); // TODO: ZGInternalError()
     } else {
-        NSMutableDictionary *details = [NSMutableDictionary dictionary];
-        [details setValue: _error forKey: NSLocalizedDescriptionKey];
-        [details setValue: url forKey: NSURLErrorKey];
-        NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile userInfo: details];
+        // TODO: better diag
+        NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile
+                        userInfo: @{ NSFilePathErrorKey: _archiveFilePath,
+                                     NSLocalizedDescriptionKey: _error }];
         block(err);
     }
 }
