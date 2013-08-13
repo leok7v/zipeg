@@ -16,6 +16,8 @@
 #import "ZGDestination.h"
 #import "ZGImages.h"
 #import "ZGApp.h"
+#include <sys/stat.h> // mkdir
+
 
 /* // TODO: (this is for layout debug and diagnostics) remove me
 @interface ZGRedBox : NSView @end
@@ -39,6 +41,7 @@
     NSTableViewSelectionHighlightStyle _highlightStyle;
     BOOL _isNew;
     uint64_t _timeToShowHeroView;
+    NSMutableDictionary* _renameMap;
 }
 
 @property (weak) NSView* contentView;
@@ -80,18 +83,7 @@
     }
     return self;
 }
-/*
-- (void) drawRect: (NSRect) r {
-    if (_document.url == null) { // new document
-        [NSGraphicsContext.currentContext saveGraphicsState];
-        CGContextRef gc = (CGContextRef) [NSGraphicsContext.currentContext graphicsPort];
-        CGContextSetAlpha(gc, 0.5);
-        [NSGraphicsContext.currentContext restoreGraphicsState];
-    } else {
-        [super drawRect: r];
-    }
-}
-*/
+
 @end
 
 
@@ -128,7 +120,7 @@
 - (id) initWithDocument: (ZGDocument*) doc searchString: (NSString*) s done: (void(^)(BOOL)) block {
     self = [super init];
     _document = doc;
-    _search = [s copy];
+    _search = s.copy;
     _block = block;
     return self;
 }
@@ -173,6 +165,7 @@
 // http://stackoverflow.com/questions/16347569/why-arent-the-init-and-windowcontrollerdidloadnib-method-called-when-a-autosav
 // and
 // http://developer.apple.com/library/mac/#documentation/DataManagement/Conceptual/DocBasedAppProgrammingGuideForOSX/StandardBehaviors/StandardBehaviors.html#//apple_ref/doc/uid/TP40011179-CH5-SW8
+
 
 + (BOOL) canConcurrentlyReadDocumentsOfType: (NSString*) typeName {
     return false; // otherwise all -init will be called in concurently on multipe threads on session restore
@@ -221,7 +214,6 @@
 
 - (void) dealloc {
     trace(@"");
-    trace_allocs();
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver:self];
     [ZGApp deferedTraceAllocs];
@@ -264,7 +256,12 @@
         }
         [_tableView reloadData];
         dispatch_async(dispatch_get_current_queue(), ^{
-            [_outlineViewDelegate expandAll];
+            if (![_archive.root isKindOfClass: ZGFileSystemItem.class]) {
+                [_outlineViewDelegate expandAll];
+            } else { // do not expandAll for the filesystem - will take forever
+                [_outlineView expandItem: _root expandChildren: false];
+                [_outlineView expandItem: _root.children[0] expandChildren: false];
+            }
             [_outlineViewDelegate selectFirsFile];
             if (_archive.numberOfFolders > 0) {
                 [self sizeToContent];
@@ -367,6 +364,10 @@ static NSTableView* createTableView(NSRect r) {
     [tv setDraggingSourceOperationMask : NSDragOperationGeneric forLocal: YES];
     [tv registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
     return tv;
+}
+
+- (int) viewStyle {
+    return _highlightStyle == NSTableViewSelectionHighlightStyleSourceList ? 0 : 1;
 }
 
 - (void) setViewStyle: (int) s {
@@ -626,7 +627,7 @@ static NSTableView* createTableView(NSRect r) {
 - (void) extract {
     mkdir("/tmp/foo", 0700);
     NSURL* u = [NSURL fileURLWithPath: @"/tmp/foo" isDirectory: true];
-    [self extract: null to: u];
+    [self extract: null to: u DnD: false];
 }
 
 - (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
@@ -654,7 +655,7 @@ static NSTableView* createTableView(NSRect r) {
         [self.sheet begin: alert
                      done: ^(int rc) {
                          if (rc == NSAlertFirstButtonReturn) {
-                             answer = applyToAll.state == NSOffState ? kAutoRename : kAutoRenameAll;
+                             answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
                          } else if (rc == NSAlertSecondButtonReturn) {
                              answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
                          } else if (rc == NSAlertThirdButtonReturn) {
@@ -682,8 +683,8 @@ static NSTableView* createTableView(NSRect r) {
         // during archive opening and during extraction. Do not show hero
         // screen at the second scenario.
         _heroView.hidden = _archive != null;
-        NSString* prompt = [NSString stringWithFormat:@"Please enter archive password for archive\n«%@»",
-                            [_url.path lastPathComponent]];
+        NSString* prompt = [NSString stringWithFormat: @"Please enter archive password for archive\n«%@»",
+                            _url.path.lastPathComponent];
         NSString* info = @"Password has been set by the person who created this archive file.\n"
           "If you don`t know the password please contact that person.";
         NSAlert* alert = [NSAlert alertWithMessageText: prompt
@@ -698,7 +699,6 @@ static NSTableView* createTableView(NSRect r) {
         cell.usesSingleLineMode = true;
         password_input.stringValue = @"";
         alert.accessoryView = password_input;
-        dumpAllViews();
         [self.sheet begin: alert
             done: ^(int rc) {
                 if (rc == NSAlertDefaultReturn) {
@@ -733,6 +733,7 @@ static NSTableView* createTableView(NSRect r) {
     assert(_archive != null);
     [_archive extract: items to: url operation: op done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
+            _renameMap = null;
             if (error != null) {
                 [[NSSound soundNamed:@"error"] play];
                 NSAlert* alert = [NSAlert alertWithError: error];
@@ -810,7 +811,125 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (void) extract: (NSArray*) items to: (NSURL*) url {
+static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
+    for (NSObject<ZGItemProtocol>* c in r.children) {
+        if (c.children != null) { // see note about empty children[] in ZG7zipItem -initWith
+            [items addObject: c];
+        }
+    }
+    for (NSObject<ZGItemProtocol>* c in r.children) {
+        if (r.children != null) {
+            addChildren(items, c);
+        }
+    }
+}
+
+- (NSInteger) askOverwrite: (NSString*) name {
+    assert([NSThread isMainThread]);
+    NSAlert*   alert = [NSAlert new];
+    [alert addButtonWithTitle: @"Cancel"];
+    [alert addButtonWithTitle: @"No"];
+    [alert addButtonWithTitle: @"Yes"];
+    [alert addButtonWithTitle: @"Keep Both"];
+    [alert setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
+    [alert setInformativeText: @"Overwritten files are placed into Trash Bin"];
+    alert.alertStyle = NSInformationalAlertStyle;
+    NSButton* applyToAll = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 100, 24)];
+    applyToAll.title = @"Apply to All";
+    applyToAll.buttonType = NSSwitchButton;
+    [applyToAll sizeToFit];
+    alert.accessoryView = applyToAll;
+    [self.sheet begin: alert
+                 done: ^(int rc) {
+                     NSInteger answer = -1;
+                     if (rc == NSAlertFirstButtonReturn) {
+                         answer = kCancel;
+                     } else if (rc == NSAlertSecondButtonReturn) {
+                         answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
+                     } else if (rc == NSAlertThirdButtonReturn) {
+                         answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
+                     } else {
+                         answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
+                     }
+                     alert.accessoryView = null;
+                     assert(answer != -1);
+                     [NSApp stopModalWithCode: answer];
+                 }];
+    return  [NSApp runModalForWindow: alert.window];
+}
+
+- (BOOL) sortOverwrite: (NSArray*) itms to: (NSURL*) url {
+#if 0
+    NSString* destination = url.path;
+    NSArray* items;
+    if (itms == null) {  // TODO: remove false &&
+        NSMutableArray* a = [[NSMutableArray alloc] initWithCapacity: _archive.numberOfItems];
+        // these items will be in root-to-leafs order and thus do not need to be sorted
+        addChildren(a, _archive.root);
+        items = a;
+    } else {
+        items = [itms sortedArrayUsingComparator: ^NSComparisonResult(id a, id b) {
+            NSObject<ZGItemProtocol>* first = a;
+            NSObject<ZGItemProtocol>* second = b;
+            NSString* f = first.fullPath;
+            NSString* s = second.fullPath;
+            return [f compare: s];
+        }];
+    }
+    _renameMap = [NSMutableDictionary dictionaryWithCapacity: _archive.numberOfFolders * 2];
+    trace("SORTED");
+    NSFileManager* fm = NSFileManager.defaultManager;
+    NSNumber* answer = null;
+    for (NSObject<ZGItemProtocol>* it in items) {
+        trace(@"%@", it.fullPath);
+        if (it.children != null) { // directory (possibly empty)
+            NSString* fp = it.fullPath;
+            NSArray* pc = fp.pathComponents;
+            trace(@"%@", pc);
+            NSString* df = destination;
+            for (int i = 0; i < pc.count; i++) {
+                df = [df stringByAppendingPathComponent: pc[i]];
+                NSArray* sa = [pc subarrayWithRange: NSMakeRange(0, i + 1)];
+                NSString* f = [NSString pathWithComponents: sa];
+                NSNumber* v = _renameMap[f];
+                if (v != null) {
+                    trace(@"%@=%d", df, v.intValue);
+                    break;
+                }
+                trace(@"%@", df);
+                BOOL all = isEqual(AnswerKeepBothToAll, answer) ||
+                           isEqual(AnswerNoToAll, answer) ||
+                           isEqual(AnswerKeepBothToAll, answer);
+                if (all) {
+                    _renameMap[df] = answer;
+                } else {
+                    BOOL d = false;
+                    BOOL b = [fm fileExistsAtPath: df isDirectory: &d] && d;
+                    if (b) {
+                        answer = [self askOverwrite: df];
+                        if (isEqual(answer, AnswerCancel)) {
+                            return false;
+                        }
+                        _renameMap[df] = answer;
+                    } else {
+                        // directory does not exist but it can appear later
+                        // to be on the safe side we will autorename it if this is the case
+                        _renameMap[df] = AnswerAskAgainIfExists;
+                    }
+                }
+            }
+        }
+    }
+#endif
+    return true;
+}
+
+- (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
+    if (!dnd) {
+        NSInteger r = [self askOverwrite: @"test"];
+        trace(@"%ld", r);
+        [self sortOverwrite: items to: url];
+    }
     ExtractItemsOperation *operation = [[ExtractItemsOperation alloc] initWithDocument: self items: items to: url];
     [_operationQueue addOperation: operation];
 }

@@ -6,9 +6,9 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
     kYesToAll = 1,  // IFileExtractCallback.h NOverwriteAnswer::EEnum consts
     kNo = 2,        // and p7z.hpp
     kNoToAll = 3,
-    kAutoRename = 4, // just one file
+    kKeepBoth = 4, // just one file
     kCancel = 5,
-    kAutoRenameAll = 6
+    kKeepBothToAll = 6,
 };
 
 
@@ -26,8 +26,9 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
 @property (nonatomic, readonly) NSObject<ZGItemProtocol>* root;
 
 - (void) extract;
-- (void) extract: (NSArray*) items to: (NSURL*) url;
+- (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd;
 - (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) i open: (BOOL) o;
+- (int) viewStyle;
 - (void) setViewStyle: (int) s;
 - (void) search: (NSString*) s;
 - (void) firstResponderChanged;
