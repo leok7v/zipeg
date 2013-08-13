@@ -1,0 +1,3 @@
+@interface ZGProgress : NSWindow
+
+@end
