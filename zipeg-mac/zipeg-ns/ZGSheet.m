@@ -47,6 +47,8 @@
     if (![s isKindOfClass: NSAlert.class]) {
         [NSApp endSheet: s];
         [s orderOut: null];
+    } else {
+        [NSApp endSheet: ((NSAlert*)s).window];
     }
     _sheetWindow = null;
     if (_done != null) {
