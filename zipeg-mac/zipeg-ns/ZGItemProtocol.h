@@ -1,7 +1,8 @@
 @class ZGDocument;
 
 @protocol ZGItemProtocol
-@property NSString *name;
+@property (nonatomic, readonly) NSString* name;
+@property (nonatomic, readonly) NSString* fullPath;
 @property (nonatomic, readonly) NSMutableArray *children; // nil for leaf
 @property (nonatomic, readonly) NSMutableArray *folderChildren; // nil for leaf
 @property (weak) NSObject<ZGItemProtocol> *parent;

@@ -1,10 +1,11 @@
 #import "ZGGenericItem.h"
 
 @implementation ZGGenericItem {
-    NSObject<ZGItemProtocol>* __weak _parent;
+    NSString* _name;
+    NSString* _fullpath;
     NSMutableArray* _children;
     NSMutableArray* _folderChildren;
-    NSString* _name;
+    NSObject<ZGItemProtocol>* __weak _parent;
 }
 @synthesize name = _name;
 @synthesize children = _children;
@@ -39,5 +40,34 @@
 + (id) itemWithItem: (NSObject<ZGItemProtocol>*) i {
     return [[ZGGenericItem alloc] initWithItem: i];
 }
+
++ (NSString*) fullPath: (NSObject<ZGItemProtocol>*) i {
+    NSUInteger n = i.name.length;
+    NSObject<ZGItemProtocol>* p = i.parent;
+    while (p != null) {
+        n += p.name.length + 1;
+        p = p.parent;
+    }
+    NSMutableString *s = [NSMutableString stringWithCapacity: n];
+    [s appendString: i.name];
+    p = i.parent;
+    while (p != null) {
+        if (![p.name isEqualToString: @"/"]) {
+            [s insertString: @"/" atIndex: 0];
+        }
+        [s insertString:p.name atIndex: 0];
+        p = p.parent;
+    }
+    trace("fullPath=%@", s);
+    return s;
+}
+
+- (NSString*) fullPath {
+    if (_fullpath == null) {
+        _fullpath = [ZGGenericItem fullPath: self];
+    }
+    return _fullpath;
+}
+
 
 @end

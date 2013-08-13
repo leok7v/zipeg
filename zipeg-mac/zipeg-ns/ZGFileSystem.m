@@ -1,13 +1,19 @@
 #import "ZGFileSystem.h"
+#import "ZGGenericItem.h"
 
 static NSMutableArray *leafNode;
 
 static ZGFileSystemItem *g_root;
 
 @implementation ZGFileSystemItem {
+    NSString* _name;
+    NSString* _fullpath;
+    NSObject<ZGItemProtocol>* __weak _parent;
     NSMutableArray *_children;
     NSMutableArray *_folderChildren;
 }
+@synthesize name = _name;
+@synthesize parent = _parent;
 
 + (void)initialize {
     assert(self == [ZGFileSystemItem class]);
@@ -17,7 +23,7 @@ static ZGFileSystemItem *g_root;
 - (id)initWithPath:(NSString *)path parent:(ZGFileSystemItem *)parentItem {
     self = [super init];
     if (self) {
-        _name = [[path lastPathComponent] copy];
+        _name = path.lastPathComponent.copy;
         _parent = parentItem;
     }
     return self;
@@ -27,39 +33,25 @@ static ZGFileSystemItem *g_root;
 //    trace(@"");
 }
 
-- (NSString*)fullPath {
-    NSUInteger n = _name.length;
-    NSObject<ZGItemProtocol>* p = _parent;
-    while (p != null) {
-        n += p.name.length + 1;
-        p = p.parent;
+- (NSString*) fullPath {
+    if (_fullpath == null) {
+        _fullpath = [ZGGenericItem fullPath: self];
     }
-    NSMutableString *s = [NSMutableString stringWithCapacity:n];
-    [s appendString:_name];
-    p = _parent;
-    while (p != null) {
-        if (![p.name isEqualToString:@"/"]) {
-            [s insertString:@"/" atIndex:0];
-        }
-        [s insertString:p.name atIndex:0];
-        p = p.parent;
-    }
-    //trace("fullPath=%@", s);
-    return s;
+    return _fullpath;
 }
 
 - (NSMutableArray *)children { // Creates, caches, and returns the array of children. Loads children incrementally
     if (_children == leafNode) {
         return null;
     } else if (_children == nil) {
-        NSFileManager *fileManager = [NSFileManager defaultManager];
-        NSString *fullPath = [self fullPath];
+        NSFileManager* fm = NSFileManager.defaultManager;
+        NSString* fp = self.fullPath;
         BOOL isDir, valid;
-        valid = [fileManager fileExistsAtPath:fullPath isDirectory:&isDir];
+        valid = [fm fileExistsAtPath: fp isDirectory:&isDir];
         if (valid && isDir) {
-            trace(@"fullPath %@", fullPath);
-            NSArray *array = [fileManager contentsOfDirectoryAtPath:fullPath error:nil];
-            NSUInteger numChildren = [array count];
+            trace(@"fullPath %@", fp);
+            NSArray* array = [fm contentsOfDirectoryAtPath:fp error:nil];
+            NSUInteger numChildren = array.count;
             _children = [[NSMutableArray alloc] initWithCapacity:numChildren];
             for (int i = 0; i < numChildren; i++) {
                 NSObject<ZGItemProtocol> *newChild = [[ZGFileSystemItem alloc] initWithPath: array[i] parent:self];
@@ -79,16 +71,16 @@ static ZGFileSystemItem *g_root;
     } else if (_folderChildren != nil) {
         return _folderChildren;
     } else {
-        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSFileManager *fileManager = NSFileManager.defaultManager;
         _folderChildren = [NSMutableArray new];
         if (_children == null) {
             _children = self.children;
         }
         if (_children != leafNode) {
             for (NSObject<ZGItemProtocol>* child in _children) {
-                NSString *fullPath = [self fullPath];
+                NSString* fp = self.fullPath;
                 BOOL isDir, valid;
-                valid = [fileManager fileExistsAtPath:fullPath isDirectory:&isDir];
+                valid = [fileManager fileExistsAtPath: fp isDirectory: &isDir];
                 if (valid && isDir) {
                     [_folderChildren addObject:(ZGFileSystemItem*)child];
                 }
