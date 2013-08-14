@@ -76,8 +76,10 @@ static NSMutableArray *leafNode;
 @synthesize parent = _parent;
 
 + (void) initialize {
-    assert(self == [ZG7zipItem class]);
-    leafNode = [[NSMutableArray alloc] init];
+    assert(self == ZG7zipItem.class);
+    leafNode = [NSMutableArray new];
+    trace("leafNode=%@", leafNode);
+    assert(leafNode != null);
 }
 
 - (id) initWith:(ZG7zip*) archive name: (NSString*) n index: (int) i isLeaf: (BOOL) leaf {
@@ -99,7 +101,7 @@ static NSMutableArray *leafNode;
     //  trace(@"");
 }
 
-- (void) addChild:(NSObject<ZGItemProtocol>*)child {
+- (void) addChild: (NSObject<ZGItemProtocol>*) child {
     assert(_children != leafNode);
     assert(child != self);
     [_children addObject:child];
@@ -214,7 +216,7 @@ struct D : P7Z::Delegate {
         return true;
     }
     virtual bool itemProperties(P7Z* a, int itemIndex, const char* names[], P7Z::Value* values[]) {
-        return [delegate itemProperties:itemIndex names:names values:values];
+        return [delegate itemProperties: itemIndex names: names values: values];
     }
 };
 
@@ -275,6 +277,7 @@ static void reportProgress(ZG7zip* z, int ix) {
 
 
 - (BOOL) buildTree {
+    ZGNumber* _TRUE = [ZGNumber.alloc initWithBool: true];
     _numberOfFolders = 0;
     for (int i = 0; i < _numberOfItems; i++) {
         if (i % 100 == 0 && self.isCancelled) {
@@ -288,15 +291,23 @@ static void reportProgress(ZG7zip* z, int ix) {
         if (_items[pathname] == null) {
             BOOL isFolder = false;
             NSObject* isDir = _props[i][@"IsDir"];
-            if ([isDir isKindOfClass:[ZGNumber class]] && ((ZGNumber*)isDir).kind == kB) {
+            if ([isDir isKindOfClass: ZGNumber.class] && ((ZGNumber*)isDir).kind == kB) {
                 isFolder = ((NSNumber*)isDir).boolValue;
             } else {
                 isFolder = [pathname hasSuffix:@"/"];
             }
-            ZG7zipItem* item = [[ZG7zipItem alloc] initWith: self name: pathname.lastPathComponent index: i isLeaf: !isFolder];
+            if (isDir == null && !isFolder) {
+                isFolder = a->isDir(i);
+            }
+            if (isDir == null && isFolder) {
+                _props[i][@"IsDir"] = _TRUE;
+            }
+            ZG7zipItem* item = [ZG7zipItem.alloc initWith: self name: pathname.lastPathComponent index: i isLeaf: !isFolder];
             if (item == null) {
                 return false;
             }
+            NSObject* attr = _props[i][@"Attrib"];
+            trace("%@ attr=%@ isDir=%@ isFolder=%d", item.name, attr, isDir, isFolder);
             if (isFolder) {
                 [_isFolders setBit:i to:true];
                 [_isLeafFolders setBit:i to:true];
@@ -326,7 +337,7 @@ static void reportProgress(ZG7zip* z, int ix) {
             }
             if ([parentComponents length] == 0) {
                 item.parent = _root;
-                // trace(@"0x%016llX.parent:=0x%016llX (root) %@ -> %@", (unsigned long long)item, (unsigned long long)_root, _root.name, item.name);
+                trace(@"0x%016llX.parent:=0x%016llX (root) %@ -> %@", (unsigned long long)item, (unsigned long long)_root, _root.name, item.name);
                 break;
             }
             ZG7zipItem* p = _items[parentComponents];
@@ -335,7 +346,7 @@ static void reportProgress(ZG7zip* z, int ix) {
             if (p == null) {
                 trace(@"creating synthetic parent for %@", parentComponents);
                 NSString* last = parentComponents.lastPathComponent;
-                p = [[ZG7zipItem alloc] initWith: self name: last index: -1 isLeaf: false];
+                p = [ZG7zipItem.alloc initWith: self name: last index: -1 isLeaf: false];
                 if (p == null) {
                     return false;
                 }
@@ -343,7 +354,7 @@ static void reportProgress(ZG7zip* z, int ix) {
                 _numberOfFolders++;
             }
             item.parent = p;
-            // trace(@"0x%016llX.parent:=0x%016llX %@ -> %@", (unsigned long long)item, (unsigned long long)p, p.name, item.name);
+            trace(@"0x%016llX.parent:=0x%016llX %@ -> %@", (unsigned long long)item, (unsigned long long)p, p.name, item.name);
             if (p->_index >= 0 && (item->_index < 0 || [_isFolders isSet: item->_index])) {
                 [_isLeafFolders setBit: p->_index to: false];
             }
@@ -361,7 +372,7 @@ static void reportProgress(ZG7zip* z, int ix) {
         ZG7zipItem* item = _items[pathname];
         assert(item != null);
         assert(item.parent != null);
-        [(ZG7zipItem*)item.parent addChild:item];
+        [(ZG7zipItem*)item.parent addChild: item];
         i++;
         reportProgress(self, i);
     }
@@ -499,6 +510,9 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 }
 
 - (BOOL) isCancelled {
+    if (_op != null && _op.isCancelled) {
+        trace(@"cancelled");
+    }
     return _op != null ? _op.isCancelled : false;
 }
 
@@ -643,7 +657,7 @@ static NSString* starifyMultipartFilename(NSString* s) {
     // _archiveFilePath = @"/Users/leo/tmp/test-xp-zip 試験.zip";
     // _archiveFilePath = @"/Users/leo/tmp/Райкин-birthday-export-2013-06-24.zip";
     NSString* rn = starifyMultipartFilename(_archiveFilePath.lastPathComponent);
-    _root = [[ZG7zipItem alloc] initWith: self name: rn index: -1 isLeaf: false];
+    _root = [ZG7zipItem.alloc initWith: self name: rn index: -1 isLeaf: false];
     assert(self.root != null);
     bool b = false;
     @try {
@@ -694,6 +708,7 @@ static NSString* starifyMultipartFilename(NSString* s) {
         }
     } @finally {
         _op = null; // we must release the opearation here
+        // [NSThread sleepForTimeInterval: 5]; // seconds
         done(self, *err);
     }
     return b;
@@ -818,6 +833,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 
 - (const wchar_t*) password {
     if (!_password || _password.length == 0) {
+        // [NSThread sleepForTimeInterval: 5]; // seconds
         _password = [document askOnBackgroundThreadForPassword];
     }
     if (_password) {

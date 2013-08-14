@@ -600,6 +600,17 @@ bool P7Z::iterateAllItems() {
     return iterateItems(0, getNumberOfItems());
 }
 
+bool P7Z::isDir(int i) {
+    NCOM::CPropVariant prop;
+    CArchiveLink &link = *(CArchiveLink*)archiveLink;
+    const CArc &arc = link.Arcs.Back();
+    if (arc.Archive->GetProperty(i, kpidIsDir, &prop) != S_OK) {
+        return false;
+    } else {
+        return prop.vt == VT_BOOL && prop.boolVal != VARIANT_FALSE;
+    }
+}
+
 bool P7Z::iterateItems(int from, int to) { // [from..to[
     try {
         int n = to - from;
@@ -638,7 +649,7 @@ bool P7Z::iterateItems(int from, int to) { // [from..to[
                         b = false;
                     } else if (prop.vt != VT_EMPTY && prop.vt != VT_NULL) {
                         propToValue(props[j], prop, s[j], values[j]);
-                        // printf("[%d] props[%d] propId=%d v.kind=%d v.num=0x%016llu v.str=0x%016llu\n", i, j, props[j], values[j]->kind, values[j]->num, values[j]->str);
+                        printf("[%d] props[%d] %s propId=%d v.kind=%d v.num=0x%016llu v.str=0x%016llu\n", i, j, names[j], props[j], values[j]->kind, values[j]->num, values[j]->str);
                         assert(values[j]->kind != 0);
                     } else {
                         // prop.vt == VT_EMPTY and there is nothing I can do about it.

@@ -48,6 +48,7 @@ public:
     int  getNumberOfProperties();
     bool iterateAllItems();
     bool iterateItems(int fromInclusively, int toExclusively);
+    bool isDir(int itemIndex); // some archives (e.g. 7zip) do not have IsDir property
     const char* getItemName(int itemIndex);
     void setCodePage(int cp);
     int getCodePage() { return codePage; }
