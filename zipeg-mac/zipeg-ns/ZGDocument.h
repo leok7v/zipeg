@@ -25,6 +25,7 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
 @property (nonatomic, readonly, weak) NSWindow* window;
 @property (nonatomic, readonly) NSObject<ZGItemProtocol>* root;
 
+- (void) cancel; // cancel current operation if any, otherwise nop
 - (void) extract;
 - (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd;
 - (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) i open: (BOOL) o;

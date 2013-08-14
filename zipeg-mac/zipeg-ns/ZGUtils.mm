@@ -111,7 +111,6 @@ static void _dumpViews(NSView* v, int level) {
     for (int i = 0; i < level; i++) {
         indent = [indent stringByAppendingString:@"    "];
     }
-    // TODO: NSTextField.cell (other cells?)
     NSString* delegate = debugDescription(v, @selector(delegate));
     NSString* dataSource = debugDescription(v, @selector(dataSource));
     NSString* dataCell = debugDescription(v, @selector(dataCell));
@@ -119,7 +118,13 @@ static void _dumpViews(NSView* v, int level) {
           [@" frame=" stringByAppendingString: NSStringFromRect(v.frame)] : @"";
     NSString* bounds = [v respondsToSelector: @selector(bounds)] ?
           [@" bounds=" stringByAppendingString: NSStringFromRect(v.bounds)] : @"";
-    NSLog(@"%@%@%@%@ %@ %@ %@", indent, v.class, frame, bounds, delegate, dataSource, dataCell);
+    NSString* tag = [v respondsToSelector: @selector(tag)] ?
+          [@" tag=" stringByAppendingFormat: @"%ld", [v tag]] : @"";
+    NSString* t = call(v, @selector(title));
+    NSString* title = t != null ? [@" title=" stringByAppendingString: t] : @"";
+    NSString* sv = [v isKindOfClass: NSTextField.class] ? [(id)v stringValue] : null;
+    NSString* text = sv != null ? [@" stringValue=" stringByAppendingString: sv] : @"";
+    NSLog(@"%@%@%@%@ %@%@%@%@%@%@", indent, v.class, frame, bounds, delegate, dataSource, dataCell, tag, title, text);
     id subviews = getBySelector(v, @selector(subviews));
     if (subviews != null) {
         for (id s in subviews) {
@@ -140,16 +145,13 @@ void dumpViews(NSView* v) {
 }
 
 void dumpAllViews() {
-    NSDocumentController* dc = NSDocumentController.sharedDocumentController;
-    NSArray* docs = dc.documents;
-    if (docs != null && docs.count > 0) {
-        for (int i = 0; i < docs.count; i++) {
-            ZGDocument* doc = (ZGDocument*)docs[i];
-            if (doc.window != null) {
-                NSLog(@"%@", doc.displayName);
-                dumpViews([doc.window.contentView superview]);
-                NSLog(@"");
-            }
+    NSArray* docs = ((NSDocumentController*)NSDocumentController.sharedDocumentController).documents;
+    for (int i = 0; i < docs.count; i++) {
+        ZGDocument* doc = (ZGDocument*)docs[i];
+        if (doc.window != null) {
+            NSLog(@"%@", doc.displayName);
+            dumpViews([doc.window.contentView superview]);
+            NSLog(@"");
         }
     }
 }
@@ -242,6 +244,18 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 
 - (NSView*) findViewByClassName: (NSString*) className {
     return [NSView findView: self byClassName: className];
+}
+
+- (void) setOrigin: (NSPoint) pt {
+    NSRect f = self.frame;
+    f.origin = pt;
+    self.frame = f;
+}
+
+- (void) setSize: (NSSize) sz {
+    NSRect f = self.frame;
+    f.size = sz;
+    self.frame = f;
 }
 
 @end

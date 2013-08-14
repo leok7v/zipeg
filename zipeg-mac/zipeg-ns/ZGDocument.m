@@ -10,13 +10,12 @@
 #import "ZGTableViewDataSource.h"
 #import "ZGSplitViewDelegate.h"
 #import "ZGWindowController.h"
-#import "ZGSheet.h"
 #import "ZGToolbar.h"
 #import "ZGToolbarDelegate.h"
 #import "ZGDestination.h"
 #import "ZGImages.h"
 #import "ZGApp.h"
-#import "ZGProgress.h"
+#import "ZGAlerts.h"
 #include <sys/stat.h> // mkdir
 
 
@@ -61,8 +60,7 @@
 @property NSString* typeName;
 @property NSError* error;
 @property ZGHeroView* heroView;
-@property ZGSheet* sheet;
-@property ZGProgress* progress;
+@property ZGAlerts* alerts;
 
 - (void) openArchiveForOperation: (NSOperation*) op;
 - (void) extractItemsForOperation: (NSOperation*) op items: (NSArray*) items to: (NSURL*) url;
@@ -435,8 +433,7 @@ static NSTableView* createTableView(NSRect r) {
     _toolbar.delegate = _toolbarDelegate; // weak reference
     _window.toolbar = _toolbar;
  
-    _sheet = [ZGSheet.alloc initWithWindow: controller.window];
-    _progress = ZGProgress.new;
+    _alerts = [ZGAlerts.alloc initWithDocument: self];
 
     NSRect dbounds = _contentView.bounds;
     dbounds.origin.y = dbounds.size.height - 30;
@@ -464,7 +461,14 @@ static NSTableView* createTableView(NSRect r) {
         // TODO: how to make document modified without this hack?
         [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
     } else {
-        [_progress begin: _window];
+        const double delayInSeconds = 1.0;
+        const dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+            if (_archive == null) {
+                [self beginAlerts];
+            }
+        });
+        _alerts.topText = [NSString stringWithFormat: @"Opening: %@", _url.path.lastPathComponent];
         _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
         OpenArchiveOperation *operation = [OpenArchiveOperation.alloc initWithDocument: self];
         [_operationQueue addOperation: operation];
@@ -475,6 +479,18 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (void) windowDidResignKey {
+}
+
+- (void) beginAlerts {
+    if (!_alerts.isOpen) {
+        [_alerts begin: _window];
+    }
+}
+
+- (void) endAlerts {
+    if (_alerts.isOpen) {
+        [_alerts end];
+    }
 }
 
 - (void) firstResponderChanged {
@@ -503,9 +519,16 @@ static NSTableView* createTableView(NSRect r) {
     return _isNew;
 }
 
+- (void) cancel {
+    [_operationQueue cancelAllOperations];
+    [_operationQueue waitUntilAllOperationsAreFinished];
+}
+
 - (BOOL) documentCanClose {
+    trace(@"");
+    // TODO: dismiss progress if nobody is waiting in communication queue
     if (_operationQueue.operations.count > 0) {
-        // TODO: replace with Presenter and dismiss when all ops are done
+        /* TODO: do it via alerts
         NSBeginInformationalAlertSheet(
             @"Operation is in Progress", @"OK", @"Cancel", @"",
             _window,
@@ -513,14 +536,14 @@ static NSTableView* createTableView(NSRect r) {
             @selector(closeDidEnd:returnCode:contextInfo:),
             null, // didDismissSelector
             null, @"");  // could be: @"fmt=%@", @"args"
+        */
     }
     return _operationQueue.operations.count == 0;
 }
 
 - (void) closeDidEnd: (NSWindow*)sheet returnCode: (int) rc contextInfo:(void *) contextInfo {
     if (rc == NSAlertDefaultReturn) {
-        [_operationQueue cancelAllOperations];
-        [_operationQueue waitUntilAllOperationsAreFinished];
+        [self cancel];
         [_window performClose: self];
     } else {
         // trace(@"Quit - canceled");
@@ -532,8 +555,7 @@ static NSTableView* createTableView(NSRect r) {
     if (_splitView != null) {
         NSTableColumn* tc = _tableView.tableColumns[0];
         assert(tc != null);
-        [_operationQueue cancelAllOperations];
-        [_operationQueue waitUntilAllOperationsAreFinished];
+        [self cancel];
         _splitView.subviews = @[];
         [_splitView removeFromSuperview];
         _splitView = null;
@@ -597,11 +619,10 @@ static NSTableView* createTableView(NSRect r) {
     if (!b) {
         a = null;
     }
-    ZGDocument* __block __weak that = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
-        [_progress end];
         if (a != null) {
+            [self endAlerts];
             _archive = a;
             // _archive = ZGFileSystem.new;
             [_window setTitle: a.root.name]; // the DnD of title icon will still show filename.part1.rar
@@ -613,10 +634,15 @@ static NSTableView* createTableView(NSRect r) {
             [[self.windowControllers[0] window] makeFirstResponder: _outlineView];
         } else if (error != null) {
             _heroView.hidden = false;
-            NSAlert* alert = [NSAlert alertWithError: error];
-            [that.sheet begin: alert done: ^(int rc) { [_window performClose: null]; } ];
+            NSAlert* a = [NSAlert alertWithError: error];
+            [self beginAlerts];
+            [_alerts alert: a done: ^(NSInteger rc){
+                [self endAlerts];
+                [_window performClose: _window];
+            }];
         } else {
             // error == null - aborted by user
+            [self endAlerts];
             [_window performClose: _window];
         }
     });
@@ -636,34 +662,34 @@ static NSTableView* createTableView(NSRect r) {
     int __block answer;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
-        NSString*   name = [NSString stringWithUTF8String: fromName];
-        NSAlert*   alert = NSAlert.new;
-        [alert addButtonWithTitle: @"Keep Both"];
-        [alert addButtonWithTitle: @"Yes"];
-        [alert addButtonWithTitle: @"No"];
-        [alert addButtonWithTitle: @"Cancel"];
-        [alert setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
-        [alert setInformativeText: @"Overwritten files are placed into Trash Bin"];
-        alert.alertStyle = NSInformationalAlertStyle;
+        NSString* name = [NSString stringWithUTF8String: fromName];
+        NSAlert* a = NSAlert.new;
+        [a addButtonWithTitle: @"Keep Both"];
+        [a addButtonWithTitle: @"Yes"];
+        [a addButtonWithTitle: @"No"];
+        [a addButtonWithTitle: @"Cancel"];
+        [a setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
+        [a setInformativeText: @"Overwritten files are placed into Trash Bin"];
+        a.alertStyle = NSInformationalAlertStyle;
         NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
         applyToAll.title = @"Apply to All";
         applyToAll.buttonType = NSSwitchButton;
         [applyToAll sizeToFit];
-        alert.accessoryView = applyToAll;
-        [self.sheet begin: alert
-                     done: ^(int rc) {
-                         if (rc == NSAlertFirstButtonReturn) {
-                             answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
-                         } else if (rc == NSAlertSecondButtonReturn) {
-                             answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
-                         } else if (rc == NSAlertThirdButtonReturn) {
-                             answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
-                         } else {
-                             answer = kCancel;
-                         }
-                         alert.accessoryView = null;
-                         dispatch_semaphore_signal(sema);
-                     }];
+        a.accessoryView = applyToAll;
+        [self beginAlerts];
+        [_alerts alert: a done: ^(NSInteger rc){
+            if (rc == NSAlertFirstButtonReturn) {
+                answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
+            } else if (rc == NSAlertSecondButtonReturn) {
+                answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
+            } else if (rc == NSAlertThirdButtonReturn) {
+                answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
+            } else {
+                answer = kCancel;
+            }
+            a.accessoryView = null;
+            dispatch_semaphore_signal(sema);
+        }];
     });
     dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
     dispatch_release(sema);
@@ -685,29 +711,29 @@ static NSTableView* createTableView(NSRect r) {
                             _url.path.lastPathComponent];
         NSString* info = @"Password has been set by the person who created this archive file.\n"
           "If you don`t know the password please contact that person.";
-        NSAlert* alert = [NSAlert alertWithMessageText: prompt
-                                         defaultButton: @"OK"
-                                       alternateButton: @"Cancel"
-                                           otherButton: null
-                             informativeTextWithFormat: @"%@", info];
-        alert.alertStyle = NSInformationalAlertStyle;
+        NSAlert* a = [NSAlert alertWithMessageText: prompt
+                                     defaultButton: @"OK"
+                                   alternateButton: @"Cancel"
+                                       otherButton: null
+                         informativeTextWithFormat: @"%@", info];
+        a.alertStyle = NSInformationalAlertStyle;
         NSTextField* password_input = [NSTextField.alloc initWithFrame: NSMakeRect(0, 0, 300, 24)];
         password_input.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin | NSViewMinXMargin;
         NSCell* cell = password_input.cell;
         cell.usesSingleLineMode = true;
         password_input.stringValue = @"";
-        alert.accessoryView = password_input;
-        [self.sheet begin: alert
-            done: ^(int rc) {
-                if (rc == NSAlertDefaultReturn) {
-                    [password_input validateEditing];
-                    password = password_input.stringValue;
-                } else {
-                    password = @"";
-                }
-                alert.accessoryView = null;
-                dispatch_semaphore_signal(sema);
-            }];
+        a.accessoryView = password_input;
+        [self beginAlerts];
+        [_alerts alert: a done: ^(NSInteger rc){
+            if (rc == NSAlertDefaultReturn) {
+                [password_input validateEditing];
+                password = password_input.stringValue;
+            } else {
+                password = @"";
+            }
+            a.accessoryView = null;
+            dispatch_semaphore_signal(sema);
+        }];
     });
     dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
     dispatch_release(sema);
@@ -733,13 +759,15 @@ static NSTableView* createTableView(NSRect r) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (error != null) {
                 [[NSSound soundNamed: @"error"] play];
-                NSAlert* alert = [NSAlert alertWithError: error];
-                [_sheet begin: alert done: ^(int rc) { } ];
+                NSAlert* a = [NSAlert alertWithError: error];
+                [self beginAlerts];
+                [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
             } else {
                 // http://cocoathings.blogspot.com/2013/01/playing-system-sounds.html
                 // see: /System/Library/Sounds
                 // Basso Blow Bottle Frog Funk Glass Hero Morse Ping Pop Purr Sosumi Submarine Tink
                 [[NSSound soundNamed:@"done"] play];
+                [self endAlerts];
             }
         });
     }];
@@ -752,7 +780,7 @@ static NSTableView* createTableView(NSRect r) {
     [self checkTimeToShowHeroView];
     if (0 <= pos && pos <= total) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            _progress.progress = (double)pos / (double)total;
+            _alerts.progress = (double)pos / (double)total;
         });
     }
     return true; // TODO: may read the state of cancel button even from background thread
@@ -765,7 +793,7 @@ static NSTableView* createTableView(NSRect r) {
     [self checkTimeToShowHeroView];
     if (0 <= fileno && fileno <= totalNumberOfFiles) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            _progress.progress = (double)fileno / (double)totalNumberOfFiles;
+            _alerts.progress = (double)fileno / (double)totalNumberOfFiles;
         });
     }
     return true; // TODO: may read the state of cancel button even from background thread
@@ -831,111 +859,45 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
     }
 }
 
+/*
 - (NSInteger) askOverwrite: (NSString*) name {
     assert([NSThread isMainThread]);
-    NSAlert*   alert = NSAlert.new;
-    [alert addButtonWithTitle: @"Cancel"];
-    [alert addButtonWithTitle: @"No"];
-    [alert addButtonWithTitle: @"Yes"];
-    [alert addButtonWithTitle: @"Keep Both"];
-    [alert setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
-    [alert setInformativeText: @"Overwritten files are placed into Trash Bin"];
-    alert.alertStyle = NSInformationalAlertStyle;
+    NSAlert* a = NSAlert.new;
+    [a addButtonWithTitle: @"Cancel"];
+    [a addButtonWithTitle: @"No"];
+    [a addButtonWithTitle: @"Yes"];
+    [a addButtonWithTitle: @"Keep Both"];
+    [a setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
+    [a setInformativeText: @"Overwritten files are placed into Trash Bin"];
+    a.alertStyle = NSInformationalAlertStyle;
     NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
     applyToAll.title = @"Apply to All";
     applyToAll.buttonType = NSSwitchButton;
     [applyToAll sizeToFit];
-    alert.accessoryView = applyToAll;
-    [self.sheet begin: alert
-                 done: ^(int rc) {
-                     NSInteger answer = -1;
-                     if (rc == NSAlertFirstButtonReturn) {
-                         answer = kCancel;
-                     } else if (rc == NSAlertSecondButtonReturn) {
-                         answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
-                     } else if (rc == NSAlertThirdButtonReturn) {
-                         answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
-                     } else {
-                         answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
-                     }
-                     alert.accessoryView = null;
-                     assert(answer != -1);
-                     [NSApp stopModalWithCode: answer];
-                 }];
-    return  [NSApp runModalForWindow: alert.window];
-}
-
-- (BOOL) sortOverwrite: (NSArray*) itms to: (NSURL*) url {
-#if 0
-    NSString* destination = url.path;
-    NSArray* items;
-    if (itms == null) {  // TODO: remove false &&
-        NSMutableArray* a = [[NSMutableArray.alloc initWithCapacity: _archive.numberOfItems];
-        // these items will be in root-to-leafs order and thus do not need to be sorted
-        addChildren(a, _archive.root);
-        items = a;
-    } else {
-        items = [itms sortedArrayUsingComparator: ^NSComparisonResult(id a, id b) {
-            NSObject<ZGItemProtocol>* first = a;
-            NSObject<ZGItemProtocol>* second = b;
-            NSString* f = first.fullPath;
-            NSString* s = second.fullPath;
-            return [f compare: s];
-        }];
-    }
-    _renameMap = [NSMutableDictionary dictionaryWithCapacity: _archive.numberOfFolders * 2];
-    trace("SORTED");
-    NSFileManager* fm = NSFileManager.defaultManager;
-    NSNumber* answer = null;
-    for (NSObject<ZGItemProtocol>* it in items) {
-        trace(@"%@", it.fullPath);
-        if (it.children != null) { // directory (possibly empty)
-            NSString* fp = it.fullPath;
-            NSArray* pc = fp.pathComponents;
-            trace(@"%@", pc);
-            NSString* df = destination;
-            for (int i = 0; i < pc.count; i++) {
-                df = [df stringByAppendingPathComponent: pc[i]];
-                NSArray* sa = [pc subarrayWithRange: NSMakeRange(0, i + 1)];
-                NSString* f = [NSString pathWithComponents: sa];
-                NSNumber* v = _renameMap[f];
-                if (v != null) {
-                    trace(@"%@=%d", df, v.intValue);
-                    break;
-                }
-                trace(@"%@", df);
-                BOOL all = isEqual(AnswerKeepBothToAll, answer) ||
-                           isEqual(AnswerNoToAll, answer) ||
-                           isEqual(AnswerKeepBothToAll, answer);
-                if (all) {
-                    _renameMap[df] = answer;
-                } else {
-                    BOOL d = false;
-                    BOOL b = [fm fileExistsAtPath: df isDirectory: &d] && d;
-                    if (b) {
-                        answer = [self askOverwrite: df];
-                        if (isEqual(answer, AnswerCancel)) {
-                            return false;
-                        }
-                        _renameMap[df] = answer;
-                    } else {
-                        // directory does not exist but it can appear later
-                        // to be on the safe side we will autorename it if this is the case
-                        _renameMap[df] = AnswerAskAgainIfExists;
-                    }
-                }
-            }
+    a.accessoryView = applyToAll;
+    [self beginAlerts];
+    [_alerts alert: a done: ^(NSInteger rc){
+        NSInteger answer = -1;
+        if (rc == NSAlertFirstButtonReturn) {
+            answer = kCancel;
+        } else if (rc == NSAlertSecondButtonReturn) {
+            answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
+        } else if (rc == NSAlertThirdButtonReturn) {
+            answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
+        } else {
+            answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
         }
-    }
-#endif
-    return true;
+        a.accessoryView = null;
+        assert(answer != -1);
+        [NSApp stopModalWithCode: answer];
+    }];
+    BAD!!! -> return [NSApp runModalForWindow: a.window];
 }
+*/
 
 - (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
     if (!dnd) {
-        NSInteger r = [self askOverwrite: @"test"];
-        console(@"%ld", r);
-        [self sortOverwrite: items to: url];
+        // TODO: may need to "Keep Both" for the dest directory of archive
     }
     ExtractItemsOperation *operation = [ExtractItemsOperation.alloc initWithDocument: self items: items to: url];
     [_operationQueue addOperation: operation];

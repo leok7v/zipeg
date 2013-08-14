@@ -40,7 +40,7 @@
 
 // http://stackoverflow.com/questions/7564290/why-isnt-applicationshouldopenuntitledfile-being-called
 
-- (BOOL) applicationShouldOpenUntitledFile:(NSApplication *) sender {
+- (BOOL) applicationShouldOpenUntitledFile: (NSApplication*) app {
     // http://www.cocoawithlove.com/2008/05/open-previous-document-on-application.html
     // On startup, when asked to open an untitled file, open the last opened file instead
     if (!_applicationHasStarted) {
@@ -49,19 +49,14 @@
     return true;
 }
 
-- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-/*
- NSTerminateCancel = 0,
- NSTerminateNow = 1,
- NSTerminateLater = 2
- */
+- (NSApplicationTerminateReply) applicationShouldTerminate: (NSApplication*) app {
     NSDocumentController* dc = NSDocumentController.sharedDocumentController;
     NSArray* docs = dc.documents;
     if (docs != null && docs.count > 0) {
         for (int i = 0; i < docs.count; i++) {
             ZGDocument* doc = (ZGDocument*)docs[i];
             if (![doc documentCanClose]) {
-                return NSTerminateCancel;
+                return NSTerminateCancel; // NSTerminateLater (?)
             }
         }
     }

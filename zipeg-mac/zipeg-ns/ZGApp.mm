@@ -26,6 +26,18 @@ static NSWindow* __weak window;
 
 @implementation ZGApp
 
+- (id) init {
+    self = [super init];
+    if (self != null) {
+        alloc_count(self);
+    }
+    return self;
+}
+
+- (void) dealloc {
+     dealloc_count(self);
+}
+
 + (void) modalWindowToSheet: (NSWindow*) s for: (NSWindow*) w {
     sheet = s;
     window = w;
@@ -105,13 +117,21 @@ static void loadIcons() {
     }
 }
 
-- (void) terminate: (id) sender {
-    NSLog(@"\nZGApp -terminate\n");
-    _appIcon = null;
-    _appIcon16x16 = null;
-    _appIcon32x32 = null;
+- (void) exit  {
     trace_allocs();
-    [super terminate: sender];
+}
+
+- (void) terminate: (id) sender {
+    if (self.delegate) {
+        NSApplicationTerminateReply r = [self.delegate applicationShouldTerminate: self];
+        if (r == NSTerminateNow) {
+            [self exit];
+            [super terminate: sender];
+        }
+    } else {
+        [self exit];
+        [super terminate: sender];
+    }
 }
 
 + (void) deferedTraceAllocs  {

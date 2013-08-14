@@ -57,7 +57,7 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
     dealloc_count(self);
 }
 
-- (NSRect) window:(NSWindow *) window willPositionSheet: (NSWindow*) sheet usingRect: (NSRect) rect {
+- (NSRect) window: (NSWindow*) window willPositionSheet: (NSWindow*) sheet usingRect: (NSRect) rect {
     NSView* cv = (NSView*)window.contentView;
     NSView* cvs = (NSView*)cv.superview;
     // dumpAllViews();
@@ -78,20 +78,20 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
     return [d windowDidResignKey];
 }
 
-- (BOOL)windowShouldClose:(id)sender {
+- (BOOL) windowShouldClose: (id) sender {
     assert([self.document isKindOfClass: ZGDocument.class]);
     ZGDocument* d = self.document;
     return [d documentCanClose];
 }
 
-- (void)windowWillClose:(NSNotification *)notification {
+- (void) windowWillClose: (NSNotification*) notification {
     [self.window removeObserver:self forKeyPath:@"firstResponder"];
 //  dumpAllViews();
 }
 
-- (void)observeValueForKeyPath: (NSString*) keyPath ofObject: (id) o change: (NSDictionary*)change context: (void*) context {
+- (void) observeValueForKeyPath: (NSString*) kp ofObject: (id) o change: (NSDictionary*) ch context: (void*) ctx {
 /*
-    NSKeyValueChange kind = ((NSNumber*)change[NSKeyValueChangeKindKey]).unsignedIntegerValue;
+    NSKeyValueChange kind = ((NSNumber*)ch[NSKeyValueChangeKindKey]).unsignedIntegerValue;
     NSString* action;
     switch (kind) {
         case NSKeyValueChangeSetting: action = @"set"; break;
@@ -101,14 +101,14 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
         default: action = [NSString stringWithFormat:@"%ld ???", kind]; break;
     }
     
-    id newKey = change[NSKeyValueChangeNewKey];
-    id oldKey = change[NSKeyValueChangeOldKey];
-    NSIndexSet* indexes = change[NSKeyValueChangeIndexesKey]; // indexes of inserted/remove/replaced objects
-    BOOL prio = change[NSKeyValueChangeNotificationIsPriorKey] != null;
+    id newKey = ch[NSKeyValueChangeNewKey];
+    id oldKey = ch[NSKeyValueChangeOldKey];
+    NSIndexSet* indexes = ch[NSKeyValueChangeIndexesKey]; // indexes of inserted/remove/replaced objects
+    BOOL prio = ch[NSKeyValueChangeNotificationIsPriorKey] != null;
     trace(@"keyPath=%@ action=%@ %@ newKey=%@ oldKey=%@ indexes=%@  prio=%d",
-          keyPath, action, o, newKey, oldKey, indexes, prio);
+          kp, action, o, newKey, oldKey, indexes, prio);
 */
-    if ([keyPath isEqualToString:@"firstResponder"]) {
+    if ([kp isEqualToString:@"firstResponder"]) {
         // NSResponder* fr = [self.window firstResponder];
         // trace(@"first responder changed to %@", fr);
         assert([self.document isKindOfClass: ZGDocument.class]);
