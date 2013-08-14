@@ -38,8 +38,8 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
 - (NSString*) askOnBackgroundThreadForPassword;
 - (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                                         to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;
-- (BOOL) progressOnBackgroundThread:(long long)pos ofTotal:(long long)total;
-- (BOOL) progressFileOnBackgroundThread:(long long)fileno ofTotal:(long long)totalNumberOfFiles;
+- (BOOL) progressOnBackgroundThread: (int64_t) pos ofTotal: (int64_t) total;
+- (BOOL) progressFileOnBackgroundThread: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles;
 - (void) windowDidBecomeKey;
 - (void) windowDidResignKey;
 

@@ -374,7 +374,8 @@ static void setTarget(NSView* v, id target) {
 }
 
 - (id) performSelector: (SEL) sel withObject: (id) o {
-    trace(@"%@(%@)", NSStringFromSelector(sel), o);
+    // TODO: this is HACKy - think about cleaner way
+    // trace(@"%@(%@)", NSStringFromSelector(sel), o);
     if (sel == @selector(buttonPressed:) && [o isKindOfClass: NSButton.class]) {
         // see NSAlert notes at the end of the file
         NSButton* btn = (NSButton*)o;

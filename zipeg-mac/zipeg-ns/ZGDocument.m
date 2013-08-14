@@ -773,12 +773,11 @@ static NSTableView* createTableView(NSRect r) {
     }];
 }
 
-- (BOOL) progressOnBackgroundThread: (long long)pos ofTotal:(long long)total {
+- (BOOL) progressOnBackgroundThread: (int64_t) pos ofTotal: (int64_t) total {
     assert(![NSThread isMainThread]);
-    // TODO: connect to progress bar(s)
-    trace(@"%llu of %llu", pos, total);
+    // trace(@"%llu of %llu", pos, total);
     [self checkTimeToShowHeroView];
-    if (0 <= pos && pos <= total) {
+    if (total > 0 && 0 <= pos && pos <= total) {
         dispatch_async(dispatch_get_main_queue(), ^{
             _alerts.progress = (double)pos / (double)total;
         });
@@ -786,12 +785,12 @@ static NSTableView* createTableView(NSRect r) {
     return true; // TODO: may read the state of cancel button even from background thread
 }
 
-- (BOOL) progressFileOnBackgroundThread:(long long)fileno ofTotal:(long long)totalNumberOfFiles {
+- (BOOL) progressFileOnBackgroundThread: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles {
     assert(![NSThread isMainThread]);
     // TODO: connect to progress bar(s)
     // trace(@"%llu of %llu", fileno, totalNumberOfFiles);
     [self checkTimeToShowHeroView];
-    if (0 <= fileno && fileno <= totalNumberOfFiles) {
+    if (totalNumberOfFiles > 0 && 0 <= fileno && fileno <= totalNumberOfFiles) {
         dispatch_async(dispatch_get_main_queue(), ^{
             _alerts.progress = (double)fileno / (double)totalNumberOfFiles;
         });

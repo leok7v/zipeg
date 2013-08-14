@@ -78,7 +78,6 @@ static NSMutableArray *leafNode;
 + (void) initialize {
     assert(self == ZG7zipItem.class);
     leafNode = [NSMutableArray new];
-    trace("leafNode=%@", leafNode);
     assert(leafNode != null);
 }
 
@@ -250,7 +249,7 @@ struct D : P7Z::Delegate {
 - (void) close {
     // trace(@"");
     if (a != null) {
-        trace("folders %d items %d", _numberOfFolders, _numberOfItems);
+        // trace("folders %d items %d", _numberOfFolders, _numberOfItems);
         a->close();
     }
     delete a; a = null;
@@ -306,8 +305,8 @@ static void reportProgress(ZG7zip* z, int ix) {
             if (item == null) {
                 return false;
             }
-            NSObject* attr = _props[i][@"Attrib"];
-            trace("%@ attr=%@ isDir=%@ isFolder=%d", item.name, attr, isDir, isFolder);
+            // NSObject* attr = _props[i][@"Attrib"];
+            // trace("%@ attr=%@ isDir=%@ isFolder=%d", item.name, attr, isDir, isFolder);
             if (isFolder) {
                 [_isFolders setBit:i to:true];
                 [_isLeafFolders setBit:i to:true];
@@ -337,14 +336,14 @@ static void reportProgress(ZG7zip* z, int ix) {
             }
             if ([parentComponents length] == 0) {
                 item.parent = _root;
-                trace(@"0x%016llX.parent:=0x%016llX (root) %@ -> %@", (unsigned long long)item, (unsigned long long)_root, _root.name, item.name);
+                // trace(@"0x%016llX.parent:=0x%016llX (root) %@ -> %@", (unsigned long long)item, (unsigned long long)_root, _root.name, item.name);
                 break;
             }
             ZG7zipItem* p = _items[parentComponents];
             // archives without entries for the folders do exist
             // create "synthetic" parent for such folder with -1 as an index
             if (p == null) {
-                trace(@"creating synthetic parent for %@", parentComponents);
+                // trace(@"creating synthetic parent for %@", parentComponents);
                 NSString* last = parentComponents.lastPathComponent;
                 p = [ZG7zipItem.alloc initWith: self name: last index: -1 isLeaf: false];
                 if (p == null) {
@@ -354,7 +353,7 @@ static void reportProgress(ZG7zip* z, int ix) {
                 _numberOfFolders++;
             }
             item.parent = p;
-            trace(@"0x%016llX.parent:=0x%016llX %@ -> %@", (unsigned long long)item, (unsigned long long)p, p.name, item.name);
+            // trace(@"0x%016llX.parent:=0x%016llX %@ -> %@", (unsigned long long)item, (unsigned long long)p, p.name, item.name);
             if (p->_index >= 0 && (item->_index < 0 || [_isFolders isSet: item->_index])) {
                 [_isLeafFolders setBit: p->_index to: false];
             }
@@ -406,7 +405,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 
 - (void) setFilter: (NSString*) filterText operation: (NSOperation*) op done: (void(^)(BOOL)) block {
     assert(![NSThread isMainThread]);
-    trace("filterText=%@ _filterText=%@", filterText, _filterText);
+    // trace("filterText=%@ _filterText=%@", filterText, _filterText);
     bool e0 =  filterText == null ||  filterText.length == 0;
     bool e1 = _filterText == null || _filterText.length == 0;
     if (e0 && e1) {
@@ -415,8 +414,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
     bool e = (e0 && [_filterText isEqualToString: filterText]) ||
              (e1 && [filterText isEqualToString: _filterText]) ||
              [filterText isEqualToString: _filterText];
-    trace("filterText=%@ _filterText=%@ filterText isEqualToString:_filterText=%d",
-          filterText, _filterText, e);
+    // trace("filterText=%@ _filterText=%@ filterText isEqualToString:_filterText=%d", filterText, _filterText, e);
     if (e) {
         return;
     }
@@ -485,7 +483,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
         // modal dialog box. If main queue is blocked for prolonged period of time
         // it means no new searches are coming in.
         if (b) {
-            trace("search done");
+            // trace("search done");
             assert([NSThread isMainThread]);
             bool found = true;
             if (in == _numberOfItems) {
@@ -496,10 +494,10 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
                 _filterText = filterText;
                 _isFilteredOut = isFilteredOut;
             }
-            trace("block(%d)", found);
+            // trace("block(%d)", found);
             block(found);
         } else {
-            trace("search cancelled");
+            // trace("search cancelled");
             block(false);
         }
     });
@@ -511,7 +509,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 
 - (BOOL) isCancelled {
     if (_op != null && _op.isCancelled) {
-        trace(@"cancelled");
+        // trace(@"cancelled");
     }
     return _op != null ? _op.isCancelled : false;
 }
@@ -801,7 +799,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     _props[itemIndex] = dic;
 
     reportProgress(self, itemIndex);
-/*
+/*  // KEEP this code around, uncommenting it is handy to archive problems debugging
     if (itemIndex < 10) {
         NSMutableString* s = [NSMutableString new];
         for (int i = 0; i < properties; i++) {
@@ -826,10 +824,11 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 
 - (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                       to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
-    return [document askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
-                                              to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize];
+    return [document askOnBackgroundThreadOverwriteFrom: (const char*) fromName
+                                                   time: (int64_t) fromTime size: (int64_t) fromSize
+                                                     to: (const char*) toName time: (int64_t) toTime
+                                                   size: (int64_t) toSize];
 }
-
 
 - (const wchar_t*) password {
     if (!_password || _password.length == 0) {
