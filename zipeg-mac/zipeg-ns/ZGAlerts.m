@@ -36,9 +36,9 @@
     if (self != null) {
         alloc_count(self);
         self.autoresizingMask = NSViewMinYMargin;
-        _stop_n = [[NSImage imageNamed: @"stop-n"] copy];
+        _stop_n = [[NSImage imageNamed: @"stop-n-32x32@2.png"] copy];
         _stop_n.size = NSMakeSize(18, 18);
-        _stop_p = [[NSImage imageNamed: @"stop-p"] copy];
+        _stop_p = [[NSImage imageNamed: @"stop-p-32x32@2.png"] copy];
         _stop_p.size = NSMakeSize(18, 18);
         _stop = _stop_n;
         NSMutableParagraphStyle* style = NSMutableParagraphStyle.new;
