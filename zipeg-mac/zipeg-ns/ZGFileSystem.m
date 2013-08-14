@@ -117,14 +117,14 @@ static ZGFileSystemItem *g_root;
 
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
             document: (ZGDocument*) doc
-           operation: (NSOperation*) op error:(NSError**) err
+           operation: (ZGOperation*) op error:(NSError**) err
                 done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) done {
     trace(@"ZGFileSystem is using shared instance of root object");
     done(self, null);
     return true;
 }
 
-- (void) setFilter: (NSString*) filterText operation: (NSOperation*) op done: (void(^)(BOOL)) block {
+- (void) setFilter: (NSString*) filterText operation: (ZGOperation*) op done: (void(^)(BOOL)) block {
     // not implemented
 }
 
@@ -140,7 +140,7 @@ static ZGFileSystemItem *g_root;
     return 999999;
 }
 
-- (void) extract: (NSArray*) items to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(NSError* e)) block {
+- (void) extract: (NSArray*) items to: (NSURL*) url operation: (ZGOperation*) op done: (void(^)(NSError* e)) block {
     block(null);
 }
 

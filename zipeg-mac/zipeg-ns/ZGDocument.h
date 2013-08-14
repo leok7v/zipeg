@@ -25,7 +25,8 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
 @property (nonatomic, readonly, weak) NSWindow* window;
 @property (nonatomic, readonly) NSObject<ZGItemProtocol>* root;
 
-- (void) cancel; // cancel current operation if any, otherwise nop
+- (void) requestCancel;
+- (void) cancelAll; // cancel all operations (if any), otherwise nop
 - (void) extract;
 - (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd;
 - (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) i open: (BOOL) o;
@@ -35,6 +36,11 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
 - (void) firstResponderChanged;
 - (BOOL) documentCanClose;
 - (void) sizeToContent;
+- (NSInteger) runModalAlert: (NSString*) message defaultButton: (NSString*) db
+            alternateButton: (NSString*) ab info: (NSString*) info;
+- (void) alertModalSheet: (NSString*) message defaultButton: (NSString*) db
+         alternateButton: (NSString*) ab info: (NSString*) info done: (void(^)(NSInteger rc)) d;
+- (BOOL) askOnBackgroundThreadForCancel;
 - (NSString*) askOnBackgroundThreadForPassword;
 - (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                                         to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;

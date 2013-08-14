@@ -16,11 +16,11 @@
 @property (nonatomic, readonly) int numberOfFolders;
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
             document: (ZGDocument*) doc
-           operation: (NSOperation*) op
+           operation: (ZGOperation*) op
                error: (NSError**) err
                 done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) block;
 // setFilter is called on background thread. block must be called back on the main thread
-- (void) setFilter: (NSString*) filterText operation: (NSOperation*) op done: (void(^)(BOOL)) block;
-- (void) extract: (NSArray*) items to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(NSError* e)) block;
+- (void) setFilter: (NSString*) filterText operation: (ZGOperation*) op done: (void(^)(BOOL)) block;
+- (void) extract: (NSArray*) items to: (NSURL*) url operation: (ZGOperation*) op done: (void(^)(NSError* e)) block;
 - (void) close;
 @end

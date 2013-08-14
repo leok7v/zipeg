@@ -31,7 +31,7 @@ struct D;
     NSMutableArray* _paths;
     NSMutableArray* _pnames;
     NSMutableArray* _props;
-    NSOperation* _op;
+    ZGOperation* _op;
     ZGDocument* __weak document;
     int _pathIndex; // in pnames
     int _numberOfItems;
@@ -403,7 +403,7 @@ static void reportProgress(ZG7zip* z, int ix) {
 // http://regexkit.sourceforge.net/RegexKitLite/#ICUSyntax_ICURegularExpressionSyntax
 static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 
-- (void) setFilter: (NSString*) filterText operation: (NSOperation*) op done: (void(^)(BOOL)) block {
+- (void) setFilter: (NSString*) filterText operation: (ZGOperation*) op done: (void(^)(BOOL)) block {
     assert(![NSThread isMainThread]);
     // trace("filterText=%@ _filterText=%@", filterText, _filterText);
     bool e0 =  filterText == null ||  filterText.length == 0;
@@ -508,6 +508,13 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 }
 
 - (BOOL) isCancelled {
+    if (_op != null && _op.cancelRequested) {
+        if ([document askOnBackgroundThreadForCancel]) {
+            [_op cancel];
+        } else {
+            _op.cancelRequested = false;
+        }
+    }
     if (_op != null && _op.isCancelled) {
         // trace(@"cancelled");
     }
@@ -629,7 +636,7 @@ static NSString* starifyMultipartFilename(NSString* s) {
 
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
             document: (ZGDocument*) doc
-           operation: (NSOperation*) op error:(NSError**) err
+           operation: (ZGOperation*) op error:(NSError**) err
                 done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) done {
     // This method must be called on the background thread
     assert(![NSThread isMainThread]);
@@ -816,11 +823,9 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return !self.isCancelled;
 }
 
-
 - (void) error: (const char*) message {
     _error = [NSString stringWithUTF8String: message];
 }
-
 
 - (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                       to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
@@ -928,7 +933,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return prefixComponents;
 }
 
-- (void) extract: (NSArray*) itms to: (NSURL*) url operation: (NSOperation*) op done: (void(^)(NSError* e)) block {
+- (void) extract: (NSArray*) itms to: (NSURL*) url operation: (ZGOperation*) op done: (void(^)(NSError* e)) block {
     assert(![NSThread isMainThread]);
     if (![url isFileURL]) {
         NSMutableDictionary *details = [NSMutableDictionary dictionary];

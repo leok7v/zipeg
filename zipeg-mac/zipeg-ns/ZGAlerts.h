@@ -2,15 +2,15 @@
 
 @interface ZGAlerts : NSWindow
 
-@property float progress;
 @property NSString* topText;
 @property NSString* bottomText;
 
 - (id) initWithDocument: (ZGDocument*) d;
-- (void) begin: (NSWindow*) w;
+- (void) begin;
 - (BOOL) isOpen;
 - (void) end;
 - (void) alert: (NSAlert*) a done: (void(^)(NSInteger rc)) block;
+- (void) setProgress: (int64_t) pos of: (int64_t) total;
 @end
 
 
@@ -37,6 +37,14 @@
     that are still in progress (some may end while the question itself if presented) and 
     if this is the case scenarios 2 and 4 need to receive "cancel" return code from alerting 
     system without any further user intervention.
+---
+ Some simplification of the flow:
+ I've added ZGOperation that has requestCancel state (can be set to true or false).
+ The stop button in the ZGProgress control requests cancelation of current operation from
+ ZGDocument. The background thread detects the request asks user's confirmation and blocks
+ till it recieves the answer. If application termination request comes - different question
+ is posed to the user asking for cancelation of all operations in progress and if user
+ agrees they are cancelled without further one-by-one per-operation confirmations.
 
  TODO:
     Suppressed Alerts: if I even need them should be implemented through automatically localized

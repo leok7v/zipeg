@@ -62,9 +62,9 @@
 @property ZGHeroView* heroView;
 @property ZGAlerts* alerts;
 
-- (void) openArchiveForOperation: (NSOperation*) op;
-- (void) extractItemsForOperation: (NSOperation*) op items: (NSArray*) items to: (NSURL*) url;
-- (void) searchArchiveWithString: (NSString*) s forOperation: (NSOperation*) op done: (void(^)(BOOL)) block;
+- (void) openArchiveForOperation: (ZGOperation*) op;
+- (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url;
+- (void) searchArchiveWithString: (NSString*) s forOperation: (ZGOperation*) op done: (void(^)(BOOL)) block;
 
 @end
 
@@ -85,7 +85,7 @@
 @end
 
 
-@interface OpenArchiveOperation : NSOperation {
+@interface OpenArchiveOperation : ZGOperation {
     ZGDocument* __weak _document;
 }
 - (id)initWithDocument: (ZGDocument*) document;
@@ -105,7 +105,7 @@
 
 @end
 
-@interface SearchArchiveOperation : NSOperation {
+@interface SearchArchiveOperation : ZGOperation {
     ZGDocument* __weak _document;
     NSString* _search;
     void (^_block)(BOOL b);
@@ -130,7 +130,7 @@
 @end
 
 
-@interface ExtractItemsOperation : NSOperation {
+@interface ExtractItemsOperation : ZGOperation {
     ZGDocument* __weak _document;
     NSArray* _items;
     NSURL* _url;
@@ -483,7 +483,7 @@ static NSTableView* createTableView(NSRect r) {
 
 - (void) beginAlerts {
     if (!_alerts.isOpen) {
-        [_alerts begin: _window];
+        [_alerts begin];
     }
 }
 
@@ -519,43 +519,65 @@ static NSTableView* createTableView(NSRect r) {
     return _isNew;
 }
 
-- (void) cancel {
+- (void) cancelAll {
     [_operationQueue cancelAllOperations];
+    [self endAlerts];
     [_operationQueue waitUntilAllOperationsAreFinished];
 }
 
-- (BOOL) documentCanClose {
-    trace(@"");
-    // TODO: dismiss progress if nobody is waiting in communication queue
-    if (_operationQueue.operations.count > 0) {
-        /* TODO: do it via alerts
-        NSBeginInformationalAlertSheet(
-            @"Operation is in Progress", @"OK", @"Cancel", @"",
-            _window,
-            self, // modalDelegate
-            @selector(closeDidEnd:returnCode:contextInfo:),
-            null, // didDismissSelector
-            null, @"");  // could be: @"fmt=%@", @"args"
-        */
+- (void) requestCancel {
+    for (ZGOperation* op in _operationQueue.operations) {
+        if (op.isExecuting) {
+            op.cancelRequested = true;
+        }
     }
+}
+
+- (BOOL) documentCanClose {
     return _operationQueue.operations.count == 0;
 }
 
-- (void) closeDidEnd: (NSWindow*)sheet returnCode: (int) rc contextInfo:(void *) contextInfo {
-    if (rc == NSAlertDefaultReturn) {
-        [self cancel];
-        [_window performClose: self];
-    } else {
-        // trace(@"Quit - canceled");
-    }
+- (NSInteger) runModalAlert: (NSString*) message defaultButton: (NSString*) db
+            alternateButton: (NSString*) ab info: (NSString*) info {
+    NSInteger __block answer = NSAlertErrorReturn;
+    NSAlert* a = [NSAlert alertWithMessageText: message
+                                 defaultButton: db
+                               alternateButton: ab
+                                   otherButton: null
+                     informativeTextWithFormat: @"%@", info];
+    a.alertStyle = NSInformationalAlertStyle;
+    [self beginAlerts];
+    [_alerts alert: a done: ^(NSInteger rc) {
+        answer = rc;
+    }];
+    // https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Sheets/Tasks/UsingAppModalDialogs.html
+    [NSApp runModalForWindow: _alerts];
+    [self endAlerts];
+    return answer;
 }
+
+- (void) alertModalSheet: (NSString*) message defaultButton: (NSString*) db
+         alternateButton: (NSString*) ab info: (NSString*) info done: (void(^)(NSInteger rc)) d {
+    NSAlert* a = [NSAlert alertWithMessageText: message
+                                 defaultButton: db
+                               alternateButton: ab
+                                   otherButton: null
+                     informativeTextWithFormat: @"%@", info];
+    a.alertStyle = NSInformationalAlertStyle;
+    [self beginAlerts];
+    [_alerts alert: a done: ^(NSInteger rc) {
+        d(rc);
+    }];
+}
+
+
 
 - (void)close {
     // NSWindowController _windowDidClose will call us recursively from super :(
     if (_splitView != null) {
         NSTableColumn* tc = _tableView.tableColumns[0];
         assert(tc != null);
-        [self cancel];
+        [self cancelAll];
         _splitView.subviews = @[];
         [_splitView removeFromSuperview];
         _splitView = null;
@@ -606,13 +628,13 @@ static NSTableView* createTableView(NSRect r) {
     return _archive != null;
 }
 
-- (void) openArchiveForOperation: (NSOperation*) op {
+- (void) openArchiveForOperation: (ZGOperation*) op {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
     NSObject<ZGItemFactory>* __block a = ZG7zip.new;
     NSError* __block error;
     BOOL b = [a readFromURL: _url ofType: _typeName encoding: _encoding
-                   document: self operation: (NSOperation*) op error: &error
+                   document: self operation: (ZGOperation*) op error: &error
                        done: ^(NSObject<ZGItemFactory>* a, NSError* error) {
                        }
              ];
@@ -632,7 +654,7 @@ static NSTableView* createTableView(NSRect r) {
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder: _outlineView];
-        } else if (error != null) {
+        } else if (error != null && !op.isCancelled) {
             _heroView.hidden = false;
             NSAlert* a = [NSAlert alertWithError: error];
             [self beginAlerts];
@@ -654,12 +676,39 @@ static NSTableView* createTableView(NSRect r) {
     [self extract: null to: u DnD: false];
 }
 
-- (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
-                                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
-
+- (BOOL) askOnBackgroundThreadForCancel {
     assert(![NSThread isMainThread]);
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    int __block answer;
+    BOOL __block answer = false;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        assert([NSThread isMainThread]);
+        if (_operationQueue.operationCount > 0) {
+            NSString* info = _archive == null ? @"" : // opening archive - no data corruption expected
+            @"(Some folders and file may be left behind corrupted or incomplete.)";
+            NSAlert* a = [NSAlert alertWithMessageText: @"Do you want to cancel current operation?"
+                                         defaultButton: @"Stop"
+                                       alternateButton: @"Keep Going"
+                                           otherButton: null
+                             informativeTextWithFormat: @"%@", info];
+            a.alertStyle = NSInformationalAlertStyle;
+            [self beginAlerts];
+            [_alerts alert: a done: ^(NSInteger rc) {
+                answer = rc == NSAlertDefaultReturn;
+                dispatch_semaphore_signal(sema);
+            }];
+        }
+    });
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    dispatch_release(sema);
+    sema = null;
+    return answer;
+}
+
+- (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+                                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
+    assert(![NSThread isMainThread]);
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    int __block answer = NSAlertErrorReturn;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
         NSString* name = [NSString stringWithUTF8String: fromName];
@@ -751,7 +800,7 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (void) extractItemsForOperation: (NSOperation*) op items: (NSArray*) items to: (NSURL*) url {
+- (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
     assert(_archive != null);
@@ -779,7 +828,7 @@ static NSTableView* createTableView(NSRect r) {
     [self checkTimeToShowHeroView];
     if (total > 0 && 0 <= pos && pos <= total) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            _alerts.progress = (double)pos / (double)total;
+            [_alerts setProgress: pos of: total];
         });
     }
     return true; // TODO: may read the state of cancel button even from background thread
@@ -792,7 +841,7 @@ static NSTableView* createTableView(NSRect r) {
     [self checkTimeToShowHeroView];
     if (totalNumberOfFiles > 0 && 0 <= fileno && fileno <= totalNumberOfFiles) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            _alerts.progress = (double)fileno / (double)totalNumberOfFiles;
+            [_alerts setProgress: fileno of: totalNumberOfFiles];
         });
     }
     return true; // TODO: may read the state of cancel button even from background thread
@@ -819,7 +868,7 @@ static NSTableView* createTableView(NSRect r) {
     [_operationQueue addOperation: op];
 }
 
-- (void) searchArchiveWithString: (NSString*) s forOperation: (NSOperation*) op done: (void(^)(BOOL)) block {
+- (void) searchArchiveWithString: (NSString*) s forOperation: (ZGOperation*) op done: (void(^)(BOOL)) block {
     assert(![NSThread isMainThread]);
     [_archive setFilter: s operation: op done: block];
 }
@@ -857,42 +906,6 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
         }
     }
 }
-
-/*
-- (NSInteger) askOverwrite: (NSString*) name {
-    assert([NSThread isMainThread]);
-    NSAlert* a = NSAlert.new;
-    [a addButtonWithTitle: @"Cancel"];
-    [a addButtonWithTitle: @"No"];
-    [a addButtonWithTitle: @"Yes"];
-    [a addButtonWithTitle: @"Keep Both"];
-    [a setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
-    [a setInformativeText: @"Overwritten files are placed into Trash Bin"];
-    a.alertStyle = NSInformationalAlertStyle;
-    NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
-    applyToAll.title = @"Apply to All";
-    applyToAll.buttonType = NSSwitchButton;
-    [applyToAll sizeToFit];
-    a.accessoryView = applyToAll;
-    [self beginAlerts];
-    [_alerts alert: a done: ^(NSInteger rc){
-        NSInteger answer = -1;
-        if (rc == NSAlertFirstButtonReturn) {
-            answer = kCancel;
-        } else if (rc == NSAlertSecondButtonReturn) {
-            answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
-        } else if (rc == NSAlertThirdButtonReturn) {
-            answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
-        } else {
-            answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
-        }
-        a.accessoryView = null;
-        assert(answer != -1);
-        [NSApp stopModalWithCode: answer];
-    }];
-    BAD!!! -> return [NSApp runModalForWindow: a.window];
-}
-*/
 
 - (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
     if (!dnd) {

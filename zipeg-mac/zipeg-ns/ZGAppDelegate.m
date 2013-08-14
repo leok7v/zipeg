@@ -49,20 +49,73 @@
     return true;
 }
 
+- (void) cancelAll {
+    NSArray* docs = ((NSDocumentController*)NSDocumentController.sharedDocumentController).documents;
+    for (int i = 0; i < docs.count; i++) {
+        ZGDocument* doc = (ZGDocument*)docs[i];
+        [doc cancelAll];
+    }
+}
+
+
 - (NSApplicationTerminateReply) applicationShouldTerminate: (NSApplication*) app {
-    NSDocumentController* dc = NSDocumentController.sharedDocumentController;
-    NSArray* docs = dc.documents;
+    ZGDocument* last = null;
+    NSArray* docs = ((NSDocumentController*)NSDocumentController.sharedDocumentController).documents;
+    int cannotClose = 0;
     if (docs != null && docs.count > 0) {
         for (int i = 0; i < docs.count; i++) {
             ZGDocument* doc = (ZGDocument*)docs[i];
             if (![doc documentCanClose]) {
-                return NSTerminateCancel; // NSTerminateLater (?)
+                cannotClose++;
+                last = doc;
             }
         }
     }
-    return NSTerminateNow;
-    // NSTerminateLater: the app itself will be responsible for later termination
-    // OSX will just gray out (disable) App Quit and will stay this way forever...
+    if (cannotClose == 0) {
+        return NSTerminateNow;
+    }
+    NSString* message = @"Some operations are still in progress.\n"
+                         "Do you want to stop all the operations and quit Zipeg?";
+    NSString* info = @"(terminating unfinished operations may leave\n"
+                      "behind incomplete/corrupted folders and files)\n";
+    NSString* stop = @"Stop and Quit";
+    NSString* keep = @"Keep Going";
+    NSInteger rc = NSAlertErrorReturn;
+    void __block (^done)(NSInteger rc) = ^(NSInteger rc) {
+        NSApplicationTerminateReply r = rc == NSAlertDefaultReturn ? NSTerminateNow : NSTerminateCancel;
+        if (r == NSTerminateNow) {
+            [self cancelAll];
+        }
+        [NSApp replyToApplicationShouldTerminate: r];
+    };
+    if (cannotClose == 1) {
+        // the only document can present alert inside the _alerts sheet:
+        [last alertModalSheet: message defaultButton: stop alternateButton: keep info: info done: done];
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // this alert panel cannot be presented in a particular window's sheet
+            // because we have multiple documents running operations at the same time:
+            NSAlert* a = [NSAlert alertWithMessageText: message defaultButton: stop
+                                       alternateButton: keep otherButton: null
+                             informativeTextWithFormat: @"%@", info];
+            NSInteger rc = [a runModal];
+            done(rc);
+        });
+        return NSTerminateCancel;
+    }
+    if (rc == NSAlertDefaultReturn) {
+        for (int i = 0; i < docs.count; i++) {
+            ZGDocument* doc = (ZGDocument*)docs[i];
+            [doc cancelAll];
+        }
+        return NSTerminateNow;
+    } else {
+        return NSTerminateCancel;
+    }
+    // NSTerminateLater/NSTerminateCancel: the app itself will be responsible for later termination
+    // OSX will just gray out (disable) App Quit and will stay this way forever... unless you use:
+    // [NSApp replyToApplicationShouldTerminate: r];
+    // see: http://stackoverflow.com/questions/10224141/how-to-handle-cocoa-application-termination-properly
 }
 
 @end

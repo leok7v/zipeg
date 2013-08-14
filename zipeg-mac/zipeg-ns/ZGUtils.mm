@@ -260,7 +260,9 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 
 @end
 
-
+@implementation ZGOperation
+@synthesize cancelRequested;
+@end
 
 @implementation NSOutlineView(ZGExtensions)
 

@@ -2,28 +2,23 @@
 #import "ZGDocument.h"
 #import "ZGApp.h"
 
-@class ZGProgressBar;
+@class ZGProgress;
 
 @interface ZGAlerts() {
     NSView* __weak _contentView;
     ZGDocument* __weak _document;
-    ZGProgressBar* _progressBar;
-    NSButton* _cancel;
-    NSButton* _proceed;
+    ZGProgress* _progress;
     int _count;
-    NSString* _savedTop;
-    NSString* _savedBottom;
     NSSize    _savedContentViewSize;
-    NSArray*  _savedContentViewSubviews;
     NSAlert*  _alert; // strong
     void(^_block)(NSInteger rc); // strong
 }
-- (void) setupProgressBar;
-- (void) setupCancelContinue;
+- (void) requestCancel;
 @end
 
-@interface ZGProgressBar : NSView {
-    @public float _progress;
+@interface ZGProgress : NSView {
+    @public int64_t _pos;
+    @public int64_t _total;
     @public NSString* _topText;
     @public NSString* _bottomText;
     NSDictionary* _textAttributes;
@@ -34,7 +29,7 @@
 }
 @end
 
-@implementation ZGProgressBar
+@implementation ZGProgress
 
 - (id) init {
     self = super.init;
@@ -54,14 +49,14 @@
     return self;
 }
 
-
 - (void) dealloc {
     dealloc_count(self);
 }
 
-- (void) setProgress: (float) v {
-    assert(0 <= v && v <= 1);
-    _progress = MIN(MAX(0, v), 1);
+- (void) setProgress: (int64_t) pos of: (int64_t) total {
+    assert(0 <= pos && pos <= total);
+    _pos = MIN(MAX(0, pos), total);
+    _total = total;
     self.needsDisplay = true;
 }
 
@@ -90,7 +85,7 @@
 - (void) mouseUp: (NSEvent*) e {
     NSPoint pt = [self convertPoint: e.locationInWindow fromView: self.window.contentView];
     if (NSPointInRect(pt, _stop_rect)) {
-        [(ZGAlerts*)self.window setupCancelContinue];
+        [(ZGAlerts*)self.window requestCancel];
     }
     _stop = _stop_n;
     self.needsDisplay = true;
@@ -100,21 +95,9 @@
     return true;
 }
 
-- (void)cancelOperation: (id) sender {
-    [(ZGAlerts*)self.window setupCancelContinue];
+- (void) cancelOperation: (id) sender {
+    [(ZGAlerts*)self.window requestCancel];
 }
-
-/*
-- (void) keyDown: (NSEvent*) e {
-    switch (e.keyCode) {
-        case 53: // esc
-            trace(@"ESC");
-            break;
-        default:
-            [super keyDown: e];
-    }
-}
-*/
 
 - (void) drawRect: (NSRect) r {
     NSColor* c0 = [NSColor colorWithCalibratedRed: .95 green: .97 blue: 1 alpha: 1];
@@ -149,8 +132,9 @@
     p.origin.y += (r.size.height - p.size.height) / 2;
     p.origin.x += 30;
     p.size.width -= 60;
-    if (_progress > 0) {
-        CGFloat w = p.size.width * _progress;
+    double ratio = MIN(MAX(0, (double)_pos / (double)_total), 1);
+    if (ratio > 0) {
+        CGFloat w = p.size.width * ratio;
         c0 = [NSColor colorWithCalibratedWhite: .95 alpha: 1];
         [self drawBorder: NSMakeRect(p.origin.x, p.origin.y - 1, p.size.width, p.size.height + 1) color: c0 radius: 1];
 
@@ -200,10 +184,8 @@
 
 @end
 
-
 @implementation ZGAlerts
 
-@synthesize progress;
 @synthesize topText;
 @synthesize bottomText;
 
@@ -220,46 +202,40 @@
 - (void) dealloc {
     dealloc_count(self);
     _document = null;
-    _progressBar = null;
-    _proceed = null;
-    _cancel = null;
-    _savedContentViewSubviews = @[];
+    _progress = null;
     _contentView.subviews = @[];
     _contentView = null;
     _alert = null;
     _block = null;
 }
 
-- (float) progress {
-    return _progressBar->_progress;
-}
-
-- (void) setProgress: (float) v {
-    _progressBar.progress = v;
+- (void) setProgress: (int64_t) pos of: (int64_t) total {
+    [_progress setProgress: pos of: total];
+    _contentView.needsDisplay = true;
 }
 
 - (NSString*) topText {
-    return _progressBar->_topText;
+    return _progress->_topText;
 }
 
 - (void) setTopText: (NSString*) s {
-    _progressBar.topText = s;
+    _progress.topText = s;
 }
 
 - (NSString*) bottomText {
-    return _progressBar->_bottomText;
+    return _progress->_bottomText;
 }
 
 - (void) setBottomText: (NSString*) s {
-    _progressBar.bottomText = s;
+    _progress.bottomText = s;
 }
 
-- (void) begin: (NSWindow*) w {
+- (void) begin {
     assert([NSThread isMainThread]);
     assert(_count == 0);
     _count++;
-    [NSApp beginSheet: self modalForWindow: w didEndBlock:^(NSInteger rc) {
-        trace(@"");
+    [NSApp beginSheet: self modalForWindow: _document.window didEndBlock:^(NSInteger rc) {
+        // trace(@"");
     }];
 }
 
@@ -273,20 +249,29 @@
     _count--;
     [NSApp endSheet: self];
     [self orderOut: null];
+    [self dismissAlert: NSAlertErrorReturn resize: true];
 }
 
-- (void) saveText {
-    _savedTop = _progressBar->_topText;
-    _savedBottom = _progressBar->_bottomText;
-}
-
-- (void) restoreText {
-    if (_savedTop != null || _savedBottom != null) {
-        _progressBar.topText = _savedTop;
-        _progressBar.bottomText = _savedBottom;
-        _savedTop = null;
-        _savedBottom = null;
+- (void) dismissAlert: (NSInteger) rc resize: (BOOL) b {
+    if (_alert != null || _block != null) {
+        setTarget(_contentView, self, _alert);
+        void (^done) (NSInteger rc) = _block;
+        _block = null;
+        _alert = null;
+        _contentView.subviews = @[_progress];
+        if (done != null) {
+            done(rc);
+        }
+        if (b) {
+            _contentView.size = _savedContentViewSize;
+            _contentView.superview.size = _savedContentViewSize;
+            self.size = _savedContentViewSize;
+        }
     }
+}
+
+- (void) requestCancel {
+    [_document requestCancel];
 }
 
 - (void) setSize: (NSSize) size {
@@ -296,75 +281,47 @@
 }
 
 - (void) setupProgressBar {
-    [self restoreText];
-    NSSize size = NSMakeSize(400, 90);
+    NSSize size = NSMakeSize(534, 90);
     self.size = size;
     if (_contentView == null) {
         _contentView = self.contentView;
         _contentView.autoresizesSubviews = true;
-        _progressBar = ZGProgressBar.new;
-        _progressBar.frame = NSMakeRect(10, size.height - 80, size.width - 20, 50);
+        _progress = ZGProgress.new;
+        _progress.frame = NSMakeRect(10, size.height - 80, size.width - 20, 50);
     }
-    [self makeFirstResponder: _progressBar];
-    _contentView.subviews = @[_progressBar];
+    [self makeFirstResponder: _progress];
+    _contentView.subviews = @[_progress];
 }
 
-- (void) setupCancelContinue {
-    [self saveText];
-    NSSize size = NSMakeSize(400, 90 + 20);
-    self.size = size;
-    self.topText = @"The operation is still in progress."; // TODO: save what was there before
-    self.bottomText = @"Do you want to stop it?";
-    NSFont* font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize];
-    if (_proceed == null) {
-        _proceed = createButton(font, @"Continue", 10, 10);
-        _cancel  = createButton(font, @" Stop ", _proceed.frame.origin.x + _proceed.frame.size.width + 10, 10);
-        _cancel.keyEquivalent = @"\r";
-        int pw = _proceed.frame.size.width;
-        int cw = _cancel.frame.size.width;
-        int x = (size.width - pw - cw - 20) / 2;
-        _proceed.origin = NSMakePoint(x, _proceed.frame.origin.y);
-        _cancel.origin = NSMakePoint(size.width - x - _cancel.frame.size.width, _proceed.frame.origin.y);
-    }
-    self.defaultButtonCell = _cancel.cell; // make _cancel in window default button
-    [self makeFirstResponder: _proceed];
-    _contentView.subviews = @[_progressBar, _cancel, _proceed];
-    _cancel.target = self;
-    _cancel.action = @selector(stop:);
-    _proceed.target = self;
-    _proceed.action = @selector(proceed:);
-}
-
-
-static void setTarget(NSView* v, id target) {
-    if ([v isKindOfClass: NSButton.class]) {
+static void setTarget(NSView* v, id old, id target) {
+    if ([v isKindOfClass: NSButton.class] && old == ((NSControl*)v).target) {
+        // trace(@"target=0x%016llx", (int64_t)(__bridge void*)(((NSControl*)v).target));
         ((NSControl*)v).target = target;
+        ((NSControl*)v).action = @selector(buttonPressed:);
     }
     for (NSView* c in v.subviews) {
-        setTarget(c, target);
+        setTarget(c, old, target);
     }
 }
 
 - (void) alert: (NSAlert*) a done: (void(^)(NSInteger rc)) d {
-    // dumpViews(_contentView.superview);
-    // NSLog(@"-----------");
+    NSSize old = _contentView.frame.size;
+    if (_alert) {
+        old = _savedContentViewSize;
+        [self dismissAlert: NSAlertErrorReturn resize: false];
+    }
     [a layout];
-    // trace(@"%@", a.buttons);
-    // NSLog(@"-----------");
     NSWindow* w = a.window;
     NSView* acv = w.contentView;
-    // dumpViews(acv.superview);
-    _savedContentViewSubviews = _contentView.subviews.copy;
-    _savedContentViewSize = _contentView.frame.size;
-    _contentView.size = acv.frame.size;
-    _contentView.superview.size = acv.frame.size;
-    NSArray* subviews = acv.subviews.copy;
-    acv.subviews = @[]; // remove subviews first
-    _contentView.subviews = subviews; // then add them to the content view
-    setTarget(_contentView, self);
-    // NSLog(@"-----------");
-    // dumpViews(_contentView.superview);
-    self.size = _contentView.superview.frame.size;
+    CGFloat width = MAX(acv.frame.size.width, old.width);
+    NSSize size = NSMakeSize(width, acv.frame.size.height + old.height);
+    _savedContentViewSize = old;
+    _contentView.size = size;
+    _contentView.superview.size = size;
+    [acv removeFromSuperview];
+    [_contentView addSubview: acv];
+    setTarget(_contentView, a, self);
+    self.size = size;
     NSTextField* input = (NSTextField*)[_contentView findViewByClassName: @"NSTextField"];
     if (input != null) {
         [self makeFirstResponder: input];
@@ -373,69 +330,11 @@ static void setTarget(NSView* v, id target) {
     _block = d;
 }
 
-- (id) performSelector: (SEL) sel withObject: (id) o {
-    // TODO: this is HACKy - think about cleaner way
-    // trace(@"%@(%@)", NSStringFromSelector(sel), o);
-    if (sel == @selector(buttonPressed:) && [o isKindOfClass: NSButton.class]) {
-        // see NSAlert notes at the end of the file
-        NSButton* btn = (NSButton*)o;
-        trace(@"buttonPressed: tag=%ld)", btn.tag);
-        if (_alert != null) {
-            setTarget(_contentView, null);
-            void (^done) (NSInteger rc) = _block;
-            _block = null;
-            _alert = null;
-            _contentView.subviews = _savedContentViewSubviews.copy;
-            _contentView.size = _savedContentViewSize;
-            _contentView.superview.size = _savedContentViewSize;
-            self.size = _savedContentViewSize;
-            _savedContentViewSubviews = null;
-            if (done != null) {
-                done(btn.tag);
-            }
-            return null;
-        }
-    } else if (sel == @selector(stop:) || sel == @selector(proceed:)) {
-        return [super performSelector: sel withObject: o];
+- (void) buttonPressed: (id) sender {
+    if ([sender isKindOfClass: NSButton.class]) { // see NSAlert notes below
+        NSButton* btn = (NSButton*)sender;
+        [self dismissAlert: btn.tag resize: true];
     }
-    return null;
-}
-
-- (void) stop : (id) sender {
-    [_document cancel];
-}
-
-- (void) proceed : (id) sender {
-    [self setupProgressBar];
-}
-
-static NSButton* createButton(NSFont* font, NSString* title, int x, int y) {
-    NSButton* btn = NSButton.new;
-    btn.title = NSLocalizedString(title, @"");
-    btn.frame = NSMakeRect(0, 10, 300, 10);
-    btn.buttonType = NSMomentaryPushInButton;
-    NSButtonCell* bc = btn.cell;
-    bc.bezelStyle = NSRoundedBezelStyle; // this is the only style that respects default button
-    bc.highlightsBy = NSPushInCellMask;
-    bc.controlTint = NSBlueControlTint;
-    bc.focusRingType = NSFocusRingTypeDefault; // NSFocusRingTypeNone;
-    bc.bordered = true;
-    bc.font = font;
-    btn.frame = NSMakeRect(x, y, 100, NSFont.smallSystemFontSize);
-    [btn sizeToFit];
-    return btn;
-}
-
-static NSTextField* createTextField(NSFont* font, NSString* s, int x, int y) {
-    NSTextField* tf = NSTextField.new;
-    tf.editable = false;
-    tf.stringValue = NSLocalizedString(s, @"");
-    tf.frame = NSMakeRect(x, y, 300, NSFont.smallSystemFontSize);
-    tf.drawsBackground = false;
-    tf.bordered = false;
-    tf.enabled = false;
-    [tf sizeToFit];
-    return tf;
 }
 
 @end
