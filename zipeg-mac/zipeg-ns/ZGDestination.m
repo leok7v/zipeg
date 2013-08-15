@@ -83,7 +83,7 @@ static NSSearchPathDirectory dirs[] = {
     NSMenuItem* _nextToArchiveMenuItem;
     NSURL* _nextToArchiveURL;
     id _destinationObserver;
-    int _notified;
+    int _notify_count; // prevents readingUserDefaults on own notification and writingUserDefaults right after reading
 }
 
 - (id) initWithFrame: (NSRect) r for: (ZGDocument*) doc {
@@ -122,9 +122,12 @@ static NSSearchPathDirectory dirs[] = {
         self.subviews = @[_label, _selected, _ask, _to, _disclosure, _pathControl, _reveal];
         [self readUserDefaults];
         _destinationObserver = addObserver(@"zipeg.destination.update", null, ^(NSNotification* n){
-            _notified++;
-            [self readUserDefaults];
-            _notified--;
+            if (_notify_count == 0) {
+                _notify_count++;
+                // trace(@"observed readUserDefaults %@", _document.window.title);
+                [self readUserDefaults];
+                _notify_count--;
+            }
         });
     }
     return self;
@@ -165,14 +168,17 @@ static NSSearchPathDirectory dirs[] = {
 }
 
 - (void) writeUserDefaults {
-    if (_notified == 0) {
+    if (_notify_count == 0) {
         NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
         [ud setObject: @(_ask.selectedItem.tag) forKey: @"zipeg.destination.ask"];
         [ud setObject: @(_selected.selectedItem.tag) forKey: @"zipeg.destination.selected"];
         [ud setObject: @(_reveal.selectedItem.tag) forKey: @"zipeg.destination.reveal"];
         [ud setObject: [_pathControl.URL absoluteString] forKey: @"zipeg.destination.url"];
         [ud synchronize];
+        _notify_count++;
+        // trace(@"post writeUserDefaults %@", _document.window.title);
         [NSNotificationCenter.defaultCenter postNotificationName: @"zipeg.destination.update" object: null];
+        _notify_count--;
     } else {
         // we are already observing ours or somebody-elses changes - do nothing
     }
