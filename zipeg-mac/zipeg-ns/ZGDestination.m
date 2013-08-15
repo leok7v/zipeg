@@ -14,7 +14,13 @@ static NSSearchPathDirectory dirs[] = {
     NSSharedPublicDirectory
 };
 
-@interface ZGAskButtonCell : NSPopUpButtonCell
+@interface ZGDestination()
+- (void) writeUserDefaults;
+@end
+
+@interface ZGAskButtonCell : NSPopUpButtonCell {
+    ZGDestination* _notify;
+}
 
 @end
 
@@ -24,10 +30,11 @@ static NSSearchPathDirectory dirs[] = {
     return true;
 }
 
-- (id) initWithMenu: (NSMenu*) m {
+- (id) initWithMenu: (NSMenu*) m notify: (ZGDestination*) n {
     self = [super init];
     if (self != null) {
         alloc_count(self);
+        _notify = n;
     }
     self.menu = m;
     return self;
@@ -51,9 +58,9 @@ static NSSearchPathDirectory dirs[] = {
         NSInteger tag = popup.selectedItem.tag;
         tag = (tag + 1) % popup.menu.itemArray.count;
         [popup selectItemWithTag: tag]; // flip in place w/o menu
-        // trace(@"%@=%ld", popup.selectedItem.title, tag);
         call1(self.target, self.action, self);
         // DO NOT call: [popup sizeToFit]; // it makes controls too wide!
+        [_notify writeUserDefaults];
         return false;
     } else {
         return [super trackMouse: e inRect: r ofView: btn untilMouseUp: up];
@@ -75,7 +82,8 @@ static NSSearchPathDirectory dirs[] = {
     NSPathComponentCell* _nextToArchivePathComponentCell;
     NSMenuItem* _nextToArchiveMenuItem;
     NSURL* _nextToArchiveURL;
-
+    id _destinationObserver;
+    int _notified;
 }
 
 - (id) initWithFrame: (NSRect) r for: (ZGDocument*) doc {
@@ -94,17 +102,16 @@ static NSSearchPathDirectory dirs[] = {
         self.autoresizesSubviews = true;
         _font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
         _label = createLabel(4, @" ", _font, r); // tailing space is important
-        _ask = createAskButton(@[@"ask to ", @"always "], _font, r, _label.frame);
-        _selected = createAskButton(@[@"unpack selected ", @"unpack all "], _font, r, _ask.frame);
+        _ask = createAskButton(@[@"ask to ", @"always "], _font, r, _label.frame, self);
+        _selected = createAskButton(@[@"unpack selected ", @"unpack all "], _font, r, _ask.frame, self);
         _to = createButton(_selected.frame.origin.x + _selected.frame.size.width,
                            @" files to the folder:", _font, r, NSMomentaryPushInButton);
         _to.action = @selector(openDisclosure:);
         _to.target = self;
         _disclosure = createDirsButton(@"M", _font, r, _to.frame);
         _pathControl = createPathControl(_font, r, _disclosure.frame);
-//      _reveal = createButton(_pathControl.frame.origin.x + _pathControl.frame.size.width,
-//                             @" and reveal in Finder", _font, r, NSSwitchButton); // look UGLY!
-        _reveal = createAskButton(@[@"and reveal in Finder", @"and do not reveal"], _font, r, _pathControl.frame);
+        _reveal = createAskButton(@[ @" and reveal in Finder ", @"  but don't reveal " ],
+                                  _font, r, _pathControl.frame, self);
         _pathControl.action = @selector(pathControlSingleClick:);
         _pathControl.target = self;
         _pathControl.delegate = self;
@@ -113,6 +120,12 @@ static NSSearchPathDirectory dirs[] = {
         self.postsBoundsChangedNotifications = true;
         [_pathControl addObserver: self forKeyPath: @"URL" options: 0 context: null];
         self.subviews = @[_label, _selected, _ask, _to, _disclosure, _pathControl, _reveal];
+        [self readUserDefaults];
+        _destinationObserver = addObserver(@"zipeg.destination.update", null, ^(NSNotification* n){
+            _notified++;
+            [self readUserDefaults];
+            _notified--;
+        });
     }
     return self;
 }
@@ -120,6 +133,7 @@ static NSSearchPathDirectory dirs[] = {
 - (void) dealloc {
     dealloc_count(self);
     [_pathControl removeObserver: self forKeyPath: @"URL"];
+    _destinationObserver = removeObserver(@"zipeg.destination.update");
     _pathControl.target = null;
     _pathControl.action = null;
     _pathControl.delegate = null;
@@ -129,6 +143,39 @@ static NSSearchPathDirectory dirs[] = {
     _font = null;
     _ask = null;
     _to = null;
+}
+
+- (void) readUserDefaults {
+    NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
+    NSNumber* ask = [ud objectForKey: @"zipeg.destination.ask"];
+    [_ask selectItemWithTag: ask == null ? 0 : ask.intValue];
+    NSNumber* selected = [ud objectForKey: @"zipeg.destination.selected"];
+    [_selected  selectItemWithTag: selected == null ? 0 : selected.intValue];
+    NSNumber* reveal = [ud objectForKey: @"zipeg.destination.reveal"];
+    [_reveal selectItemWithTag: reveal == null ? 0 : reveal.intValue];
+    NSString* s = [ud objectForKey: @"zipeg.destination.url"];
+    if (s != null) {
+        NSURL* url = [NSURL URLWithString: s];
+        if (isEqual(url, _nextToArchiveURL)) {
+            [self nextToArchive: _disclosure];
+        } else {
+            self.pathControlURL = url;
+        }
+    }
+}
+
+- (void) writeUserDefaults {
+    if (_notified == 0) {
+        NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
+        [ud setObject: @(_ask.selectedItem.tag) forKey: @"zipeg.destination.ask"];
+        [ud setObject: @(_selected.selectedItem.tag) forKey: @"zipeg.destination.selected"];
+        [ud setObject: @(_reveal.selectedItem.tag) forKey: @"zipeg.destination.reveal"];
+        [ud setObject: [_pathControl.URL absoluteString] forKey: @"zipeg.destination.url"];
+        [ud synchronize];
+        [NSNotificationCenter.defaultCenter postNotificationName: @"zipeg.destination.update" object: null];
+    } else {
+        // we are already observing ours or somebody-elses changes - do nothing
+    }
 }
 
 - (BOOL) isAsking {
@@ -161,16 +208,22 @@ static NSSearchPathDirectory dirs[] = {
 
 - (void) disclosurePressed: (id) sender {
     int tag = (int)_disclosure.selectedItem.tag;
-    // trace(@"%d", tag);
     if (tag < 0) {
-        _pathControl.URL = [NSURL.alloc initFileURLWithPath: NSHomeDirectory() isDirectory: true];
+        self.pathControlURL = [NSURL.alloc initFileURLWithPath: NSHomeDirectory() isDirectory: true];
     } else if (tag < countof(dirs)) {
         NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[tag], NSAllDomainsMask, true);
         if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
-            _pathControl.URL = [NSURL.alloc initFileURLWithPath: path[0] isDirectory: true];
+            self.pathControlURL = [NSURL.alloc initFileURLWithPath: path[0] isDirectory: true];
         }
     } else {
         [self nextToArchive: _disclosure];
+    }
+}
+
+- (void) setPathControlURL: (NSURL*) url {
+    if (!isEqual(_pathControl.URL, url)) {
+        _pathControl.URL = url;
+        [self writeUserDefaults];
     }
 }
 
@@ -190,13 +243,12 @@ static NSSearchPathDirectory dirs[] = {
     if (w > r.size.width) {
         r.size.width = w;
     }
-    // in the future I may want to reduce the maxWidth to 50% if I figure out what to use the rest of the space for
-    int maxWidth = self.frame.size.width; // self.frame.size.width / 2;
+    int maxWidth = self.frame.size.width;
     if (r.origin.x + r.size.width > maxWidth) {
         r.size.width = maxWidth - r.origin.x;
     }
     _pathControl.frame = r;
-
+    _reveal.origin = NSMakePoint(r.origin.x + r.size.width, _reveal.frame.origin.y);
 }
 
 - (void)resizeSubviewsWithOldSize: (NSSize) was {
@@ -230,7 +282,7 @@ static NSTextField* createLabel(int x, NSString* text, NSFont* font, NSRect r) {
 }
 
 static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r, NSButtonType t) {
-    NSRect rc = r; // NSSwitchButton
+    NSRect rc = r;
     rc.origin.x = x;
     NSDictionary* a = @{NSFontAttributeName: font};
     rc.size = [text sizeWithAttributes: a];
@@ -238,7 +290,7 @@ static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r, NSB
     NSButton* btn = [NSButton.alloc initWithFrame: rc];
     btn.focusRingType = NSFocusRingTypeNone;
     btn.title = text;
-    btn.buttonType = t; // NSMomentaryPushInButton; // NSSwitchButton;
+    btn.buttonType = t; // NSMomentaryPushInButton | NSSwitchButton (that looks really ugly!)
     NSButtonCell* bc = btn.cell;
     bc.font = font;
     bc.bordered = false;
@@ -286,7 +338,7 @@ static void insertMenuItem(NSMenu* m, NSString* title, NSImage* image, int tag) 
     [m insertItem: it atIndex: m.itemArray.count];
 }
 
-static NSPopUpButton* createAskButton(NSArray* texts, NSFont* font, NSRect r, NSRect lr) {
+static NSPopUpButton* createAskButton(NSArray* texts, NSFont* font, NSRect r, NSRect lr, ZGDestination* that) {
     NSRect br = r;
     br.origin.x = lr.origin.x + lr.size.width - 8;
     br.origin.y = lr.origin.y;
@@ -304,7 +356,7 @@ static NSPopUpButton* createAskButton(NSArray* texts, NSFont* font, NSRect r, NS
     NSPopUpButton* btn = [NSPopUpButton.alloc initWithFrame: br pullsDown: true];
     btn.focusRingType = NSFocusRingTypeNone;
     btn.menu = m;
-    ZGAskButtonCell* bc = [ZGAskButtonCell.alloc initWithMenu: m];
+    ZGAskButtonCell* bc = [ZGAskButtonCell.alloc initWithMenu: m notify: that];
     btn.cell = bc;
     bc.arrowPosition = NSPopUpArrowAtBottom;
     bc.preferredEdge = NSMaxYEdge;
@@ -362,7 +414,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
 /* NSPathControl deligates */
 
 - (void) pathControlSingleClick: (id) sender {
-    _pathControl.URL = _pathControl.clickedPathComponentCell.URL;
+    self.pathControlURL = _pathControl.clickedPathComponentCell.URL;
 }
 
 - (void) pathControlDoubleClick : (id)sender {
@@ -399,8 +451,11 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
 }
 
 - (void) nextToArchive: (id) sender {
-    _pathControl.pathComponentCells = @[_nextToArchivePathComponentCell];
-    [self pathControlSizeToFit];
+    if (!self.isNextToArchive) {
+        self.pathControlURL = _nextToArchiveURL;
+        _pathControl.pathComponentCells = @[_nextToArchivePathComponentCell];
+        [self pathControlSizeToFit];
+    }
 }
 
 /* TODO: no need anymore
@@ -459,7 +514,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     BOOL result = false;
     NSURL *URL = [NSURL URLFromPasteboard: info.draggingPasteboard];
     if (URL != null) {
-        _pathControl.URL = URL;
+        self.pathControlURL = URL;
         result = true;
     }
     return result;
