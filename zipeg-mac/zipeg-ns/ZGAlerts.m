@@ -16,6 +16,50 @@
 - (void) requestCancel;
 @end
 
+@interface ZGSpinner : NSObject {
+    @public ZGBlock* _next;
+    NSImage* _spinner[12];
+    int64_t _start; // milliseconds;
+}
+
+@end
+
+@implementation ZGSpinner
+
+- (id) init {
+    self = super.init;
+    if (self != null) {
+        alloc_count(self);
+        _start = nanotime() / 1000000;
+        for (int i = 0; i < countof(_spinner); i++) {
+            NSString* name = [NSString stringWithFormat: @"spinner%d.png", i + 1];
+            _spinner[i] = [[NSImage imageNamed: name] copy];
+            assert(_spinner[i] != null);
+            _spinner[i].size = NSMakeSize(20, 20);
+        }
+    }
+    return self;
+}
+
+- (void) dealloc {
+    _next = _next.cancel;
+    dealloc_count(self);
+}
+
+- (void) drawIntoView: (NSView*) v point: (NSPoint) pt {
+    int64_t now = nanotime() / 1000000;
+    int64_t delta = now - _start;
+    int ix = (delta / 100) % countof(_spinner);
+    NSImage* image = _spinner[ix];
+    [image drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
+    _next = [ZGUtils invokeLater:^{
+        v.needsDisplayInRect = NSMakeRect(pt.x, pt.y, image.size.width, image.size.height);
+        _next = null;
+    } delay: 1.0 / countof(_spinner)];
+}
+
+@end
+
 @interface ZGProgress : NSView {
     @public int64_t _pos;
     @public int64_t _total;
@@ -26,6 +70,7 @@
     NSImage* __weak _stop;
     NSImage* _stop_n;
     NSImage* _stop_p;
+    ZGSpinner* _spinner;
 }
 @end
 
@@ -41,6 +86,7 @@
         _stop_p = [[NSImage imageNamed: @"stop-p-32x32@2.png"] copy];
         _stop_p.size = NSMakeSize(18, 18);
         _stop = _stop_n;
+        _spinner = ZGSpinner.new;
         NSMutableParagraphStyle* style = NSMutableParagraphStyle.new;
         style.alignment = NSCenterTextAlignment;
         _textAttributes = @{ NSFontAttributeName: [NSFont systemFontOfSize: NSFont.smallSystemFontSize],
@@ -51,6 +97,8 @@
 
 - (void) dealloc {
     dealloc_count(self);
+    _spinner->_next = _spinner->_next.cancel;
+    _spinner = null;
 }
 
 - (void) setProgress: (int64_t) pos of: (int64_t) total {
@@ -100,6 +148,7 @@
 }
 
 - (void) drawRect: (NSRect) r {
+    r = self.bounds;
     NSColor* c0 = [NSColor colorWithCalibratedRed: .95 green: .97 blue: 1 alpha: 1];
     NSColor* c1 = [NSColor colorWithCalibratedRed: .89 green: .91 blue: .94 alpha: 1];
     NSGradient* g = [NSGradient.alloc initWithStartingColor: c1 endingColor: c0];
@@ -156,6 +205,7 @@
     _stop_rect.origin = pt;
     _stop_rect.size = _stop.size;
     [_stop drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
+    [_spinner drawIntoView: (NSView*) self point: NSMakePoint(p.origin.x - 25, pt.y)];
 
     if (_topText != null) {
         NSRect tr = NSMakeRect(p.origin.x, p.origin.y + p.size.height + 2,
