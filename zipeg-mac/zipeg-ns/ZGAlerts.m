@@ -21,7 +21,7 @@
     NSImage* _spinner[12];
     int64_t _start; // milliseconds;
 }
-
+// NSProgressIndicator does the same job but I want this thing light and inside ZGProgress view
 @end
 
 @implementation ZGSpinner
@@ -49,7 +49,7 @@
 - (void) drawIntoView: (NSView*) v point: (NSPoint) pt {
     int64_t now = nanotime() / 1000000;
     int64_t delta = now - _start;
-    int ix = (delta / 100) % countof(_spinner);
+    int ix = (delta / 50) % countof(_spinner);
     NSImage* image = _spinner[ix];
     [image drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
     _next = [ZGUtils invokeLater:^{

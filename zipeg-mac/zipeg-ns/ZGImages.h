@@ -8,4 +8,6 @@
 @property (readonly, nonatomic) NSImage* dirOpen;
 @property (readonly, nonatomic) NSImage* appImage;
 
++ (NSImage*) iconForFileType16x16: (NSString*) pathExtension;
+
 @end

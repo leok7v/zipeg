@@ -1,7 +1,6 @@
 #import "ZGDocument.h"
 #import "ZGtableViewDataSource.h"
 #import "ZGOutlineViewDelegate.h"
-#import "ZGImageAndTextCell.h"
 
 @interface ZGTableViewDataSource () {
     ZGDocument* __weak _document;

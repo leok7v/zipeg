@@ -181,6 +181,8 @@
 			</dict>
 		</dict>
 	</array>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>

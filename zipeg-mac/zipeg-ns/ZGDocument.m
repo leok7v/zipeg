@@ -383,8 +383,12 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) it open: (BOOL) o {
-    NSImage* dir = o ? ZGImages.shared.dirOpen : ZGImages.shared.dirImage;
-    return it.children == null ? ZGImages.shared.docImage : dir;
+    if (it.children == null) {
+        NSImage* img = [ZGImages iconForFileType16x16: it.name.pathExtension];
+        return img == null ? ZGImages.shared.docImage : img;
+    } else {
+        return o ? ZGImages.shared.dirOpen : ZGImages.shared.dirImage;
+    }
 }
 
 - (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
