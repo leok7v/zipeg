@@ -6,6 +6,9 @@
     uint64_t _storage;
 }
 
+// TODO: static objects for _TRUE _FALSE 0 -1 and 1 may save some memory and speed up things a bit
+// it worth measuring it first
+
 - (ZGNumberKind)kind { return _kind; }
 - (char)charValue { return (char)_storage; }
 - (short)shortValue { return (short)_storage; }
