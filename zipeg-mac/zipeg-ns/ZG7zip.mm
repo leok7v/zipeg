@@ -107,7 +107,9 @@ static NSMutableArray *leafNode;
 }
 
 - (NSString*) fullPath {
-    assert(_parent != null); // cannot take fullPath of root
+    if (_parent == null) {
+        return @"/";
+    }
     if (_index >= 0) {
         return [_archive pathname: _index];
     } else {
