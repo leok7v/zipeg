@@ -347,7 +347,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     if (url == _nextToArchiveURL) {
         url = _document.isNew ? null : _document.url;
         if (url != null) {
-            url = [[NSURL alloc] initFileURLWithPath: url.path.stringByDeletingLastPathComponent];
+            url = [NSURL fileURLWithPath: url.path.stringByDeletingLastPathComponent];
         }
     }
     if (url != null) {
