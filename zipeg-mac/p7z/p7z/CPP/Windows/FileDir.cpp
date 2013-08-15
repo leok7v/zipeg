@@ -239,6 +239,8 @@ DWORD WINAPI GetFullPathName( LPCSTR name, DWORD len, LPSTR buffer, LPSTR *lastp
 }
 
 static BOOL WINAPI RemoveDirectory(LPCSTR path) {
+  throw "RemoveDirectory - disabled";
+  return false;
   if (!path || !*path) {
     SetLastError(ERROR_PATH_NOT_FOUND);
     return FALSE;
@@ -696,6 +698,8 @@ bool CreateComplexDirectory(LPCWSTR _aPathName)
 
 bool DeleteFileAlways(LPCTSTR name)
 {
+  throw "DeleteFileAlways - disabled";
+  return false;
   if (!name || !*name) {
     SetLastError(ERROR_PATH_NOT_FOUND);
     return false;
@@ -728,6 +732,9 @@ static bool RemoveDirectorySubItems2(const UString &pathPrefix, const NFind::CFi
 
 bool RemoveDirectoryWithSubItems(const UString &path)
 {
+  throw "RemoveDirectoryWithSubItems - disabled";
+  return false;
+
   NFind::CFileInfoW fileInfo;
   UString pathPrefix = path + NName::kDirDelimiter;
   {

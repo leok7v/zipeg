@@ -358,14 +358,13 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
           return E_FAIL;
         }
       }
-      else
-        if (!NFile::NDirectory::DeleteFileAlways(fullProcessedPath))
-        {
-          UString message = UString(kCantDeleteOutputFile) +  fullProcessedPath;
-          RINOK(_extractCallback2->MessageError(message));
-          return S_OK;
-          // return E_FAIL;
-        }
+//    else if (!NFile::NDirectory::DeleteFileAlways(fullProcessedPath))
+      else if (_extractCallback2->MoveToTrash(fullProcessedPath) != S_OK)
+      {
+        UString message = UString(kCantDeleteOutputFile) +  fullProcessedPath;
+        RINOK(_extractCallback2->MessageError(message));
+        return E_FAIL;
+      }
     }
     }
     if (!isAnti)

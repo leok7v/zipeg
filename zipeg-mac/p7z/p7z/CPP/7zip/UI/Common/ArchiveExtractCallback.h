@@ -95,7 +95,7 @@ public:
   UInt64 NumFiles;
   UInt64 UnpackSize;
   UInt32 CrcSum;
-  
+
   MY_UNKNOWN_IMP2(ICryptoGetTextPassword, ICompressProgressInfo)
   // COM_INTERFACE_ENTRY(IArchiveVolumeExtractCallback)
 

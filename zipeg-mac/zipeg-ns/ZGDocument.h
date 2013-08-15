@@ -40,6 +40,7 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
             alternateButton: (NSString*) ab info: (NSString*) info;
 - (void) alertModalSheet: (NSString*) message defaultButton: (NSString*) db
          alternateButton: (NSString*) ab info: (NSString*) info done: (void(^)(NSInteger rc)) d;
+- (BOOL) moveToTrash: (const char*) pathname;
 - (BOOL) askOnBackgroundThreadForCancel;
 - (NSString*) askOnBackgroundThreadForPassword;
 - (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize

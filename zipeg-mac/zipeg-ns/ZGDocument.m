@@ -733,7 +733,6 @@ static NSTableView* createTableView(NSRect r) {
             if (rc == NSAlertFirstButtonReturn) {
                 answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
             } else if (rc == NSAlertSecondButtonReturn) {
-                [self moveToTrash: fromName];
                 answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
             } else if (rc == NSAlertThirdButtonReturn) {
                 answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
@@ -750,26 +749,26 @@ static NSTableView* createTableView(NSRect r) {
     return answer;
 }
 
-- (BOOL) moveToTrash: (const char*) fname {
-    NSString* name = [NSString stringWithUTF8String: fname];
-    if (false) {
-        NSInteger tag = 0;
-        [NSWorkspace.sharedWorkspace performFileOperation: NSWorkspaceRecycleOperation
-                                                   source: name.stringByDeletingLastPathComponent
-                                              destination: @""
-                                                    files: @[name]
-                                                      tag: &tag];
-        trace("performFileOperation tag=%ld", tag);
-        return tag == 0;
-    } else {
+- (BOOL) moveToTrash: (const char*) pathname {
+    // timestamp("moveToTrash");
+    assert(![NSThread isMainThread]);
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    BOOL __block b = false;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        assert([NSThread isMainThread]);
+        NSString* name = [NSString stringWithUTF8String: pathname];
         [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: name]]
                                completionHandler: ^(NSDictionary* moved, NSError *error){
-                                   trace("moved=%@ %@", moved, error);
-                                   return;
+                                   // trace("moved=%@ %@", moved, error);
+                                   b = error == null;
+                                   dispatch_semaphore_signal(sema);
                                }];
-        [NSThread sleepForTimeInterval: 3.0];
-        return true;
-    }
+    });
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    dispatch_release(sema);
+    sema = null;
+    // timestamp("moveToTrash"); // 1.5 - 6 milliseconds
+    return b;
 }
 
 - (NSString*) askOnBackgroundThreadForPassword {

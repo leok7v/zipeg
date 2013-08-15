@@ -402,7 +402,16 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
             bool b = ctx->delegate->progress(ctx, completed, total);
             return b ? S_OK : E_ABORT;
         }
-        
+
+        virtual HRESULT MoveToTrash(const wchar_t *pathname) {
+            AString pname;
+            if (!ConvertUnicodeToUTF8(pathname, pname)) {
+                throw "bad file name";
+            }
+            bool b = ctx->delegate->moveToTrash(ctx, pname);
+            return b ? S_OK : E_ABORT;
+        }
+
         virtual HRESULT AskOverwrite(const wchar_t *existName,
                                      const FILETIME *existTime, const UInt64 *existSize,
                                      const wchar_t *newName,

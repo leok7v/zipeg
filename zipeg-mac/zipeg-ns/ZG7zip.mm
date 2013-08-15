@@ -50,8 +50,9 @@ struct D;
 - (BOOL) isLeafFolder: (int) index;
 - (BOOL) isFolder: (int) index;
 - (void) error: (const char*) text;
-- (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
-                      to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;
+- (BOOL) moveToTrash: (const char*) pathname;
+- (int)  askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+                       to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;
 - (const wchar_t*) password;
 - (NSString*) pathname: (int) index;
 
@@ -199,7 +200,10 @@ struct D : P7Z::Delegate {
         [delegate error: text];
     }
     virtual const wchar_t* password(P7Z*) { return [delegate password]; }
-    virtual const int askOverwrite(P7Z*, const char* fromName, int64_t fromTime, int64_t fromSize,
+    virtual bool moveToTrash(P7Z*, const char* pathname) {
+        return [delegate moveToTrash: pathname];
+    }
+    virtual int askOverwrite(P7Z*, const char* fromName, int64_t fromTime, int64_t fromSize,
                                          const char* toName,   int64_t toTime,   int64_t toSize) {
         return [delegate askOverwriteFrom: fromName time: fromTime size: fromSize
                                        to: toName time: toTime size: toSize];
@@ -827,6 +831,10 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 
 - (void) error: (const char*) message {
     _error = [NSString stringWithUTF8String: message];
+}
+
+- (BOOL) moveToTrash: (const char*) pathname {
+    return [document moveToTrash: pathname];
 }
 
 - (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
