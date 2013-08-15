@@ -338,6 +338,8 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
           UString message = UString(kCantAutoRename) + fullProcessedPath;
           RINOK(_extractCallback2->MessageError(message));
           return E_FAIL;
+        } else { // make kAutoRename work for one item only
+          _overwriteMode = NExtract::NOverwriteMode::kAskBefore;
         }
       }
       else if (_overwriteMode == NExtract::NOverwriteMode::kAutoRenameExisting)
