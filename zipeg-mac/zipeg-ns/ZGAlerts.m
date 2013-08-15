@@ -133,16 +133,17 @@
     p.origin.x += 30;
     p.size.width -= 60;
     double ratio = MIN(MAX(0, (double)_pos / (double)_total), 1);
+
+    c0 = [NSColor colorWithCalibratedWhite: .95 alpha: 1];
+    [self drawBorder: NSMakeRect(p.origin.x, p.origin.y - 1, p.size.width, p.size.height + 1) color: c0 radius: 1];
+
+    c0 = [NSColor colorWithCalibratedRed: .39 green: .40 blue: .41 alpha: 1];
+    c1 = [NSColor colorWithCalibratedRed: .76 green: .77 blue: .78 alpha: 1];
+    g = [NSGradient.alloc initWithStartingColor: c1 endingColor: c0];
+    [g drawInRect: p angle: 90];
+
+    CGFloat w = p.size.width * ratio;
     if (ratio > 0) {
-        CGFloat w = p.size.width * ratio;
-        c0 = [NSColor colorWithCalibratedWhite: .95 alpha: 1];
-        [self drawBorder: NSMakeRect(p.origin.x, p.origin.y - 1, p.size.width, p.size.height + 1) color: c0 radius: 1];
-
-        c0 = [NSColor colorWithCalibratedRed: .39 green: .40 blue: .41 alpha: 1];
-        c1 = [NSColor colorWithCalibratedRed: .76 green: .77 blue: .78 alpha: 1];
-        g = [NSGradient.alloc initWithStartingColor: c1 endingColor: c0];
-        [g drawInRect: p angle: 90];
-
         c0 = [NSColor colorWithCalibratedRed: .48 green: .57 blue: .69 alpha: 1];
         c1 = [NSColor colorWithCalibratedRed: .83 green: .87 blue: .91 alpha: 1];
         g = [NSGradient.alloc initWithStartingColor: c1 endingColor: c0];
@@ -150,12 +151,11 @@
         c1 = [NSColor colorWithCalibratedRed: .45 green: .52 blue: .62 alpha: 1];
         g = [NSGradient.alloc initWithStartingColor: c0 endingColor: c1];
         [g drawInRect: NSMakeRect(p.origin.x, p.origin.y, w, p.size.height / 2) angle: 90];
-
-        NSPoint pt = {p.origin.x + p.size.width + 5, p.origin.y - (_stop.size.height - p.size.height) / 2};
-        _stop_rect.origin = pt;
-        _stop_rect.size = _stop.size;
-        [_stop drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
     }
+    NSPoint pt = {p.origin.x + p.size.width + 5, p.origin.y - (_stop.size.height - p.size.height) / 2};
+    _stop_rect.origin = pt;
+    _stop_rect.size = _stop.size;
+    [_stop drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
 
     if (_topText != null) {
         NSRect tr = NSMakeRect(p.origin.x, p.origin.y + p.size.height + 2,
@@ -291,6 +291,7 @@
     }
     [self makeFirstResponder: _progress];
     _contentView.subviews = @[_progress];
+    _savedContentViewSize = _contentView.frame.size;
 }
 
 static void setTarget(NSView* v, id old, id target) {
@@ -305,9 +306,8 @@ static void setTarget(NSView* v, id old, id target) {
 }
 
 - (void) alert: (NSAlert*) a done: (void(^)(NSInteger rc)) d {
-    NSSize old = _contentView.frame.size;
+    NSSize old = _savedContentViewSize;
     if (_alert) {
-        old = _savedContentViewSize;
         [self dismissAlert: NSAlertErrorReturn resize: false];
     }
     [a layout];
@@ -315,7 +315,6 @@ static void setTarget(NSView* v, id old, id target) {
     NSView* acv = w.contentView;
     CGFloat width = MAX(acv.frame.size.width, old.width);
     NSSize size = NSMakeSize(width, acv.frame.size.height + old.height);
-    _savedContentViewSize = old;
     _contentView.size = size;
     _contentView.superview.size = size;
     [acv removeFromSuperview];

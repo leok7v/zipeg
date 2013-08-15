@@ -76,6 +76,7 @@ FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 @interface ZGUtils : NSObject
 // can be called from any thread, does dispatch_async to main thread
 + (ZGBlock*) invokeLater: (void(^)()) block;
++ (ZGBlock*) invokeLater: (void(^)()) b delay: (double) seconds; // dispatch_after
 @end
 
 #endif

@@ -339,7 +339,7 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 - (id) cancel {
     _isCanceled = true;
     if (_done != null) {
-        trace("cancelled %@", self);
+//       trace("cancelled %@", self);
         _done = null;
     }
     return null; // always - see usages
@@ -366,11 +366,15 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 @implementation ZGUtils
 
 + (ZGBlock*) invokeLater: (void(^)()) b {
+    return [ZGUtils invokeLater: b delay: 0];
+}
+
++ (ZGBlock*) invokeLater: (void(^)()) b delay: (double) seconds {
     assert(b != null);
     ZGBlock* block = [ZGBlock new];
     if (block) {
         block->_done = b;
-        dispatch_async(dispatch_get_current_queue(), ^(){
+        void(^i)() = ^() {
             if (!block.isCanceled && !block.isDone) {
                 void(^d)() = block->_done;
                 if (d != null) {
@@ -378,9 +382,17 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
                     d();
                 }
             }
-        });
+        };
+        if (seconds > 0) {
+            const dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC));
+            dispatch_after(popTime, dispatch_get_main_queue(), i);
+        } else {
+            dispatch_async(dispatch_get_current_queue(), i);
+        }
     }
     return block;
 }
+
+
 
 @end

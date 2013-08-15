@@ -399,8 +399,8 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
         virtual HRESULT SetCompleted(const UInt64 *completeValue) {
             completed = completeValue == 0 ? 0 : *completeValue;
             // trace("completeValue=%lld\n", completed);
-            ctx->delegate->progress(ctx, completed, total);
-            return S_OK;
+            bool b = ctx->delegate->progress(ctx, completed, total);
+            return b ? S_OK : E_ABORT;
         }
         
         virtual HRESULT AskOverwrite(const wchar_t *existName,

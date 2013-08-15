@@ -38,10 +38,10 @@
     id _windowWillCloseObserver;
     id _clipViewFrameDidChangeObserver;
     id _clipViewBoundsDidChangeObserver;
-    id _fileOperationObserver;
     NSTableViewSelectionHighlightStyle _highlightStyle;
     BOOL _isNew;
     uint64_t _timeToShowHeroView;
+    ZGBlock* _scheduledAlerts;
 }
 
 @property (weak) NSView* contentView;
@@ -448,16 +448,11 @@ static NSTableView* createTableView(NSRect r) {
     };
     _clipViewBoundsDidChangeObserver = addObserver(NSViewBoundsDidChangeNotification, clipView, sizeToContent);
     _clipViewFrameDidChangeObserver = addObserver(NSViewFrameDidChangeNotification, clipView, sizeToContent);
-    _fileOperationObserver = addObserver(NSWorkspaceDidPerformFileOperationNotification,
-                                         NSWorkspace.sharedWorkspace, ^(NSNotification* n) {
-                                             [self workspaceDidPerformFileOperation: n];
-                                         });
     _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _window,
         ^(NSNotification* n) {
             _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
             _clipViewBoundsDidChangeObserver = removeObserver(_clipViewBoundsDidChangeObserver);
             _clipViewFrameDidChangeObserver = removeObserver(_clipViewFrameDidChangeObserver);
-            _fileOperationObserver = removeObserver(_fileOperationObserver);
         }
     );
     ZGBackPanel* background = [ZGBackPanel.alloc initWithDocument: self andFrame: _contentView.frame];
@@ -467,13 +462,7 @@ static NSTableView* createTableView(NSRect r) {
         // TODO: how to make document modified without this hack?
         [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
     } else {
-        const double delayInSeconds = 1.0;
-        const dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-            if (_archive == null) {
-                [self beginAlerts];
-            }
-        });
+        [self scheduleAlerts];
         _alerts.topText = [NSString stringWithFormat: @"Opening: %@", _url.path.lastPathComponent];
         _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
         OpenArchiveOperation *operation = [OpenArchiveOperation.alloc initWithDocument: self];
@@ -487,6 +476,15 @@ static NSTableView* createTableView(NSRect r) {
 - (void) windowDidResignKey {
 }
 
+- (void) scheduleAlerts {
+    if (_scheduledAlerts == null) {
+        _scheduledAlerts = [ZGUtils invokeLater: ^{
+            [self beginAlerts];
+            _scheduledAlerts = null;
+        } delay: 1.0]; // after 1 second
+    }
+}
+
 - (void) beginAlerts {
     if (!_alerts.isOpen) {
         [_alerts begin];
@@ -494,6 +492,7 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (void) endAlerts {
+    _scheduledAlerts = _scheduledAlerts.cancel;
     if (_alerts.isOpen) {
         [_alerts end];
     }
@@ -662,7 +661,7 @@ static NSTableView* createTableView(NSRect r) {
             _heroView.hidden = false;
             NSAlert* a = [NSAlert alertWithError: error];
             [self beginAlerts];
-            [_alerts alert: a done: ^(NSInteger rc){
+            [_alerts alert: a done: ^(NSInteger rc) {
                 [self endAlerts];
                 [_window performClose: _window];
             }];
@@ -773,12 +772,6 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (void) workspaceDidPerformFileOperation: (NSNotification*) n {
-    NSNumber* tag = n.userInfo[@"NSOperationNumber"];
-    trace("NSOperationNumber tag=%@ %ld", tag, tag.integerValue);
-}
-
-
 - (NSString*) askOnBackgroundThreadForPassword {
     assert(![NSThread isMainThread]);
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
@@ -840,6 +833,7 @@ static NSTableView* createTableView(NSRect r) {
     if (items == null || items.count == 0) {
         [_outlineView deselectAll: null]; // remove confusing selection
     }
+    [self scheduleAlerts];
     _alerts.topText = [NSString stringWithFormat: @"Unpacking: %@", _url.path.lastPathComponent];
     [_archive extract: items to: url operation: op done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -854,6 +848,11 @@ static NSTableView* createTableView(NSRect r) {
                 // Basso Blow Bottle Frog Funk Glass Hero Morse Ping Pop Purr Sosumi Submarine Tink
                 [[NSSound soundNamed:@"done"] play];
                 [self endAlerts];
+                // Reveal in Finder
+                [NSWorkspace.sharedWorkspace openURLs: @[url]
+                              withAppBundleIdentifier: @"com.apple.Finder"
+                                              options: NSWorkspaceLaunchDefault
+                       additionalEventParamDescriptor: null  launchIdentifiers: null];
             }
         });
     }];

@@ -945,42 +945,47 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
         block(err);
         return;
     }
-    NSString* path = [url path];
-    int n = -1;
-    int* indices = null;
-    const char** prefixComponents = null;
-    int pc = 0;
-    if (itms != null && itms.count > 0) {
-        prefixComponents = [self prefixComponents: itms count: &pc];
-        if (pc < 0) {
-            block(ZGOutOfMemoryError());
-            return;
+    @try {
+        _op = op;
+        NSString* path = [url path];
+        int n = -1;
+        int* indices = null;
+        const char** prefixComponents = null;
+        int pc = 0;
+        if (itms != null && itms.count > 0) {
+            prefixComponents = [self prefixComponents: itms count: &pc];
+            if (pc < 0) {
+                block(ZGOutOfMemoryError());
+                return;
+            }
+            int max = [self countChildren: itms];
+            indices = new int[max];
+            if (indices == null) {
+                delete[] prefixComponents;
+                block(ZGOutOfMemoryError());
+                return;
+            }
+            n = [self collectChildren: itms to: indices position: 0 size: max];
         }
-        int max = [self countChildren: itms];
-        indices = new int[max];
-        if (indices == null) {
-            delete[] prefixComponents;
-            block(ZGOutOfMemoryError());
-            return;
+        _error = null;
+        bool b = a->extract(indices, n, [path UTF8String], prefixComponents, pc);
+        delete[] indices;
+        delete[] prefixComponents;
+        if (_error == null && !b && self.isCancelled) {
+            NSError* err = [NSError errorWithDomain: NSCocoaErrorDomain code: NSUserCancelledError
+                                           userInfo: @{ NSFilePathErrorKey: _archiveFilePath }];
+            block(err);
+        } else if (_error == null) {
+            block(b ? null : ZGOutOfMemoryError()); // TODO: ZGInternalError()
+        } else {
+            // TODO: better diag
+            NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile
+                                           userInfo: @{ NSFilePathErrorKey: _archiveFilePath,
+                          NSLocalizedDescriptionKey: _error }];
+            block(err);
         }
-        n = [self collectChildren: itms to: indices position: 0 size: max];
-    }
-    _error = null;
-    bool b = a->extract(indices, n, [path UTF8String], prefixComponents, pc);
-    delete[] indices;
-    delete[] prefixComponents;
-    if (_error == null && !b && self.isCancelled) {
-        NSError* err = [NSError errorWithDomain: NSCocoaErrorDomain code: NSUserCancelledError
-                                 userInfo: @{ NSFilePathErrorKey: _archiveFilePath }];
-        block(err);
-    } else if (_error == null) {
-        block(b ? null : ZGOutOfMemoryError()); // TODO: ZGInternalError()
-    } else {
-        // TODO: better diag
-        NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile
-                        userInfo: @{ NSFilePathErrorKey: _archiveFilePath,
-                                     NSLocalizedDescriptionKey: _error }];
-        block(err);
+    } @finally {
+        _op = null;
     }
 }
 
