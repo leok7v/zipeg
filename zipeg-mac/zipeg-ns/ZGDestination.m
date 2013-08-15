@@ -69,6 +69,7 @@ static NSSearchPathDirectory dirs[] = {
     NSPopUpButton* _selected;
     NSPopUpButton* _ask;
     NSButton* _to;
+    NSPopUpButton* _reveal;
     NSPopUpButton* _disclosure;
     NSPathControl* _pathControl;
     NSPathComponentCell* _nextToArchivePathComponentCell;
@@ -95,11 +96,15 @@ static NSSearchPathDirectory dirs[] = {
         _label = createLabel(4, @" ", _font, r); // tailing space is important
         _ask = createAskButton(@[@"ask to ", @"always "], _font, r, _label.frame);
         _selected = createAskButton(@[@"unpack selected ", @"unpack all "], _font, r, _ask.frame);
-        _to = createButton(_selected.frame.origin.x + _selected.frame.size.width, @" files to the folder:", _font, r);
+        _to = createButton(_selected.frame.origin.x + _selected.frame.size.width,
+                           @" files to the folder:", _font, r, NSMomentaryPushInButton);
         _to.action = @selector(openDisclosure:);
         _to.target = self;
         _disclosure = createDirsButton(@"M", _font, r, _to.frame);
         _pathControl = createPathControl(_font, r, _disclosure.frame);
+//      _reveal = createButton(_pathControl.frame.origin.x + _pathControl.frame.size.width,
+//                             @" and reveal in Finder", _font, r, NSSwitchButton); // look UGLY!
+        _reveal = createAskButton(@[@"and reveal in Finder", @"and do not reveal"], _font, r, _pathControl.frame);
         _pathControl.action = @selector(pathControlSingleClick:);
         _pathControl.target = self;
         _pathControl.delegate = self;
@@ -107,7 +112,7 @@ static NSSearchPathDirectory dirs[] = {
         _disclosure.action = @selector(disclosurePressed:);
         self.postsBoundsChangedNotifications = true;
         [_pathControl addObserver: self forKeyPath: @"URL" options: 0 context: null];
-        self.subviews = @[_label, _selected, _ask, _pathControl, _disclosure, _to];
+        self.subviews = @[_label, _selected, _ask, _to, _disclosure, _pathControl, _reveal];
     }
     return self;
 }
@@ -132,6 +137,10 @@ static NSSearchPathDirectory dirs[] = {
 
 - (BOOL) isSelected {
     return _selected.selectedItem.tag == 0;
+}
+
+- (BOOL) isReveal {
+    return _reveal.selectedItem.tag == 0;
 }
 
 - (BOOL) isNextToArchive {
@@ -220,8 +229,8 @@ static NSTextField* createLabel(int x, NSString* text, NSFont* font, NSRect r) {
     return label;
 }
 
-static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r) {
-    NSRect rc = r;
+static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r, NSButtonType t) {
+    NSRect rc = r; // NSSwitchButton
     rc.origin.x = x;
     NSDictionary* a = @{NSFontAttributeName: font};
     rc.size = [text sizeWithAttributes: a];
@@ -229,11 +238,14 @@ static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r) {
     NSButton* btn = [NSButton.alloc initWithFrame: rc];
     btn.focusRingType = NSFocusRingTypeNone;
     btn.title = text;
+    btn.buttonType = t; // NSMomentaryPushInButton; // NSSwitchButton;
     NSButtonCell* bc = btn.cell;
     bc.font = font;
     bc.bordered = false;
     bc.bezelStyle = NSShadowlessSquareBezelStyle;
     bc.highlightsBy = NSNoCellMask; // NSChangeGrayCellMask;
+    bc.showsStateBy = NSNoCellMask;
+    bc.controlTint = NSClearControlTint;
     bc.font = font;
     bc.bordered = false;
     btn.size = [btn.attributedStringValue size];
@@ -371,7 +383,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
 
 - (void) revealInFinder: (id) sender {
     NSURL* url = _pathControl.clickedPathComponentCell.URL;
-    //    url = url != null ? url : _pathControl.URL;
+    url = url != null ? url : _pathControl.URL;
     if (url == _nextToArchiveURL) {
         url = _document.isNew ? null : _document.url;
         if (url != null) {
