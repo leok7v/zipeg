@@ -38,6 +38,7 @@
     id _windowWillCloseObserver;
     id _clipViewFrameDidChangeObserver;
     id _clipViewBoundsDidChangeObserver;
+    id _fileOperationObserver;
     NSTableViewSelectionHighlightStyle _highlightStyle;
     BOOL _isNew;
     uint64_t _timeToShowHeroView;
@@ -326,9 +327,9 @@ static NSTableView* createTableView(NSRect r) {
     tableColumn.maxWidth = 3000;
     tableColumn.editable = true;
     assert(tv.tableColumns[0] == tableColumn);
-    
-    NSSortDescriptor *sd = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES
-                                                          selector:@selector(localizedCaseInsensitiveCompare:)];
+    NSSortDescriptor *sd = [NSSortDescriptor
+        sortDescriptorWithKey: @"name" ascending:YES
+                     selector: @selector(localizedCaseInsensitiveCompare:)];
     tableColumn.sortDescriptorPrototype = sd;
     tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
     for (int i = 1; i < 3; i++) {
@@ -447,11 +448,16 @@ static NSTableView* createTableView(NSRect r) {
     };
     _clipViewBoundsDidChangeObserver = addObserver(NSViewBoundsDidChangeNotification, clipView, sizeToContent);
     _clipViewFrameDidChangeObserver = addObserver(NSViewFrameDidChangeNotification, clipView, sizeToContent);
+    _fileOperationObserver = addObserver(NSWorkspaceDidPerformFileOperationNotification,
+                                         NSWorkspace.sharedWorkspace, ^(NSNotification* n) {
+                                             [self workspaceDidPerformFileOperation: n];
+                                         });
     _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _window,
         ^(NSNotification* n) {
             _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
             _clipViewBoundsDidChangeObserver = removeObserver(_clipViewBoundsDidChangeObserver);
             _clipViewFrameDidChangeObserver = removeObserver(_clipViewFrameDidChangeObserver);
+            _fileOperationObserver = removeObserver(_fileOperationObserver);
         }
     );
     ZGBackPanel* background = [ZGBackPanel.alloc initWithDocument: self andFrame: _contentView.frame];
@@ -569,8 +575,6 @@ static NSTableView* createTableView(NSRect r) {
         d(rc);
     }];
 }
-
-
 
 - (void)close {
     // NSWindowController _windowDidClose will call us recursively from super :(
@@ -730,6 +734,7 @@ static NSTableView* createTableView(NSRect r) {
             if (rc == NSAlertFirstButtonReturn) {
                 answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
             } else if (rc == NSAlertSecondButtonReturn) {
+                [self moveToTrash: fromName];
                 answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
             } else if (rc == NSAlertThirdButtonReturn) {
                 answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
@@ -745,6 +750,34 @@ static NSTableView* createTableView(NSRect r) {
     sema = null;
     return answer;
 }
+
+- (BOOL) moveToTrash: (const char*) fname {
+    NSString* name = [NSString stringWithUTF8String: fname];
+    if (false) {
+        NSInteger tag = 0;
+        [NSWorkspace.sharedWorkspace performFileOperation: NSWorkspaceRecycleOperation
+                                                   source: name.stringByDeletingLastPathComponent
+                                              destination: @""
+                                                    files: @[name]
+                                                      tag: &tag];
+        trace("performFileOperation tag=%ld", tag);
+        return tag == 0;
+    } else {
+        [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: name]]
+                               completionHandler: ^(NSDictionary* moved, NSError *error){
+                                   trace("moved=%@ %@", moved, error);
+                                   return;
+                               }];
+        [NSThread sleepForTimeInterval: 3.0];
+        return true;
+    }
+}
+
+- (void) workspaceDidPerformFileOperation: (NSNotification*) n {
+    NSNumber* tag = n.userInfo[@"NSOperationNumber"];
+    trace("NSOperationNumber tag=%@ %ld", tag, tag.integerValue);
+}
+
 
 - (NSString*) askOnBackgroundThreadForPassword {
     assert(![NSThread isMainThread]);
@@ -804,6 +837,10 @@ static NSTableView* createTableView(NSRect r) {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
     assert(_archive != null);
+    if (items == null || items.count == 0) {
+        [_outlineView deselectAll: null]; // remove confusing selection
+    }
+    _alerts.topText = [NSString stringWithFormat: @"Unpacking: %@", _url.path.lastPathComponent];
     [_archive extract: items to: url operation: op done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (error != null) {
