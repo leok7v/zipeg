@@ -673,7 +673,7 @@ static NSString* starifyMultipartFilename(NSString* s) {
     bool b = false;
     @try {
         _op = op;
-        b = a->open([_archiveFilePath UTF8String]) && a->getNumberOfItems() > 0 && a->getNumberOfProperties() > 0;
+        b = a->open(_archiveFilePath.UTF8String) && a->getNumberOfItems() > 0 && a->getNumberOfProperties() > 0;
         if (b) {
             _numberOfItems = a->getNumberOfItems();
             _properties = a->getNumberOfProperties();
@@ -764,7 +764,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     NSMutableDictionary* dic = [NSMutableDictionary dictionaryWithCapacity: _properties * 3 / 2];
     if (itemIndex == 0) {
         for (int i = 0; i < _properties; i++) {
-            _pnames[i] = [NSString stringWithUTF8String:names[i]];
+            _pnames[i] = [NSString stringWithUTF8String: names[i]];
             if (_pathIndex < 0 && [_pnames[i] isEqualToString:@"Path"]) {
                 _pathIndex = i;
             }
@@ -934,7 +934,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
         p = parent;
         while (!isEqual(p, _root)) {
             NSString* name = p.name;
-            prefixComponents[--i] = [name cStringUsingEncoding: NSUTF8StringEncoding];
+            prefixComponents[--i] = name.UTF8String;
             p = p.parent;
         }
         assert(i == 0);
@@ -976,7 +976,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
             n = [self collectChildren: itms to: indices position: 0 size: max];
         }
         _error = null;
-        bool b = a->extract(indices, n, [path UTF8String], prefixComponents, pc);
+        bool b = a->extract(indices, n, path.UTF8String, prefixComponents, pc);
         delete[] indices;
         delete[] prefixComponents;
         if (_error == null && !b && self.isCancelled) {

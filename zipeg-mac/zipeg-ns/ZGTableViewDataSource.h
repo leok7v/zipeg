@@ -6,5 +6,6 @@
 
 - (id) initWithDocument: (ZGDocument*) doc;
 - (id) itemAtRow: (NSInteger) row;
+- (NSArray*) itemsForRows: (NSIndexSet*) rowIndexes;
 
 @end

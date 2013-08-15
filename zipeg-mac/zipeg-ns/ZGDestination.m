@@ -435,6 +435,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     op.canChooseDirectories = true;
     op.canChooseFiles = false;
     op.resolvesAliases = true;
+    op.canCreateDirectories = true;
     op.title = NSLocalizedString(@"Zipeg: Choose a folder to unpack to", @"");
     op.prompt = NSLocalizedString(@"Choose", @""); // this is localized by OS X to .ru
 }

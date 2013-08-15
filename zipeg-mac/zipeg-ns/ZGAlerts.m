@@ -5,13 +5,13 @@
 @class ZGProgress;
 
 @interface ZGAlerts() {
+    @public NSAlert* _alert; // strong
+    void(^_block)(NSInteger rc); // strong
     NSView* __weak _contentView;
     ZGDocument* __weak _document;
     ZGProgress* _progress;
     int _count;
-    NSSize    _savedContentViewSize;
-    NSAlert*  _alert; // strong
-    void(^_block)(NSInteger rc); // strong
+    NSSize _initialContentViewSize;
 }
 - (void) requestCancel;
 @end
@@ -101,7 +101,7 @@
     _spinner = null;
 }
 
-- (void) setProgress: (int64_t) pos of: (int64_t) total {
+- (void) progress: (int64_t) pos of: (int64_t) total {
     assert(0 <= pos && pos <= total);
     _pos = MIN(MAX(0, pos), total);
     _total = total;
@@ -205,7 +205,9 @@
     _stop_rect.origin = pt;
     _stop_rect.size = _stop.size;
     [_stop drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
-    [_spinner drawIntoView: (NSView*) self point: NSMakePoint(p.origin.x - 25, pt.y)];
+    if (((ZGAlerts*)self.window)->_alert == null) {
+        [_spinner drawIntoView: (NSView*) self point: NSMakePoint(p.origin.x - 25, pt.y)];
+    }
 
     if (_topText != null) {
         NSRect tr = NSMakeRect(p.origin.x, p.origin.y + p.size.height + 2,
@@ -259,8 +261,8 @@
     _block = null;
 }
 
-- (void) setProgress: (int64_t) pos of: (int64_t) total {
-    [_progress setProgress: pos of: total];
+- (void) progress: (int64_t) pos of: (int64_t) total {
+    [_progress progress: pos of: total];
     _contentView.needsDisplay = true;
 }
 
@@ -298,7 +300,7 @@
     assert(_count == 1);
     _count--;
     [NSApp endSheet: self];
-    [self orderOut: null];
+    [self orderOut: self];
     [self dismissAlert: NSAlertErrorReturn resize: true];
 }
 
@@ -313,9 +315,9 @@
             done(rc);
         }
         if (b) {
-            _contentView.size = _savedContentViewSize;
-            _contentView.superview.size = _savedContentViewSize;
-            self.size = _savedContentViewSize;
+            _contentView.size = _initialContentViewSize;
+            _contentView.superview.size = _initialContentViewSize;
+            self.size = _initialContentViewSize;
         }
     }
 }
@@ -341,7 +343,7 @@
     }
     [self makeFirstResponder: _progress];
     _contentView.subviews = @[_progress];
-    _savedContentViewSize = _contentView.frame.size;
+    _initialContentViewSize = _contentView.frame.size;
 }
 
 static void setTarget(NSView* v, id old, id target) {
@@ -356,7 +358,7 @@ static void setTarget(NSView* v, id old, id target) {
 }
 
 - (void) alert: (NSAlert*) a done: (void(^)(NSInteger rc)) d {
-    NSSize old = _savedContentViewSize;
+    NSSize old = _initialContentViewSize;
     if (_alert) {
         [self dismissAlert: NSAlertErrorReturn resize: false];
     }

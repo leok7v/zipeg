@@ -77,8 +77,8 @@
     return c[row];
 }
 
-- (void)tableView:(NSTableView *)tableView sortDescriptorsDidChange:(NSArray *)oldDescriptors {
-    NSObject<ZGItemProtocol>* it = [self selectedItem];
+- (void) tableView: (NSTableView*) tableView sortDescriptorsDidChange: (NSArray*) oldDescriptors {
+    NSObject<ZGItemProtocol>* it = self.selectedItem;
     if (it != null) {
         // tableView:didClickTableColumn: in ZGTableViewDelegate
         // which sets sortDescriptorPrototype back after it's been null-ified
@@ -107,8 +107,20 @@
     }
 }
 
+- (NSArray*) itemsForRows:  (NSIndexSet*) rowIndexes {
+    NSMutableArray *items = [NSMutableArray.alloc initWithCapacity: rowIndexes.count];
+    NSUInteger i = [rowIndexes firstIndex];
+    while (i != NSNotFound) {
+        NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
+        [items addObject: it];
+        i = [rowIndexes indexGreaterThanIndex: i];
+    }
+    return items;
+}
+
 - (NSArray*) tableView: (NSTableView*) tv namesOfPromisedFilesDroppedAtDestination: (NSURL*) d
              forDraggedRowsWithIndexes: (NSIndexSet*) rowIndexes {
+/* TODO: remove me:
     NSMutableArray *urls  = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
     NSMutableArray *items = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
     NSUInteger i = [rowIndexes firstIndex];
@@ -119,6 +131,16 @@
         trace(@"it=%@ fileURL=%@", it.description, u);
         [urls addObject: u.path.lastPathComponent];
         i = [rowIndexes indexGreaterThanIndex: i];
+    }
+    [_document extract: items to: d DnD: true];
+    return urls;
+*/
+    NSArray* items = [self itemsForRows: rowIndexes];
+    NSMutableArray *urls  = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
+    for (NSObject<ZGItemProtocol>* it in items) {
+        NSURL* u =[NSURL fileURLWithPath:[d.path stringByAppendingPathComponent: it.name] isDirectory: false];
+        trace(@"it=%@ fileURL=%@", it.description, u);
+        [urls addObject: u.path.lastPathComponent];
     }
     [_document extract: items to: d DnD: true];
     return urls;

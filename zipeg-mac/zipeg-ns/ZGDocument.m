@@ -42,6 +42,8 @@
     BOOL _isNew;
     uint64_t _timeToShowHeroView;
     ZGBlock* _scheduledAlerts;
+    int _itemsToExtract;
+    int _foldersToExtract;
 }
 
 @property (weak) NSView* contentView;
@@ -64,7 +66,7 @@
 @property ZGAlerts* alerts;
 
 - (void) openArchiveForOperation: (ZGOperation*) op;
-- (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url;
+- (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd;
 - (void) searchArchiveWithString: (NSString*) s forOperation: (ZGOperation*) op done: (void(^)(BOOL)) block;
 
 @end
@@ -135,24 +137,26 @@
     ZGDocument* __weak _document;
     NSArray* _items;
     NSURL* _url;
+    BOOL _dnd;
 }
-- (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url;
+- (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd;
 @end
 
 @implementation ExtractItemsOperation
 
-- (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url {
+- (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
     self = [super init];
     if (self != null) {
         _document = doc;
         _items = items;
         _url = url;
+        _dnd = dnd;
     }
     return self;
 }
 
 - (void)main {
-    [_document extractItemsForOperation: self items: _items to: _url];
+    [_document extractItemsForOperation: self items: _items to: _url DnD: _dnd];
 }
 
 @end
@@ -507,6 +511,9 @@ static NSTableView* createTableView(NSRect r) {
     // trace(@"first responder changed to %@", fr);
     if (fr == _tableView) {
         [_tableViewDelegate tableViewBecameFirstResponder: _tableView];
+        _lastFirstResponder = _tableView;
+    } if (fr == _outlineView) {
+        _lastFirstResponder = _outlineView;
     }
 }
 
@@ -546,18 +553,39 @@ static NSTableView* createTableView(NSRect r) {
     return _operationQueue.operations.count == 0;
 }
 
+- (NSInteger) runModalAlert: (NSString*) message buttons: (NSArray*) buttons info: (NSString*) info {
+    NSInteger __block answer = NSAlertErrorReturn;
+    NSAlert* a = NSAlert.new;
+    for (NSString* s in buttons) {
+        [a addButtonWithTitle: s];
+    }
+    a.messageText = message;
+    a.informativeText = info;
+    a.alertStyle = NSInformationalAlertStyle;
+    [self beginAlerts];
+    [_alerts alert: a done: ^(NSInteger rc) {
+        answer = rc;
+        [NSApp stopModal];
+    }];
+    // https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Sheets/Tasks/UsingAppModalDialogs.html
+    [NSApp runModalForWindow: _alerts];
+    [self endAlerts];
+    return answer;
+}
+
 - (NSInteger) runModalAlert: (NSString*) message defaultButton: (NSString*) db
-            alternateButton: (NSString*) ab info: (NSString*) info {
+            alternateButton: (NSString*) ab otherButton: ob info: (NSString*) info {
     NSInteger __block answer = NSAlertErrorReturn;
     NSAlert* a = [NSAlert alertWithMessageText: message
                                  defaultButton: db
                                alternateButton: ab
-                                   otherButton: null
+                                   otherButton: ob
                      informativeTextWithFormat: @"%@", info];
     a.alertStyle = NSInformationalAlertStyle;
     [self beginAlerts];
     [_alerts alert: a done: ^(NSInteger rc) {
         answer = rc;
+        [NSApp stopModal];
     }];
     // https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Sheets/Tasks/UsingAppModalDialogs.html
     [NSApp runModalForWindow: _alerts];
@@ -635,6 +663,330 @@ static NSTableView* createTableView(NSRect r) {
     return _archive != null;
 }
 
+- (void) extract {
+    NSURL* u = [NSURL fileURLWithPath: _destination.URL.path isDirectory: true];
+    NSArray* items = null;
+    if (_destination.isSelected) {
+        if (_lastFirstResponder == _tableView) {
+            items = [_tableViewDatatSource itemsForRows: _tableView.selectedRowIndexes];
+        } else if (!_outlineView.isHidden && _lastFirstResponder == _outlineView) {
+            NSObject<ZGItemProtocol>* it = [_outlineViewDelegate selectedItem];
+            if (it != null) {
+                items = @[it];
+            }
+        }
+    }
+    [self extract: items to: u DnD: false];
+}
+
+static int numberOfLeafs(NSArray* items, int* numberOfFolders) {
+    int n = 0;
+    for (NSObject<ZGItemProtocol>* it in items) {
+        if (it.children == null) {
+            n++; // leaf
+        } else {
+            n += numberOfLeafs(it.children, numberOfFolders);
+            (*numberOfFolders)++;
+        }
+    }
+    return n;
+}
+
+
+static NSString* nonexistingName(NSString* name, NSString* ext, int64_t value) {
+    assert(value > 0);
+    NSString* res = [name stringByAppendingFormat:@"%lld", value];
+    if (ext != null && ext.length > 0) {
+        res = [res stringByAppendingPathExtension: ext];
+    }
+    BOOL e = [NSFileManager.defaultManager fileExistsAtPath: res isDirectory: null];
+    return !e ? res : null;
+}
+
+static NSString* nextPathname(NSString* path) {
+    NSString* ext = path.pathExtension;
+    NSString* name = path.stringByDeletingPathExtension;
+    int64_t n = -1;
+    int spix = [name lastIndexOf: @" "];
+    if (spix >= 0) {
+        int k = spix + 1;
+        if (k < name.length && isdigit([name characterAtIndex: k])) {
+            n = [name characterAtIndex: k] - '0';
+            k++;
+            while (k < name.length && isdigit([name characterAtIndex:k])) {
+                n = n * 10 + [name characterAtIndex: k] - '0';
+                k++;
+            }
+            if (k == name.length) {
+                // the name is in format: "bla-bla-bla 12345"
+            } else {
+                n = -1;
+            }
+        }
+    }
+    if (n >= 0) {
+        name = [name substringFrom: 0 to: spix + 1];
+    } else {
+        n = 1; // Finder starts with " 2" (which may be a bug or a feature) we will start with " 1"
+        name = [name stringByAppendingString: @" "];
+    }
+    // This is what "Finder.app" does on OS X 10.8
+    bool b = true;
+    while (b && n < (1LL << 62)) {
+        b = nonexistingName(name, ext, n) == null;
+        if (b) { // file exists
+            n = n + n;
+        }
+    }
+    if (b) {
+        return null;
+    }
+    int64_t left = n / 2 + 1, right = n;
+    while (left < right) {
+        int64_t mid = (left + right) / 2;
+        if (nonexistingName(name, ext, mid) == null) {
+            left = mid + 1;
+        } else {
+            right = mid;
+        }
+    }
+    return nonexistingName(name, ext, right);
+}
+
+- (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
+    if (items == null) {
+        _itemsToExtract = _archive.numberOfItems - _archive.numberOfFolders;
+        _foldersToExtract = _archive.numberOfFolders;
+    } else {
+        _foldersToExtract = 0;
+        _itemsToExtract = numberOfLeafs(items, &_foldersToExtract);
+    }
+    if (dnd) {
+        [self addExtractOperation: items to: url DnD: dnd];
+        return;
+    }
+    if (!_destination.isSelected) {
+        items = null;
+    }
+    if (_destination.isNextToArchive) {
+        url = [NSURL fileURLWithPath: [_url.path stringByDeletingLastPathComponent]];
+        trace("url=%@", url);
+    }
+    NSString* rn = _archive.root.name;
+    trace(@"root.name=%@", rn);
+    NSString* lpc = _url.path.lastPathComponent.stringByDeletingPathExtension;
+    trace(@"lpc=%@", lpc);
+    url = [NSURL fileURLWithPath:[url.path stringByAppendingPathComponent: lpc]];
+    trace("url=%@", url);
+    NSString* path = url.path;
+    BOOL d = false;
+    BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
+    NSString* details = @"";
+    NSString* files = @"";
+    if (_itemsToExtract > 1) {
+        files = [NSString stringWithFormat:@"%d files", _itemsToExtract];
+    } else if (_itemsToExtract > 0) {
+        files = @"one file";
+    }
+    if (_foldersToExtract > 1) {
+        details = [NSString stringWithFormat:@"%@ in %d folders from\n", files, _foldersToExtract];
+    } else {
+        details = [NSString stringWithFormat:@"%@ from\n", files];
+    }
+    if (!e) {
+        NSInteger rc = NSAlertDefaultReturn;
+        if (_destination.isAsking) {
+            rc = [self runModalAlert: [NSString stringWithFormat:
+                                       @"About to unpack %@«%@»\ninto folder:\n«%@»?\n"
+                                       "Do you want to proceed?", details, _url.path.lastPathComponent, url.path]
+                       defaultButton: @"Proceed"
+                     alternateButton: @"Stop"
+                         otherButton: null
+                                info: @"destination folder does not exist and will be created"];
+        }
+        if (rc == NSAlertDefaultReturn) {
+            mkdir(path.UTF8String, 0700);
+            [self addExtractOperation: items to: url DnD: dnd];
+        } else {
+            return;
+        }
+    } else { // there is a folder or file in a way, new name w/o asking:
+        NSInteger rc = NSAlertFirstButtonReturn;
+        NSString* next = nextPathname(path);
+        if (_destination.isAsking) {
+            rc = [self runModalAlert: [NSString stringWithFormat:
+                                       @"About to unpack %@«%@» into existing folder:\n«%@»?\n"
+                                       "How do you want to proceed?", details, _url.path.lastPathComponent, url.path]
+                             buttons: @[ @"Keep Both", @"Replace", @"Merge", @"Stop" ]
+                                info: [NSString stringWithFormat:
+                                       @"Keep Both will change the destination to: "
+                                       "«%@»\n"
+                                       "Replace will move existing folder\n«%@»\ninto Trash.\n"
+                                       "Merge will unpack into existing folder.", next, url.path.lastPathComponent]];
+        }
+        if (rc == NSAlertFirstButtonReturn) { // Keep Both
+            path = next;
+            url = [NSURL fileURLWithPath: path];
+            trace("url=%@", url);
+            e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
+            assert(!e);
+            mkdir(path.UTF8String, 0700);
+            [self addExtractOperation: items to: url DnD: dnd];
+        } else if (rc == NSAlertSecondButtonReturn) { // Replace
+            [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: path]]
+                                   completionHandler: ^(NSDictionary* moved, NSError *error){
+                                       // trace("moved=%@ %@", moved, error);
+                                       if (error == null) {
+                                           NSURL* url = [NSURL fileURLWithPath: path];
+                                           trace("url=%@", url);
+                                           BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: null];
+                                           assert(!e);
+                                           mkdir(path.UTF8String, 0700);
+                                           [self addExtractOperation: items to: url DnD: dnd];
+                                       } else {
+                                           NSAlert* a = [NSAlert alertWithError: error];
+                                           [self beginAlerts];
+                                           [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
+                                       }
+                                   }];
+            return;
+        } else if (rc == NSAlertThirdButtonReturn) { // Merge
+            url = [NSURL fileURLWithPath: path];
+            trace("url=%@", url);
+            [self addExtractOperation: items to: url DnD: dnd];
+        } else { // Stop
+            return;
+        }
+    }
+}
+
+- (void) addExtractOperation: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
+    ExtractItemsOperation* operation = [ExtractItemsOperation.alloc
+                                        initWithDocument: self
+                                        items: items
+                                        to: url
+                                        DnD: dnd];
+    [_operationQueue addOperation: operation];
+}
+
+- (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
+    // This method is called on the background thread
+    assert(![NSThread isMainThread]);
+    assert(_archive != null);
+    if (items == null || items.count == 0) {
+        [_outlineView deselectAll: null]; // remove confusing selection
+    }
+    [self scheduleAlerts];
+    _alerts.topText = [NSString stringWithFormat: @"Unpacking: %@", _url.path.lastPathComponent];
+    [_archive extract: items to: url operation: op done: ^(NSError* error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _alerts.topText = _url.path.lastPathComponent;
+            [_alerts progress: 0 of: 0];
+            if (error != null) {
+                [[NSSound soundNamed: @"error"] play];
+                NSAlert* a = [NSAlert alertWithError: error];
+                [self beginAlerts];
+                [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
+            } else {
+                // http://cocoathings.blogspot.com/2013/01/playing-system-sounds.html
+                // see: /System/Library/Sounds
+                // Basso Blow Bottle Frog Funk Glass Hero Morse Ping Pop Purr Sosumi Submarine Tink
+                [[NSSound soundNamed:@"done"] play];
+                [self endAlerts];
+                // TODO: this might be a good place to collapse .../attachment/attachment/... in the file system
+                if (_destination.isReveal && !dnd) { // Reveal in Finder
+                    [NSWorkspace.sharedWorkspace openURLs: @[url]
+                                  withAppBundleIdentifier: @"com.apple.Finder"
+                                                  options: NSWorkspaceLaunchDefault
+                           additionalEventParamDescriptor: null
+                                        launchIdentifiers: null];
+                }
+                [_window makeFirstResponder: _lastFirstResponder];
+            }
+        });
+    }];
+}
+
+- (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+                                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
+    assert(![NSThread isMainThread]);
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    int __block answer = NSAlertErrorReturn;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        assert([NSThread isMainThread]);
+        NSString* name = [NSString stringWithUTF8String: fromName];
+        [self askOverwrite: name appltToAll: _itemsToExtract > 1 done:^(int r) {
+            answer = r;
+            dispatch_semaphore_signal(sema);
+        }];
+    });
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    dispatch_release(sema);
+    sema = null;
+    return answer;
+}
+
+- (void) askOverwrite: (NSString*) name appltToAll: (BOOL) ata done: (void (^)(int)) done {
+    NSAlert* a = NSAlert.new;
+    [a addButtonWithTitle: @"Keep Both"];
+    [a addButtonWithTitle: @"Replace"];
+    if (ata) {
+        [a addButtonWithTitle: @"Skip"];
+    }
+    [a addButtonWithTitle: @"Stop"];
+    [a setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
+    [a setInformativeText: @"Overwritten files are placed into Trash Bin"];
+    a.alertStyle = NSInformationalAlertStyle;
+    NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
+    applyToAll.title = @"Apply to All";
+    applyToAll.buttonType = NSSwitchButton;
+    [applyToAll sizeToFit];
+    if (ata) {
+        a.accessoryView = applyToAll;
+    }
+    [self beginAlerts];
+    [_alerts alert: a done: ^(NSInteger rc){
+        int answer = NSAlertErrorReturn;
+        if (rc == NSAlertFirstButtonReturn) {
+            answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
+        } else if (rc == NSAlertSecondButtonReturn) {
+            answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
+        } else if (rc == NSAlertThirdButtonReturn) {
+            if (ata) {
+                answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
+            } else {
+                answer = kCancel;
+            }
+        } else {
+            answer = kCancel;
+        }
+        a.accessoryView = null;
+        done(answer);
+    }];
+}
+
+- (BOOL) moveToTrash: (const char*) pathname {
+    // timestamp("moveToTrash");
+    assert(![NSThread isMainThread]);
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    BOOL __block b = false;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        assert([NSThread isMainThread]);
+        NSString* name = [NSString stringWithUTF8String: pathname];
+        [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: name]]
+                               completionHandler: ^(NSDictionary* moved, NSError *error){
+                                   // trace("moved=%@ %@", moved, error);
+                                   b = error == null;
+                                   dispatch_semaphore_signal(sema);
+                               }];
+    });
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    dispatch_release(sema);
+    sema = null;
+    // timestamp("moveToTrash"); // 1.5 - 6 milliseconds
+    return b;
+}
+
 - (void) openArchiveForOperation: (ZGOperation*) op {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
@@ -644,12 +996,14 @@ static NSTableView* createTableView(NSRect r) {
                    document: self operation: (ZGOperation*) op error: &error
                        done: ^(NSObject<ZGItemFactory>* a, NSError* error) {
                        }
-             ];
+              ];
     if (!b) {
         a = null;
     }
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
+        _alerts.topText = _url.path.lastPathComponent;
+        [_alerts progress: 0 of: 0];
         if (a != null) {
             [self endAlerts];
             _archive = a;
@@ -677,104 +1031,6 @@ static NSTableView* createTableView(NSRect r) {
     });
 }
 
-- (void) extract {
-    mkdir("/tmp/foo", 0700);
-    NSURL* u = [NSURL fileURLWithPath: @"/tmp/foo" isDirectory: true];
-    [self extract: null to: u DnD: false];
-}
-
-- (BOOL) askOnBackgroundThreadForCancel {
-    assert(![NSThread isMainThread]);
-    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    BOOL __block answer = false;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        assert([NSThread isMainThread]);
-        if (_operationQueue.operationCount > 0) {
-            NSString* info = _archive == null ? @"" : // opening archive - no data corruption expected
-            @"(Some folders and file may be left behind corrupted or incomplete.)";
-            NSAlert* a = [NSAlert alertWithMessageText: @"Do you want to cancel current operation?"
-                                         defaultButton: @"Stop"
-                                       alternateButton: @"Keep Going"
-                                           otherButton: null
-                             informativeTextWithFormat: @"%@", info];
-            a.alertStyle = NSInformationalAlertStyle;
-            [self beginAlerts];
-            [_alerts alert: a done: ^(NSInteger rc) {
-                answer = rc == NSAlertDefaultReturn;
-                dispatch_semaphore_signal(sema);
-            }];
-        }
-    });
-    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-    dispatch_release(sema);
-    sema = null;
-    return answer;
-}
-
-- (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
-                                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
-    assert(![NSThread isMainThread]);
-    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    int __block answer = NSAlertErrorReturn;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        assert([NSThread isMainThread]);
-        NSString* name = [NSString stringWithUTF8String: fromName];
-        NSAlert* a = NSAlert.new;
-        [a addButtonWithTitle: @"Keep Both"];
-        [a addButtonWithTitle: @"Yes"];
-        [a addButtonWithTitle: @"No"];
-        [a addButtonWithTitle: @"Cancel"];
-        [a setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
-        [a setInformativeText: @"Overwritten files are placed into Trash Bin"];
-        a.alertStyle = NSInformationalAlertStyle;
-        NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
-        applyToAll.title = @"Apply to All";
-        applyToAll.buttonType = NSSwitchButton;
-        [applyToAll sizeToFit];
-        a.accessoryView = applyToAll;
-        [self beginAlerts];
-        [_alerts alert: a done: ^(NSInteger rc){
-            if (rc == NSAlertFirstButtonReturn) {
-                answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
-            } else if (rc == NSAlertSecondButtonReturn) {
-                answer = applyToAll.state == NSOffState ? kYes : kYesToAll;
-            } else if (rc == NSAlertThirdButtonReturn) {
-                answer = applyToAll.state == NSOffState ? kNo : kNoToAll;
-            } else {
-                answer = kCancel;
-            }
-            a.accessoryView = null;
-            dispatch_semaphore_signal(sema);
-        }];
-    });
-    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-    dispatch_release(sema);
-    sema = null;
-    return answer;
-}
-
-- (BOOL) moveToTrash: (const char*) pathname {
-    // timestamp("moveToTrash");
-    assert(![NSThread isMainThread]);
-    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    BOOL __block b = false;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        assert([NSThread isMainThread]);
-        NSString* name = [NSString stringWithUTF8String: pathname];
-        [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: name]]
-                               completionHandler: ^(NSDictionary* moved, NSError *error){
-                                   // trace("moved=%@ %@", moved, error);
-                                   b = error == null;
-                                   dispatch_semaphore_signal(sema);
-                               }];
-    });
-    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-    dispatch_release(sema);
-    sema = null;
-    // timestamp("moveToTrash"); // 1.5 - 6 milliseconds
-    return b;
-}
-
 - (NSString*) askOnBackgroundThreadForPassword {
     assert(![NSThread isMainThread]);
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
@@ -788,7 +1044,7 @@ static NSTableView* createTableView(NSRect r) {
         NSString* prompt = [NSString stringWithFormat: @"Please enter archive password for archive\n«%@»",
                             _url.path.lastPathComponent];
         NSString* info = @"Password has been set by the person who created this archive file.\n"
-          "If you don`t know the password please contact that person.";
+        "If you don`t know the password please contact that person.";
         NSAlert* a = [NSAlert alertWithMessageText: prompt
                                      defaultButton: @"OK"
                                    alternateButton: @"Cancel"
@@ -819,6 +1075,34 @@ static NSTableView* createTableView(NSRect r) {
     return password;
 }
 
+- (BOOL) askOnBackgroundThreadForCancel {
+    assert(![NSThread isMainThread]);
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    BOOL __block answer = false;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        assert([NSThread isMainThread]);
+        if (_operationQueue.operationCount > 0) {
+            NSString* info = _archive == null ? @"" : // opening archive - no data corruption expected
+            @"(Some folders and file may be left behind corrupted or incomplete.)";
+            NSAlert* a = [NSAlert alertWithMessageText: @"Do you want to cancel current operation?"
+                                         defaultButton: @"Stop"
+                                       alternateButton: @"Keep Going"
+                                           otherButton: null
+                             informativeTextWithFormat: @"%@", info];
+            a.alertStyle = NSInformationalAlertStyle;
+            [self beginAlerts];
+            [_alerts alert: a done: ^(NSInteger rc) {
+                answer = rc == NSAlertDefaultReturn;
+                dispatch_semaphore_signal(sema);
+            }];
+        }
+    });
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    dispatch_release(sema);
+    sema = null;
+    return answer;
+}
+
 - (void) checkTimeToShowHeroView {
     if (_timeToShowHeroView > 0 && nanotime() > _timeToShowHeroView) {
         _timeToShowHeroView = 0;
@@ -829,45 +1113,13 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url {
-    // This method is called on the background thread
-    assert(![NSThread isMainThread]);
-    assert(_archive != null);
-    if (items == null || items.count == 0) {
-        [_outlineView deselectAll: null]; // remove confusing selection
-    }
-    [self scheduleAlerts];
-    _alerts.topText = [NSString stringWithFormat: @"Unpacking: %@", _url.path.lastPathComponent];
-    [_archive extract: items to: url operation: op done: ^(NSError* error) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (error != null) {
-                [[NSSound soundNamed: @"error"] play];
-                NSAlert* a = [NSAlert alertWithError: error];
-                [self beginAlerts];
-                [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
-            } else {
-                // http://cocoathings.blogspot.com/2013/01/playing-system-sounds.html
-                // see: /System/Library/Sounds
-                // Basso Blow Bottle Frog Funk Glass Hero Morse Ping Pop Purr Sosumi Submarine Tink
-                [[NSSound soundNamed:@"done"] play];
-                [self endAlerts];
-                // Reveal in Finder
-                [NSWorkspace.sharedWorkspace openURLs: @[url]
-                              withAppBundleIdentifier: @"com.apple.Finder"
-                                              options: NSWorkspaceLaunchDefault
-                       additionalEventParamDescriptor: null  launchIdentifiers: null];
-            }
-        });
-    }];
-}
-
 - (BOOL) progressOnBackgroundThread: (int64_t) pos ofTotal: (int64_t) total {
     assert(![NSThread isMainThread]);
     // trace(@"%llu of %llu", pos, total);
     [self checkTimeToShowHeroView];
     if (total > 0 && 0 <= pos && pos <= total) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [_alerts setProgress: pos of: total];
+            [_alerts progress: pos of: total];
         });
     }
     return true; // TODO: may read the state of cancel button even from background thread
@@ -880,7 +1132,7 @@ static NSTableView* createTableView(NSRect r) {
     [self checkTimeToShowHeroView];
     if (totalNumberOfFiles > 0 && 0 <= fileno && fileno <= totalNumberOfFiles) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [_alerts setProgress: fileno of: totalNumberOfFiles];
+            [_alerts progress: fileno of: totalNumberOfFiles];
         });
     }
     return true; // TODO: may read the state of cancel button even from background thread
@@ -944,14 +1196,6 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
             addChildren(items, c);
         }
     }
-}
-
-- (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
-    if (!dnd) {
-        // TODO: may need to "Keep Both" for the dest directory of archive
-    }
-    ExtractItemsOperation *operation = [ExtractItemsOperation.alloc initWithDocument: self items: items to: url];
-    [_operationQueue addOperation: operation];
 }
 
 - (void) pasteboard: (NSPasteboard*) pasteboard provideDataForType: (NSString*) type {

@@ -10,7 +10,7 @@
 - (BOOL) isOpen;
 - (void) end;
 - (void) alert: (NSAlert*) a done: (void(^)(NSInteger rc)) block;
-- (void) setProgress: (int64_t) pos of: (int64_t) total;
+- (void) progress: (int64_t) pos of: (int64_t) total;
 @end
 
 

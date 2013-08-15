@@ -31,7 +31,7 @@ static HashMapS2L map(500, NOT_A_VALUE);
 uint64_t alloc_count(id i) {
     @synchronized (ZGUtils.class) {
         NSObject* o = (NSObject*)i;
-        const char* cn = [NSStringFromClass(o.class) cStringUsingEncoding: NSUTF8StringEncoding];
+        const char* cn = NSStringFromClass(o.class).UTF8String;
         uint64_t v = map.get(cn);
         if (v == NOT_A_VALUE) {
             v = 0;
@@ -44,7 +44,7 @@ uint64_t alloc_count(id i) {
 uint64_t dealloc_count(id i) {
     @synchronized (ZGUtils.class) {
         NSObject* o = (NSObject*)i;
-        const char* cn = [NSStringFromClass(o.class) cStringUsingEncoding: NSUTF8StringEncoding];
+        const char* cn = NSStringFromClass(o.class).UTF8String;
         uint64_t v = map.get(cn);
         assert(v != NOT_A_VALUE); // dealloc before alloc?!
         assert(v > 0); // too many deallocs

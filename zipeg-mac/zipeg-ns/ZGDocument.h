@@ -16,6 +16,7 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
 
 }
 @property NSURL* url;
+@property NSView* __weak lastFirstResponder;
 @property NSOutlineView* outlineView;
 @property NSTableView*   tableView;
 @property NSSplitView*   splitView;
@@ -37,7 +38,7 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
 - (BOOL) documentCanClose;
 - (void) sizeToContent;
 - (NSInteger) runModalAlert: (NSString*) message defaultButton: (NSString*) db
-            alternateButton: (NSString*) ab info: (NSString*) info;
+            alternateButton: (NSString*) ab otherButton: (NSString*) ob info: (NSString*) info;
 - (void) alertModalSheet: (NSString*) message defaultButton: (NSString*) db
          alternateButton: (NSString*) ab info: (NSString*) info done: (void(^)(NSInteger rc)) d;
 - (BOOL) moveToTrash: (const char*) pathname;
