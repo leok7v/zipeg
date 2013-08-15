@@ -68,7 +68,7 @@ static NSSearchPathDirectory dirs[] = {
     NSTextField* _label;
     NSPopUpButton* _selected;
     NSPopUpButton* _ask;
-    NSTextField* _to;
+    NSButton* _to;
     NSPopUpButton* _disclosure;
     NSPathControl* _pathControl;
     NSPathComponentCell* _nextToArchivePathComponentCell;
@@ -95,7 +95,9 @@ static NSSearchPathDirectory dirs[] = {
         _label = createLabel(4, @" ", _font, r); // tailing space is important
         _ask = createAskButton(@[@"ask to ", @"always "], _font, r, _label.frame);
         _selected = createAskButton(@[@"unpack selected ", @"unpack all "], _font, r, _ask.frame);
-        _to = createLabel(_selected.frame.origin.x + _selected.frame.size.width, @" files to the folder:", _font, r);
+        _to = createButton(_selected.frame.origin.x + _selected.frame.size.width, @" files to the folder:", _font, r);
+        _to.action = @selector(openDisclosure:);
+        _to.target = self;
         _disclosure = createDirsButton(@"M", _font, r, _to.frame);
         _pathControl = createPathControl(_font, r, _disclosure.frame);
         _pathControl.action = @selector(pathControlSingleClick:);
@@ -116,6 +118,7 @@ static NSSearchPathDirectory dirs[] = {
     _pathControl.target = null;
     _pathControl.action = null;
     _pathControl.delegate = null;
+    _to.target = null;
     _pathControl = null;
     _label = null;
     _font = null;
@@ -143,15 +146,19 @@ static NSSearchPathDirectory dirs[] = {
     
 }
 
+- (void) openDisclosure: (id) sender {
+    [_disclosure performClick: sender];
+}
+
 - (void) disclosurePressed: (id) sender {
     int tag = (int)_disclosure.selectedItem.tag;
     // trace(@"%d", tag);
     if (tag < 0) {
-        _pathControl.URL = [[NSURL alloc] initFileURLWithPath: NSHomeDirectory() isDirectory: true];
+        _pathControl.URL = [NSURL.alloc initFileURLWithPath: NSHomeDirectory() isDirectory: true];
     } else if (tag < countof(dirs)) {
         NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[tag], NSAllDomainsMask, true);
         if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
-            _pathControl.URL = [[NSURL alloc] initFileURLWithPath: path[0] isDirectory: true];
+            _pathControl.URL = [NSURL.alloc initFileURLWithPath: path[0] isDirectory: true];
         }
     } else {
         [self nextToArchive: _disclosure];
@@ -196,7 +203,7 @@ static NSTextField* createLabel(int x, NSString* text, NSFont* font, NSRect r) {
     NSDictionary* a = @{NSFontAttributeName: font};
     lr.size = [text sizeWithAttributes: a];
     lr.origin.y = (r.size.height - lr.size.height) / 2;
-    NSTextField* label = [[NSTextField alloc] initWithFrame: lr];
+    NSTextField* label = [NSTextField.alloc initWithFrame: lr];
     label.focusRingType = NSFocusRingTypeNone;
     label.stringValue = text;
     NSTextFieldCell* tc = label.cell;
@@ -213,17 +220,38 @@ static NSTextField* createLabel(int x, NSString* text, NSFont* font, NSRect r) {
     return label;
 }
 
+static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r) {
+    NSRect rc = r;
+    rc.origin.x = x;
+    NSDictionary* a = @{NSFontAttributeName: font};
+    rc.size = [text sizeWithAttributes: a];
+    rc.origin.y = (r.size.height - rc.size.height) / 2;
+    NSButton* btn = [NSButton.alloc initWithFrame: rc];
+    btn.focusRingType = NSFocusRingTypeNone;
+    btn.title = text;
+    NSButtonCell* bc = btn.cell;
+    bc.font = font;
+    bc.bordered = false;
+    bc.bezelStyle = NSShadowlessSquareBezelStyle;
+    bc.highlightsBy = NSNoCellMask; // NSChangeGrayCellMask;
+    bc.font = font;
+    bc.bordered = false;
+    btn.size = [btn.attributedStringValue size];
+    [btn sizeToFit];
+    return btn;
+}
+
 static NSPathControl* createPathControl(NSFont* font, NSRect r, NSRect lr) {
     NSRect pr = r;
     pr.origin.x = lr.origin.x + lr.size.width;
     pr.size.width = r.size.width / 2 - pr.origin.x;
     pr.origin.y = lr.origin.y;
     pr.size.height = lr.size.height;
-    NSPathControl* pc = [[NSPathControl alloc] initWithFrame: pr];
+    NSPathControl* pc = [NSPathControl.alloc initWithFrame: pr];
     NSArray* path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSAllDomainsMask, true);
     NSString* s = path != null && path.count > 0 && [path[0] isKindOfClass: NSString.class] ?
                   (NSString*)path[0] : @"~/Desktop";
-    NSURL* u = [[NSURL alloc] initFileURLWithPath: s isDirectory: true];
+    NSURL* u = [NSURL.alloc initFileURLWithPath: s isDirectory: true];
     pc.URL = u;
     pc.pathStyle = NSPathStyleStandard;
     pc.backgroundColor = [NSColor clearColor];
@@ -240,7 +268,7 @@ static NSPathControl* createPathControl(NSFont* font, NSRect r, NSRect lr) {
 }
 
 static void insertMenuItem(NSMenu* m, NSString* title, NSImage* image, int tag) {
-    NSMenuItem *it = [[NSMenuItem alloc] initWithTitle: NSLocalizedString(title, @"") action: null keyEquivalent:@""];
+    NSMenuItem *it = [NSMenuItem.alloc initWithTitle: NSLocalizedString(title, @"") action: null keyEquivalent:@""];
     it.tag = tag;
     it.image = image;
     [m insertItem: it atIndex: m.itemArray.count];
@@ -261,10 +289,10 @@ static NSPopUpButton* createAskButton(NSArray* texts, NSFont* font, NSRect r, NS
         w = MAX(w, sz.width);
     }
     br.size.width = w + 20;
-    NSPopUpButton* btn = [[NSPopUpButton alloc] initWithFrame: br pullsDown: true];
+    NSPopUpButton* btn = [NSPopUpButton.alloc initWithFrame: br pullsDown: true];
     btn.focusRingType = NSFocusRingTypeNone;
     btn.menu = m;
-    ZGAskButtonCell* bc = [[ZGAskButtonCell alloc] initWithMenu: m];
+    ZGAskButtonCell* bc = [ZGAskButtonCell.alloc initWithMenu: m];
     btn.cell = bc;
     bc.arrowPosition = NSPopUpArrowAtBottom;
     bc.preferredEdge = NSMaxYEdge;
@@ -283,7 +311,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     br.origin.y = lr.origin.y - 4;
     br.size.width = [label sizeWithAttributes: @{ NSFontAttributeName: font }].width;
     br.size.height = lr.size.height + 8;
-    NSPopUpButton* btn = [[NSPopUpButton alloc] initWithFrame: br pullsDown: true];
+    NSPopUpButton* btn = [NSPopUpButton.alloc initWithFrame: br pullsDown: true];
     btn.focusRingType = NSFocusRingTypeNone;
     btn.buttonType = NSToggleButton;
     NSButtonCell* bc = btn.cell;
@@ -294,14 +322,14 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     bc.bordered = false;
     btn.menu = [NSMenu new];
     insertMenuItem(btn.menu, @"", null, -2);
-    NSURL* u = [[NSURL alloc] initFileURLWithPath: NSHomeDirectory() isDirectory: true];
+    NSURL* u = [NSURL.alloc initFileURLWithPath: NSHomeDirectory() isDirectory: true];
     NSImage* image = [NSWorkspace.sharedWorkspace iconForFile: u.path];
     image.size = NSMakeSize(16, 16);
     insertMenuItem(btn.menu, u.path.lastPathComponent, image, -1); // Home
     for (int i = 0; i < countof(dirs); i++) {
         NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[i], NSAllDomainsMask, true);
         if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
-            u = [[NSURL alloc] initFileURLWithPath: path[0] isDirectory: true];
+            u = [NSURL.alloc initFileURLWithPath: path[0] isDirectory: true];
             NSString* p = [u path];
             NSImage *image = [NSWorkspace.sharedWorkspace iconForFile: p];
             image.size = NSMakeSize(16, 16);
@@ -315,7 +343,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
 - (void) drawRect: (NSRect) r {
     NSColor* t = [NSColor colorWithCalibratedRed: .92 green: .95 blue: .97 alpha: 1];
     NSColor* b = [NSColor colorWithCalibratedRed: .79 green: .82 blue: .87 alpha: 1];
-    NSGradient *gradient = [[NSGradient alloc] initWithStartingColor: b endingColor: t];
+    NSGradient *gradient = [NSGradient.alloc initWithStartingColor: b endingColor: t];
     [gradient drawInRect: r angle: 90];
 }
 
@@ -386,7 +414,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
 - (void) pathControl: (NSPathControl*) pc willPopUpMenu: (NSMenu*) m {
     if (_nextToArchiveMenuItem == null) {
         NSString* title = NSLocalizedString(@"next to archive", @"");
-        NSMenuItem* mi = [[NSMenuItem alloc] initWithTitle:title action: @selector(nextToArchive:) keyEquivalent:@""];
+        NSMenuItem* mi = [NSMenuItem.alloc initWithTitle:title action: @selector(nextToArchive:) keyEquivalent:@""];
         mi.target = self;
         mi.image = ZGApp.appIcon16x16;
         _nextToArchiveMenuItem = mi;
@@ -404,7 +432,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
         [m addItem: _nextToArchiveMenuItem];
     }
     NSString* title = NSLocalizedString(@"Reveal in Finder", @"");
-    NSMenuItem* mi = [[NSMenuItem alloc] initWithTitle:title action: @selector(revealInFinder:) keyEquivalent:@""];
+    NSMenuItem* mi = [NSMenuItem.alloc initWithTitle:title action: @selector(revealInFinder:) keyEquivalent:@""];
     mi.target = self;
     [m addItem: NSMenuItem.separatorItem];
     [m addItem: mi];
