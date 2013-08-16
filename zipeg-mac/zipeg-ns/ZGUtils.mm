@@ -156,6 +156,35 @@ void dumpAllViews() {
     }
 }
 
+BOOL rmdirs(NSString* path) {
+    // http://www.unix.com/man-page/POSIX/3posix/rmdir/
+    // If path names a symbolic link, then rmdir() shall fail and set errno to [ENOTDIR]
+    BOOL b = true;
+    NSDictionary* a = [NSFileManager.defaultManager attributesOfItemAtPath: path error: null];
+    if (a[NSFileType] == NSFileTypeSymbolicLink) {
+        // http://linux.die.net/man/2/unlink
+        trace("unlink(%@) - symbolic link", path);
+        b = unlink(path.UTF8String) == 0 && b; // If the name referred to a symbolic link the link is removed.
+        return b; // do not follow symbolic links
+    }
+    NSArray* filenames = [NSFileManager.defaultManager contentsOfDirectoryAtPath: path error: null];
+    for (NSString* fn in filenames) {
+        if (![fn isEqualToString: @".."] && ![fn isEqualToString: @"."]) {
+            NSString* p = [path stringByAppendingPathComponent: fn];
+            BOOL d = false;
+            if ([NSFileManager.defaultManager fileExistsAtPath: p isDirectory: &d] && !d) {
+                b = rmdirs(p) == 0 && b;
+            } else {
+                trace("unlink(%@)", p);
+                b = unlink(p.UTF8String) == 0 && b;
+            }
+        }
+    }
+    trace("rmdir(%@)", path);
+    b = rmdir(path.UTF8String) == 0 && b;
+    return b;
+}
+
 void subtreeDescription(NSView* v) {
     NSLog(@"%@", [v performSelector: @selector(_subtreeDescription)]);
 }
@@ -400,6 +429,11 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     return block;
 }
 
-
+// done will be called on the same background thread
++ (void) rmdirsOnBackgroundThread: (NSString*) path done: (void(^)(BOOL)) done {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+        done(rmdirs(path));
+    });
+}
 
 @end

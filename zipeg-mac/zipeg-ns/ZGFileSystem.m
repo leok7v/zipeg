@@ -47,12 +47,12 @@ static ZGFileSystemItem *g_root;
         NSFileManager* fm = NSFileManager.defaultManager;
         NSString* fp = self.fullPath;
         BOOL isDir, valid;
-        valid = [fm fileExistsAtPath: fp isDirectory:&isDir];
+        valid = [fm fileExistsAtPath: fp isDirectory: &isDir];
         if (valid && isDir) {
             trace(@"fullPath %@", fp);
             NSArray* array = [fm contentsOfDirectoryAtPath:fp error:nil];
             NSUInteger numChildren = array.count;
-            _children = [[NSMutableArray alloc] initWithCapacity:numChildren];
+            _children = [[NSMutableArray alloc] initWithCapacity: numChildren];
             for (int i = 0; i < numChildren; i++) {
                 NSObject<ZGItemProtocol> *newChild = [[ZGFileSystemItem alloc] initWithPath: array[i] parent:self];
                 trace(@"  %@", array[i]);
@@ -71,7 +71,7 @@ static ZGFileSystemItem *g_root;
     } else if (_folderChildren != nil) {
         return _folderChildren;
     } else {
-        NSFileManager *fileManager = NSFileManager.defaultManager;
+        NSFileManager* fm = NSFileManager.defaultManager;
         _folderChildren = [NSMutableArray new];
         if (_children == null) {
             _children = self.children;
@@ -80,7 +80,7 @@ static ZGFileSystemItem *g_root;
             for (NSObject<ZGItemProtocol>* child in _children) {
                 NSString* fp = self.fullPath;
                 BOOL isDir, valid;
-                valid = [fileManager fileExistsAtPath: fp isDirectory: &isDir];
+                valid = [fm fileExistsAtPath: fp isDirectory: &isDir];
                 if (valid && isDir) {
                     [_folderChildren addObject:(ZGFileSystemItem*)child];
                 }

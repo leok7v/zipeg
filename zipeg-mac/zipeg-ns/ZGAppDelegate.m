@@ -2,6 +2,7 @@
 #import "ZGAppDelegate.h"
 #import "ZGDocument.h"
 #import "ZGErrors.h"
+#import "ZGApp.h"
 
 @interface ZGAppDelegate()
 @property BOOL applicationHasStarted;
@@ -16,6 +17,20 @@
     [ud synchronize];
     ZGErrorsInit();
     _applicationHasStarted = true;
+    NSDictionary* uf = ZGApp.allUnpackingFolders.copy;
+    for (NSString* temp in uf.allKeys) {
+        if (![NSFileManager.defaultManager fileExistsAtPath: temp]) {
+            [ZGApp unregisterUnpackingFolder: temp];
+        } else {
+            [ZGUtils rmdirsOnBackgroundThread: temp done:^(BOOL b) {
+                if (b) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [ZGApp unregisterUnpackingFolder: temp];
+                    });
+                }
+            }];
+        }
+    }
 }
 
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication *) theApplication {

@@ -146,6 +146,36 @@ HRESULT CArchiveExtractCallback::GetUnpackSize()
   return S_OK;
 }
 
+
+static bool ignoreMacOSXResourceForksAndFinderBreadcrumbs(const wchar_t* name) {
+    //  TODO: for now ignore resource forks and Finder's .DS_Store
+    const wchar_t* p = wcsstr(name, L".DS_Store");
+    int len = wcslen(name);
+    bool b = p != 0 && p + wcslen(L".DS_Store") == name + len;
+    if (!b) {
+        p = wcsstr(name, L"__MACOSX");
+        b = p != 0 && p + wcslen(L"__MACOSX") == name + len;
+    }
+    if (!b) {
+        p = wcsstr(name, L"__MACOSX/");
+        b = p != 0 && p == name;
+    }
+    if (!b) {
+        p = wcsstr(name, L"/__MACOSX/");
+        b = p != 0;
+    }
+    if (!b) {
+        p = wcsstr(name, L"._");
+        b = p != 0 && p == name;
+    }
+    if (!b) {
+        p = wcsstr(name, L"/._");
+        b = p != 0;
+    }
+    return b;
+}
+
+
 STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStream **outStream, Int32 askExtractMode)
 {
   COM_TRY_BEGIN
@@ -183,6 +213,9 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
 
   RINOK(GetUnpackSize());
 
+  if (ignoreMacOSXResourceForksAndFinderBreadcrumbs(fullPath)) {
+      return S_OK;
+  }
   if (_wildcardCensor)
   {
     if (!_wildcardCensor->CheckPath(fullPath, !_fi.IsDir))

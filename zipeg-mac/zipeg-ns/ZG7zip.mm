@@ -266,7 +266,6 @@ struct D : P7Z::Delegate {
     }
 }
 
-
 static bool ignore(const NSString* pathname) {
      // TODO: for now ignore resource forks and Finder's .DS_Store
     return [pathname hasSuffix:@".DS_Store"] || [pathname hasSuffix:@"__MACOSX"] ||

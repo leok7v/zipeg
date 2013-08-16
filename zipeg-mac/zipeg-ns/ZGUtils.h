@@ -29,6 +29,8 @@ enum {
     kSizableTB = NSViewMinYMargin   | NSViewMaxYMargin
 };
 
+FOUNDATION_EXPORT BOOL rmdirs(NSString* path);
+
 FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 
 @interface NSString(ZGExtensions)
@@ -78,6 +80,9 @@ FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 // can be called from any thread, does dispatch_async to main thread
 + (ZGBlock*) invokeLater: (void(^)()) block;
 + (ZGBlock*) invokeLater: (void(^)()) b delay: (double) seconds; // dispatch_after
+// done will be called on the same background thread
++ (void) rmdirsOnBackgroundThread: (NSString*) path done: (void(^)(BOOL)) done;
+
 @end
 
 #endif

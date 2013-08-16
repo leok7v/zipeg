@@ -41,6 +41,9 @@
 }
 
 - (NSRect) titleRectForBounds: (NSRect) bounds {
+    // TODO: sanitize ch < 32 out of the attributedStringValue (thank to Apple for Icon<CR>
+    // which is still used all around the internet inside iconset zip files
+    // see: paper_stacks_by_blupaper-d2zx0sa.zip
     NSSize titleSize = [[self attributedStringValue] size];
     bounds.size.width = MAX(bounds.size.width, titleSize.width + kImageOriginXOffset + kTextOriginXOffset);
     NSRect ifr;

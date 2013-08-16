@@ -142,4 +142,38 @@ static void loadIcons() {
     });
 }
 
+#define kUnpackingFolders @"com.zipeg.unpacking.folders"
+
++ (void) registerUnpackingFolder: (NSString*) path to: (NSString*) dest {
+    trace("%@ -> %@", path, dest);
+    NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
+    NSDictionary* d = [ud dictionaryForKey: kUnpackingFolders];
+    if (d != null) {
+        NSMutableDictionary* folders = [NSMutableDictionary dictionaryWithDictionary: d];
+        folders[path] = dest;
+        [ud setObject: folders forKey: kUnpackingFolders];
+    } else {
+        [ud setObject: @{ path: dest } forKey: kUnpackingFolders];
+    }
+    [ud synchronize];
+}
+
++ (void) unregisterUnpackingFolder: (NSString*) path {
+    trace("%@", path);
+    NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
+    NSDictionary* d = [ud dictionaryForKey: kUnpackingFolders];
+    if (d != null) {
+        NSMutableDictionary* folders = [NSMutableDictionary dictionaryWithDictionary: d];
+        [folders removeObjectForKey: path];
+        [ud setObject: folders forKey: kUnpackingFolders];
+        [ud synchronize];
+    }
+}
+
++ (NSMutableDictionary*) allUnpackingFolders {
+    NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
+    NSDictionary* d = [ud dictionaryForKey: kUnpackingFolders];
+    return d != null ? [NSMutableDictionary dictionaryWithDictionary: d] : null;
+}
+
 @end
