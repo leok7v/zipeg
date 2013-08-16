@@ -172,15 +172,15 @@ BOOL rmdirs(NSString* path) {
         if (![fn isEqualToString: @".."] && ![fn isEqualToString: @"."]) {
             NSString* p = [path stringByAppendingPathComponent: fn];
             BOOL d = false;
-            if ([NSFileManager.defaultManager fileExistsAtPath: p isDirectory: &d] && !d) {
+            if ([NSFileManager.defaultManager fileExistsAtPath: p isDirectory: &d] && d) {
                 b = rmdirs(p) == 0 && b;
             } else {
-                trace("unlink(%@)", p);
+                // trace("unlink(%@)", p);
                 b = unlink(p.UTF8String) == 0 && b;
             }
         }
     }
-    trace("rmdir(%@)", path);
+    // trace("rmdir(%@)", path);
     b = rmdir(path.UTF8String) == 0 && b;
     return b;
 }

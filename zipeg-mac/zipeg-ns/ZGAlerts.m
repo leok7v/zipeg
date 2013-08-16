@@ -266,14 +266,16 @@
 
 - (void) dealloc {
     dealloc_count(self);
+    if (_timer != null) {
+        dispatch_source_cancel(_timer);
+        _timer = null;
+    }
     _document = null;
     _progress = null;
     _contentView.subviews = @[];
     _contentView = null;
     _alert = null;
     _block = null;
-    dispatch_source_cancel(_timer);
-    _timer = null;
 }
 
 - (void) progress: (int64_t) pos of: (int64_t) total {
