@@ -37,11 +37,13 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
 - (void) firstResponderChanged;
 - (BOOL) documentCanClose;
 - (void) sizeToContent;
-- (NSInteger) runModalAlert: (NSString*) message defaultButton: (NSString*) db
-            alternateButton: (NSString*) ab otherButton: (NSString*) ob info: (NSString*) info;
-- (void) alertModalSheet: (NSString*) message defaultButton: (NSString*) db
-         alternateButton: (NSString*) ab info: (NSString*) info done: (void(^)(NSInteger rc)) d;
-- (BOOL) moveToTrash: (const char*) pathname;
+- (void) alertModalSheet: (NSString*) message
+                 buttons: (NSArray*) buttons
+                tooltips: (NSArray*) tips
+                    info: (NSString*) info
+              suppressed: (BOOL*) s
+                    done: (void(^)(NSInteger rc)) d;
+- (BOOL) moveToTrash: (const char*) pathname; // must be called from background thread
 - (BOOL) askOnBackgroundThreadForCancel;
 - (NSString*) askOnBackgroundThreadForPassword;
 - (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize

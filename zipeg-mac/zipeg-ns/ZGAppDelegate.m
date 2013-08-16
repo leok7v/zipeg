@@ -3,8 +3,7 @@
 #import "ZGDocument.h"
 #import "ZGErrors.h"
 
-@interface ZGAppDelegate() {
-}
+@interface ZGAppDelegate()
 @property BOOL applicationHasStarted;
 @end
 
@@ -82,7 +81,7 @@
     NSString* keep = @"Keep Going";
     NSInteger rc = NSAlertErrorReturn;
     void __block (^done)(NSInteger rc) = ^(NSInteger rc) {
-        NSApplicationTerminateReply r = rc == NSAlertDefaultReturn ? NSTerminateNow : NSTerminateCancel;
+        NSApplicationTerminateReply r = rc == NSAlertFirstButtonReturn ? NSTerminateNow : NSTerminateCancel;
         if (r == NSTerminateNow) {
             [self cancelAll];
         }
@@ -90,14 +89,21 @@
     };
     if (cannotClose == 1) {
         // the only document can present alert inside the _alerts sheet:
-        [last alertModalSheet: message defaultButton: stop alternateButton: keep info: info done: done];
+        [last alertModalSheet: message
+                buttons: @[stop, keep]
+                     tooltips: null
+                         info: info
+                   suppressed: null
+                         done: done];
     } else {
         dispatch_async(dispatch_get_main_queue(), ^{
             // this alert panel cannot be presented in a particular window's sheet
             // because we have multiple documents running operations at the same time:
-            NSAlert* a = [NSAlert alertWithMessageText: message defaultButton: stop
-                                       alternateButton: keep otherButton: null
-                             informativeTextWithFormat: @"%@", info];
+            NSAlert* a = NSAlert.new;
+            a.messageText = message;
+            [a addButtonWithTitle: stop];
+            [a addButtonWithTitle: keep];
+            a.informativeText = info;
             NSInteger rc = [a runModal];
             done(rc);
         });

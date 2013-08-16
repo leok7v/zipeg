@@ -229,22 +229,29 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 
 @implementation NSView(ZGExtensions)
 
-+ (NSView*) findView: (NSView*) v byClassName: (NSString*) cn {
++ (NSView*) findView: (NSView*) v byClassName: (NSString*) cn tag: (int64_t) t {
     if ([cn  isEqualToString: NSStringFromClass(v.class)]) {
-        return v;
+        if (t < 0 || v.tag == LLONG_MIN) {
+            return v;
+        }
     }
     NSView* r = null;
     if (v.subviews != null) {
         for (id s in v.subviews) {
-            r = [self findView: (NSView*)s byClassName: cn];
+            r = [self findView: (NSView*)s byClassName: cn tag: t];
         }
     }
     return r;
 }
 
 - (NSView*) findViewByClassName: (NSString*) className {
-    return [NSView findView: self byClassName: className];
+    return [NSView findView: self byClassName: className tag: LLONG_MIN];
 }
+
+- (NSView*) findViewByClassName: (NSString*) className tag: (int) t {
+    return [NSView findView: self byClassName: className tag: t];
+}
+
 
 - (void) setOrigin: (NSPoint) pt {
     NSRect f = self.frame;

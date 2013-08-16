@@ -553,15 +553,26 @@ static NSTableView* createTableView(NSRect r) {
     return _operationQueue.operations.count == 0;
 }
 
-- (NSInteger) runModalAlert: (NSString*) message buttons: (NSArray*) buttons info: (NSString*) info {
+- (NSInteger) runModalAlert: (NSString*) message
+                    buttons: (NSArray*) buttons
+                   tooltips: (NSArray*) tips
+                       info: (NSString*) info
+                 suppressed: (BOOL*) s {
     NSInteger __block answer = NSAlertErrorReturn;
     NSAlert* a = NSAlert.new;
+    int i = 0;
     for (NSString* s in buttons) {
-        [a addButtonWithTitle: s];
+        NSButton* btn = [a addButtonWithTitle: s];
+        if (tips != null && i < tips.count && tips[i] != null && ((NSString*)tips[i]).length > 0) {
+            btn.toolTip = tips[i];
+        }
+        i++;
     }
     a.messageText = message;
     a.informativeText = info;
     a.alertStyle = NSInformationalAlertStyle;
+    a.icon = [NSImage imageNamed: @"transparent-1x1.png"];
+    a.showsSuppressionButton = s != null;
     [self beginAlerts];
     [_alerts alert: a done: ^(NSInteger rc) {
         answer = rc;
@@ -570,37 +581,32 @@ static NSTableView* createTableView(NSRect r) {
     // https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Sheets/Tasks/UsingAppModalDialogs.html
     [NSApp runModalForWindow: _alerts];
     [self endAlerts];
+    if (s != null) {
+        *s = a.suppressionButton.state == NSOnState;
+    }
     return answer;
 }
 
-- (NSInteger) runModalAlert: (NSString*) message defaultButton: (NSString*) db
-            alternateButton: (NSString*) ab otherButton: ob info: (NSString*) info {
-    NSInteger __block answer = NSAlertErrorReturn;
-    NSAlert* a = [NSAlert alertWithMessageText: message
-                                 defaultButton: db
-                               alternateButton: ab
-                                   otherButton: ob
-                     informativeTextWithFormat: @"%@", info];
+- (void) alertModalSheet: (NSString*) message
+                 buttons: (NSArray*) buttons
+                tooltips: (NSArray*) tips
+                    info: (NSString*) info
+              suppressed: (BOOL*) s
+                    done: (void(^)(NSInteger rc)) d {
+    NSAlert* a = NSAlert.new;
+    int i = 0;
+    for (NSString* s in buttons) {
+        NSButton* btn = [a addButtonWithTitle: s];
+        if (tips != null && i < tips.count && tips[i] != null && ((NSString*)tips[i]).length > 0) {
+            btn.toolTip = tips[i];
+        }
+        i++;
+    }
+    a.messageText = message;
+    a.informativeText = info;
     a.alertStyle = NSInformationalAlertStyle;
-    [self beginAlerts];
-    [_alerts alert: a done: ^(NSInteger rc) {
-        answer = rc;
-        [NSApp stopModal];
-    }];
-    // https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Sheets/Tasks/UsingAppModalDialogs.html
-    [NSApp runModalForWindow: _alerts];
-    [self endAlerts];
-    return answer;
-}
-
-- (void) alertModalSheet: (NSString*) message defaultButton: (NSString*) db
-         alternateButton: (NSString*) ab info: (NSString*) info done: (void(^)(NSInteger rc)) d {
-    NSAlert* a = [NSAlert alertWithMessageText: message
-                                 defaultButton: db
-                               alternateButton: ab
-                                   otherButton: null
-                     informativeTextWithFormat: @"%@", info];
-    a.alertStyle = NSInformationalAlertStyle;
+    a.icon = [NSImage imageNamed: @"transparent-1x1.png"];
+    a.showsSuppressionButton = s != null;
     [self beginAlerts];
     [_alerts alert: a done: ^(NSInteger rc) {
         d(rc);
@@ -753,7 +759,7 @@ static NSString* nextPathname(NSString* path) {
     return nonexistingName(name, ext, right);
 }
 
-- (void) extract: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
+- (void) extract: (NSArray*) items to: (NSURL*) dest DnD: (BOOL) dnd {
     if (items == null) {
         _itemsToExtract = _archive.numberOfItems - _archive.numberOfFolders;
         _foldersToExtract = _archive.numberOfFolders;
@@ -762,23 +768,20 @@ static NSString* nextPathname(NSString* path) {
         _itemsToExtract = numberOfLeafs(items, &_foldersToExtract);
     }
     if (dnd) {
-        [self addExtractOperation: items to: url DnD: dnd];
+        [self addExtractOperation: items to: dest DnD: dnd];
         return;
     }
     if (!_destination.isSelected) {
         items = null;
     }
     if (_destination.isNextToArchive) {
-        url = [NSURL fileURLWithPath: [_url.path stringByDeletingLastPathComponent]];
-        trace("url=%@", url);
+        dest = [NSURL fileURLWithPath: [_url.path stringByDeletingLastPathComponent]];
+        trace("url=%@", dest);
     }
-    NSString* rn = _archive.root.name;
-    trace(@"root.name=%@", rn);
     NSString* lpc = _url.path.lastPathComponent.stringByDeletingPathExtension;
-    trace(@"lpc=%@", lpc);
-    url = [NSURL fileURLWithPath:[url.path stringByAppendingPathComponent: lpc]];
-    trace("url=%@", url);
-    NSString* path = url.path;
+    dest = [NSURL fileURLWithPath:[dest.path stringByAppendingPathComponent: lpc]];
+    trace("url=%@", dest);
+    NSString* path = dest.path;
     BOOL d = false;
     BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
     NSString* details = @"";
@@ -796,17 +799,21 @@ static NSString* nextPathname(NSString* path) {
     if (!e) {
         NSInteger rc = NSAlertDefaultReturn;
         if (_destination.isAsking) {
+            BOOL suppress = false;
             rc = [self runModalAlert: [NSString stringWithFormat:
-                                       @"About to unpack %@«%@»\ninto folder:\n«%@»?\n"
-                                       "Do you want to proceed?", details, _url.path.lastPathComponent, url.path]
-                       defaultButton: @"Proceed"
-                     alternateButton: @"Stop"
-                         otherButton: null
-                                info: @"destination folder does not exist and will be created"];
+                                       @"About to unpack %@«%@»\ninto folder:\n«%@»\n"
+                                       "Do you want to proceed?", details, _url.path.lastPathComponent, dest.path]
+                             buttons: @[ @"Proceed", @"Stop" ]
+                            tooltips: null
+                                info: @"Destination folder does not exist. It will be created."
+                          suppressed: &suppress];
+            if (suppress) {
+                _destination.asking = false;
+            }
         }
-        if (rc == NSAlertDefaultReturn) {
+        if (rc == NSAlertFirstButtonReturn) {
             mkdir(path.UTF8String, 0700);
-            [self addExtractOperation: items to: url DnD: dnd];
+            [self addExtractOperation: items to: dest DnD: dnd];
         } else {
             return;
         }
@@ -814,24 +821,34 @@ static NSString* nextPathname(NSString* path) {
         NSInteger rc = NSAlertFirstButtonReturn;
         NSString* next = nextPathname(path);
         if (_destination.isAsking) {
+            BOOL suppress = false;
+            NSString* keepTooltip = [NSString stringWithFormat:
+                                      @"\"Keep Both\" will change the destination to: "
+                                      "«%@»", next];
+            NSString* replaceTooltip = [NSString stringWithFormat:
+                                      @"\"Replace\" will move existing folder\n«%@»\ninto Trash.",
+                                        dest.path.lastPathComponent];
+            NSString* mergeTooltip = @"\"Merge\" will unpack items into existing folder.";
             rc = [self runModalAlert: [NSString stringWithFormat:
                                        @"About to unpack %@«%@» into existing folder:\n«%@»?\n"
-                                       "How do you want to proceed?", details, _url.path.lastPathComponent, url.path]
+                                       "How do you want to proceed?", details, _url.path.lastPathComponent, dest.path]
                              buttons: @[ @"Keep Both", @"Replace", @"Merge", @"Stop" ]
-                                info: [NSString stringWithFormat:
-                                       @"Keep Both will change the destination to: "
-                                       "«%@»\n"
-                                       "Replace will move existing folder\n«%@»\ninto Trash.\n"
-                                       "Merge will unpack into existing folder.", next, url.path.lastPathComponent]];
+                            tooltips: @[ keepTooltip, replaceTooltip, mergeTooltip, @"Do not unpack" ]
+                                info: @"Hover over buttons for more detailed explanaition.\n"
+                                       "Isn't it easier sometimes to just drag and drop?"
+                          suppressed: &suppress];
+            if (suppress) {
+                _destination.asking = false;
+            }
         }
         if (rc == NSAlertFirstButtonReturn) { // Keep Both
             path = next;
-            url = [NSURL fileURLWithPath: path];
-            trace("url=%@", url);
+            dest = [NSURL fileURLWithPath: path];
+            trace("url=%@", dest);
             e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
             assert(!e);
             mkdir(path.UTF8String, 0700);
-            [self addExtractOperation: items to: url DnD: dnd];
+            [self addExtractOperation: items to: dest DnD: dnd];
         } else if (rc == NSAlertSecondButtonReturn) { // Replace
             [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: path]]
                                    completionHandler: ^(NSDictionary* moved, NSError *error){
@@ -851,9 +868,9 @@ static NSString* nextPathname(NSString* path) {
                                    }];
             return;
         } else if (rc == NSAlertThirdButtonReturn) { // Merge
-            url = [NSURL fileURLWithPath: path];
-            trace("url=%@", url);
-            [self addExtractOperation: items to: url DnD: dnd];
+            dest = [NSURL fileURLWithPath: path];
+            trace("url=%@", dest);
+            [self addExtractOperation: items to: dest DnD: dnd];
         } else { // Stop
             return;
         }

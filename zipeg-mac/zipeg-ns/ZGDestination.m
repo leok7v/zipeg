@@ -188,6 +188,10 @@ static NSSearchPathDirectory dirs[] = {
     return _ask.selectedItem.tag == 0;
 }
 
+- (void) setAsking: (BOOL) b {
+    [_ask selectItemWithTag: b ? 0 : 1];
+}
+
 - (BOOL) isSelected {
     return _selected.selectedItem.tag == 0;
 }

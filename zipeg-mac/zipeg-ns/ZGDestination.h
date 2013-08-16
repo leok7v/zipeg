@@ -3,6 +3,7 @@
 @interface ZGDestination : NSView<NSPathControlDelegate>
 
 - (id) initWithFrame: (NSRect) r for: (ZGDocument*) d;
+- (void) setAsking: (BOOL) b;
 - (BOOL) isAsking;
 - (BOOL) isSelected;
 - (BOOL) isNextToArchive;

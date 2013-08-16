@@ -30,6 +30,7 @@
 		B36196D617959F6800C515E4 /* ZGBitset.m in Sources */ = {isa = PBXBuildFile; fileRef = B36196D517959F6800C515E4 /* ZGBitset.m */; };
 		B36196D91795BB8E00C515E4 /* ZGUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = B36196D81795BB8E00C515E4 /* ZGUtils.mm */; };
 		B361A43517A3FE28008C8199 /* libp7z.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = B39F1D4817924CBE00472FEF /* libp7z.dylib */; };
+		B36487C717BDBDD70000C650 /* transparent-1x1.png in Resources */ = {isa = PBXBuildFile; fileRef = B36487C617BDBDD70000C650 /* transparent-1x1.png */; };
 		B3767B0017AF978F00971CE4 /* folders-white.png in Resources */ = {isa = PBXBuildFile; fileRef = B3767AFF17AF978F00971CE4 /* folders-white.png */; };
 		B3767B0317AFAAC700971CE4 /* ZGSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = B3767B0217AFAAC700971CE4 /* ZGSheet.m */; };
 		B37E554B179278DF00E54693 /* zipeg.icns in Resources */ = {isa = PBXBuildFile; fileRef = B37E554A179278DF00E54693 /* zipeg.icns */; };
@@ -176,6 +177,7 @@
 		B36196D517959F6800C515E4 /* ZGBitset.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGBitset.m; sourceTree = "<group>"; };
 		B36196D71795BB8E00C515E4 /* ZGUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGUtils.h; sourceTree = "<group>"; };
 		B36196D81795BB8E00C515E4 /* ZGUtils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ZGUtils.mm; sourceTree = "<group>"; };
+		B36487C617BDBDD70000C650 /* transparent-1x1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "transparent-1x1.png"; path = "Resources/transparent-1x1.png"; sourceTree = "<group>"; };
 		B3767AFF17AF978F00971CE4 /* folders-white.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "folders-white.png"; path = "Resources/folders-white.png"; sourceTree = "<group>"; };
 		B3767B0117AFAAC700971CE4 /* ZGSheet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGSheet.h; sourceTree = "<group>"; };
 		B3767B0217AFAAC700971CE4 /* ZGSheet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGSheet.m; sourceTree = "<group>"; };
@@ -420,6 +422,7 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B36487C617BDBDD70000C650 /* transparent-1x1.png */,
 				B3BE9D1817BCDBB8009DCD8D /* spinner1.png */,
 				B3BE9D1917BCDBB8009DCD8D /* spinner2.png */,
 				B3BE9D1A17BCDBB8009DCD8D /* spinner3.png */,
@@ -643,6 +646,7 @@
 				B3BE9D2D17BCDBB8009DCD8D /* spinner10.png in Resources */,
 				B3BE9D2E17BCDBB8009DCD8D /* spinner11.png in Resources */,
 				B3BE9D2F17BCDBB8009DCD8D /* spinner12.png in Resources */,
+				B36487C717BDBDD70000C650 /* transparent-1x1.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
