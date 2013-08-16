@@ -162,6 +162,10 @@ static NSSearchPathDirectory dirs[] = {
         if (isEqual(url, _nextToArchiveURL)) {
             [self nextToArchive: _disclosure];
         } else {
+            BOOL d = false;
+            if (![NSFileManager.defaultManager fileExistsAtPath: url.path isDirectory: &d] || !d) {
+                url = usersDocuments();
+            }
             self.pathControlURL = url;
         }
     }
@@ -219,11 +223,11 @@ static NSSearchPathDirectory dirs[] = {
 - (void) disclosurePressed: (id) sender {
     int tag = (int)_disclosure.selectedItem.tag;
     if (tag < 0) {
-        self.pathControlURL = [NSURL.alloc initFileURLWithPath: NSHomeDirectory() isDirectory: true];
+        self.pathControlURL = [NSURL fileURLWithPath: NSHomeDirectory() isDirectory: true];
     } else if (tag < countof(dirs)) {
         NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[tag], NSAllDomainsMask, true);
         if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
-            self.pathControlURL = [NSURL.alloc initFileURLWithPath: path[0] isDirectory: true];
+            self.pathControlURL = [NSURL fileURLWithPath: path[0] isDirectory: true];
         }
     } else {
         [self nextToArchive: _disclosure];
@@ -315,6 +319,13 @@ static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r, NSB
     return btn;
 }
 
+static NSURL* usersDocuments() {
+    NSArray* path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSAllDomainsMask, true);
+    NSString* s = path != null && path.count > 0 && [path[0] isKindOfClass: NSString.class] ?
+    (NSString*)path[0] : @"~/Documents";
+    return [NSURL fileURLWithPath: s isDirectory: true];
+}
+
 static NSPathControl* createPathControl(NSFont* font, NSRect r, NSRect lr) {
     NSRect pr = r;
     pr.origin.x = lr.origin.x + lr.size.width;
@@ -322,10 +333,7 @@ static NSPathControl* createPathControl(NSFont* font, NSRect r, NSRect lr) {
     pr.origin.y = lr.origin.y;
     pr.size.height = lr.size.height;
     NSPathControl* pc = [NSPathControl.alloc initWithFrame: pr];
-    NSArray* path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSAllDomainsMask, true);
-    NSString* s = path != null && path.count > 0 && [path[0] isKindOfClass: NSString.class] ?
-                  (NSString*)path[0] : @"~/Desktop";
-    NSURL* u = [NSURL.alloc initFileURLWithPath: s isDirectory: true];
+    NSURL* u = usersDocuments();
     pc.URL = u;
     pc.pathStyle = NSPathStyleStandard;
     pc.backgroundColor = [NSColor clearColor];
@@ -396,14 +404,14 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     bc.bordered = false;
     btn.menu = [NSMenu new];
     insertMenuItem(btn.menu, @"", null, -2);
-    NSURL* u = [NSURL.alloc initFileURLWithPath: NSHomeDirectory() isDirectory: true];
+    NSURL* u = [NSURL fileURLWithPath: NSHomeDirectory() isDirectory: true];
     NSImage* image = [NSWorkspace.sharedWorkspace iconForFile: u.path];
     image.size = NSMakeSize(16, 16);
     insertMenuItem(btn.menu, u.path.lastPathComponent, image, -1); // Home
     for (int i = 0; i < countof(dirs); i++) {
         NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[i], NSAllDomainsMask, true);
         if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
-            u = [NSURL.alloc initFileURLWithPath: path[0] isDirectory: true];
+            u = [NSURL fileURLWithPath: path[0] isDirectory: true];
             NSString* p = [u path];
             NSImage *image = [NSWorkspace.sharedWorkspace iconForFile: p];
             image.size = NSMakeSize(16, 16);

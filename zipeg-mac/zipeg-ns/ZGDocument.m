@@ -790,6 +790,15 @@ static NSString* nextPathname(NSString* path) {
     return mkdir(_temporaryUnpackingFolder.UTF8String, 0700) == 0;
 }
 
+- (void) posixError: (NSString*) path {
+    NSError* e = [NSError errorWithDomain: NSPOSIXErrorDomain
+                                     code: errno
+                                 userInfo: @{NSFilePathErrorKey : path}];
+    NSAlert* a = [NSAlert alertWithError: e];
+    [self beginAlerts];
+    [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
+}
+
 - (void) extract: (NSArray*) items to: (NSURL*) dest DnD: (BOOL) dnd {
     // TODO: __MACOSX/.../._.DS_Store (resource fork!) still exists!
     assert(_trueDestination == null);
@@ -841,7 +850,9 @@ static NSString* nextPathname(NSString* path) {
                                        "Do you want to proceed?", details, _url.path.lastPathComponent, dest.path]
                              buttons: @[ @"Proceed", @"Stop" ]
                             tooltips: null
-                                info: @"Destination folder does not exist. It will be created."
+                                info: @"Destination folder does not exist. It will be created.\n"
+                                       "You can re-enable suppressed alerts by choosing\n"
+                                       "\"ask\" instead of \"always\" under \"Unpack\" button later."
                           suppressed: &suppress];
             if (suppress) {
                 _destination.asking = false;
@@ -851,11 +862,11 @@ static NSString* nextPathname(NSString* path) {
             if ([self extractToNonexistentFolder: path]) {
                 dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
                 [self addExtractOperation: items to: dest DnD: dnd];
+                return;
             } else {
-                // TODO: report mkdir errno failure
+                [self posixError: path];
             }
         }
-        return;
     } else { // there is a folder or file in a way, need new name
         NSInteger rc = NSAlertFirstButtonReturn;
         NSString* next = nextPathname(path);
@@ -866,9 +877,11 @@ static NSString* nextPathname(NSString* path) {
                                       @"\"Keep Both\" will change the destination to: "
                                       "«%@»", next];
             NSString* replaceTooltip = [NSString stringWithFormat:
-                                      @"\"Replace\" will move existing folder\n«%@»\ninto Trash.",
+                                      @"\"Replace\" will move existing folder\n«%@»\ninto Trash Bin "
+                                        "and will unpack items\ninto newly created folder.",
                                         dest.path.lastPathComponent];
-            NSString* mergeTooltip = @"\"Merge\" will unpack items into existing folder.\n"
+            NSString* mergeTooltip = @"\"Merge\" will unpack items into existing folder\n"
+                                      "merging them over already existing items.\n"
                                       "Use with caution. \"Keep Both\" is much safe alternative.";
             rc = [self runModalAlert: [NSString stringWithFormat:
                                        @"About to unpack %@«%@» into existing folder:\n«%@»?\n"
@@ -876,7 +889,9 @@ static NSString* nextPathname(NSString* path) {
                              buttons: @[ @"Keep Both", @"Replace", @"Merge", @"Stop" ]
                             tooltips: @[ keepTooltip, replaceTooltip, mergeTooltip, @"Do not unpack" ]
                                 info: @"Hover over buttons for more detailed explanaition.\n"
-                                       "Isn't it easier just drag and drop?"
+                                       "Isn't it easier just drag and drop?\n"
+                                       "You can re-enable suppressed alerts by choosing\n"
+                                       "\"ask\" instead of \"always\" under \"Unpack\" button later."
                           suppressed: &suppress];
             if (suppress) {
                 _destination.asking = false;
@@ -887,8 +902,9 @@ static NSString* nextPathname(NSString* path) {
             if ([self extractToNonexistentFolder: path]) {
                 dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
                 [self addExtractOperation: items to: dest DnD: dnd];
+                return;
             } else {
-                // TODO: report mkdir errno failure
+                [self posixError: path];
             }
         } else if (rc == NSAlertSecondButtonReturn) { // Replace
             [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: path]]
@@ -903,24 +919,31 @@ static NSString* nextPathname(NSString* path) {
                                            if ([self extractToNonexistentFolder: path]) {
                                                NSURL* dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
                                                [self addExtractOperation: items to: dest DnD: dnd];
+                                               return;
                                            } else {
-                                               // TODO: report mkdir errno failure
+                                               [self posixError: path];
                                            }
                                        } else {
                                            NSAlert* a = [NSAlert alertWithError: error];
                                            [self beginAlerts];
                                            [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
                                        }
+                                       assert(_operationQueue.operationCount == 0);
+                                       _trueDestination = null;
+                                       _temporaryUnpackingFolder = null;
                                    }];
             return;
         } else if (rc == NSAlertThirdButtonReturn) { // Merge
             dest = [NSURL fileURLWithPath: path];
             trace("url=%@", dest);
             [self addExtractOperation: items to: dest DnD: dnd];
-        } else { // Stop
             return;
+        } else { // Stop
         }
     }
+    assert(_operationQueue.operationCount == 0);
+    _trueDestination = null;
+    _temporaryUnpackingFolder = null;
 }
 
 - (void) addExtractOperation: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
@@ -1056,7 +1079,7 @@ static NSString* nextPathname(NSString* path) {
         [a addButtonWithTitle: @"Skip"].toolTip = skipTooltip;
     }
     [a addButtonWithTitle: @"Stop"].toolTip = @"Will stop unpacking any further items.";
-    [a setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
+    [a setMessageText: [NSString stringWithFormat:@"Overwrite file\n«%@»?",  name]];
     [a setInformativeText: @"Hover over buttons for more detailed explanaition.\n"
                             "Overwritten files are placed into Trash Bin."];
     a.alertStyle = NSInformationalAlertStyle;
