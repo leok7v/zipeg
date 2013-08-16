@@ -4,6 +4,16 @@
 
 @class ZGProgress;
 
+@interface ZGAnimatedImage : NSObject {
+@public ZGBlock* _next;
+    NSArray* _sprites;
+    double _fps;
+    int64_t _start; // milliseconds;
+}
+// NSProgressIndicator does the same job but I want this thing light and inside ZGProgress view
+- (NSImage*) currentSprite;
+@end
+
 @interface ZGAlerts() {
     @public NSAlert* _alert; // strong
     void(^_block)(NSInteger rc); // strong
@@ -12,31 +22,29 @@
     ZGProgress* _progress;
     int _count;
     NSSize _initialContentViewSize;
+    ZGAnimatedImage* _boxes;
+    dispatch_source_t _timer;
 }
 - (void) requestCancel;
 @end
 
-@interface ZGSpinner : NSObject {
-    @public ZGBlock* _next;
-    NSImage* _spinner[12];
-    int64_t _start; // milliseconds;
-}
-// NSProgressIndicator does the same job but I want this thing light and inside ZGProgress view
-@end
+@implementation ZGAnimatedImage
 
-@implementation ZGSpinner
-
-- (id) init {
+- (id) initWith: (NSString*) prefix frames: (int) n size: (NSSize) size fps: (double) fps {
     self = super.init;
     if (self != null) {
         alloc_count(self);
         _start = nanotime() / 1000000;
-        for (int i = 0; i < countof(_spinner); i++) {
-            NSString* name = [NSString stringWithFormat: @"spinner%d.png", i];
-            _spinner[i] = [[NSImage imageNamed: name] copy];
-            assert(_spinner[i] != null);
-            _spinner[i].size = NSMakeSize(20, 20);
+        _fps = fps;
+        NSMutableArray* s = [NSMutableArray arrayWithCapacity: n];
+        for (int i = 0; i < n; i++) {
+            NSString* name = [NSString stringWithFormat: @"%@%d.png", prefix, i];
+            NSImage* image = [[NSImage imageNamed: name] copy];
+            assert(image != null);
+            image.size = size;
+            s[i] = image;
         }
+        _sprites = s;
     }
     return self;
 }
@@ -46,16 +54,20 @@
     dealloc_count(self);
 }
 
-- (void) drawIntoView: (NSView*) v point: (NSPoint) pt {
+- (NSImage*) currentSprite {
     int64_t now = nanotime() / 1000000;
     int64_t delta = now - _start;
-    int ix = (delta / 50) % countof(_spinner);
-    NSImage* image = _spinner[ix];
+    int ix = (delta / 50) % (int)_sprites.count;
+    return _sprites[ix];
+}
+
+- (void) drawIntoView: (NSView*) v point: (NSPoint) pt {
+    NSImage* image = self.currentSprite;
     [image drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
-    _next = [ZGUtils invokeLater:^{
+    _next = [ZGUtils invokeLater: ^{
         v.needsDisplayInRect = NSMakeRect(pt.x, pt.y, image.size.width, image.size.height);
         _next = null;
-    } delay: 1.0 / countof(_spinner)];
+    } delay: 1.0 / _fps];
 }
 
 @end
@@ -70,7 +82,7 @@
     NSImage* __weak _stop;
     NSImage* _stop_n;
     NSImage* _stop_p;
-    ZGSpinner* _spinner;
+    ZGAnimatedImage* _spinner;
 }
 @end
 
@@ -86,7 +98,7 @@
         _stop_p = [[NSImage imageNamed: @"stop-p-32x32@2.png"] copy];
         _stop_p.size = NSMakeSize(18, 18);
         _stop = _stop_n;
-        _spinner = ZGSpinner.new;
+        _spinner = [ZGAnimatedImage.alloc initWith: @"spinner" frames: 12 size: NSMakeSize(20, 20) fps: 12];
         NSMutableParagraphStyle* style = NSMutableParagraphStyle.new;
         style.alignment = NSCenterTextAlignment;
         _textAttributes = @{ NSFontAttributeName: [NSFont systemFontOfSize: NSFont.smallSystemFontSize],
@@ -247,6 +259,7 @@
         alloc_count(self);
         _document = d;
         [self setupProgressBar];
+        _boxes = [ZGAnimatedImage.alloc initWith: @"box" frames: 7 size: NSMakeSize(64, 64) fps: 0.2];
     }
     return self;
 }
@@ -259,6 +272,8 @@
     _contentView = null;
     _alert = null;
     _block = null;
+    dispatch_source_cancel(_timer);
+    _timer = null;
 }
 
 - (void) progress: (int64_t) pos of: (int64_t) total {
@@ -319,6 +334,8 @@
             _contentView.superview.size = _initialContentViewSize;
             self.size = _initialContentViewSize;
         }
+        dispatch_source_cancel(_timer);
+        _timer = null;
     }
 }
 
@@ -363,6 +380,8 @@ static void setTarget(NSView* v, id old, id target) {
         [self dismissAlert: NSAlertErrorReturn resize: false];
     }
     [a layout];
+    _alert = a;
+    _block = d;
     NSWindow* w = a.window;
     NSView* acv = w.contentView;
     CGFloat width = MAX(acv.frame.size.width, old.width);
@@ -371,14 +390,28 @@ static void setTarget(NSView* v, id old, id target) {
     _contentView.superview.size = size;
     [acv removeFromSuperview];
     [_contentView addSubview: acv];
+    void (^__block b)() = ^() {
+        if (_alert != null) {
+            NSImageView* iv = (NSImageView*)[_contentView findViewByClassName: @"NSImageView"];
+            assert(iv != null);
+            iv.image = _boxes.currentSprite;
+        }
+    };
+    b();
     setTarget(_contentView, a, self);
     self.size = size;
     NSTextField* input = (NSTextField*)[_contentView findViewByClassName: @"NSTextField"];
     if (input != null) {
         [self makeFirstResponder: input];
     }
-    _alert = a;
-    _block = d;
+    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    if (_timer != null) {
+        dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC);
+        uint64_t interval = 5 * NSEC_PER_SEC; // every 5 seconds, converted to nanosecs
+        dispatch_source_set_timer(_timer, startTime, interval, 8000);
+        dispatch_source_set_event_handler(_timer, b);
+        dispatch_resume(_timer);
+    }
 }
 
 - (void) buttonPressed: (id) sender {

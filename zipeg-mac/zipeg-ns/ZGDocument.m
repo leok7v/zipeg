@@ -1017,7 +1017,9 @@ static NSString* nextPathname(NSString* path) {
             rmdir(_temporaryUnpackingFolder.UTF8String);
         }
     }
-    [ZGApp unregisterUnpackingFolder: _temporaryUnpackingFolder];
+    if (_temporaryUnpackingFolder != null) {
+        [ZGApp unregisterUnpackingFolder: _temporaryUnpackingFolder];
+    }
 }
 
 - (void) moveToTrueDestination {
@@ -1067,8 +1069,8 @@ static NSString* nextPathname(NSString* path) {
 - (void) askOverwrite: (NSString*) name appltToAll: (BOOL) ata done: (void (^)(int)) done {
     NSAlert* a = NSAlert.new;
     NSString* next = nextPathname(name);
-    NSString* keepTooltip = [NSString stringWithFormat: @"\"Keep Both\" will postfix "
-                             "the destination file with a new version number:\n%@", next.lastPathComponent];
+    NSString* keepTooltip = [NSString stringWithFormat: @"\"Keep Both\" will append new version number "
+                             "to the destination item:\n%@", next.lastPathComponent];
     NSString* replaceTooltip = [NSString stringWithFormat:
                                 @"\"Replace\" will move existing file\n«%@»\ninto Trash.",
                                 name.lastPathComponent];
