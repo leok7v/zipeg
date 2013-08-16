@@ -833,7 +833,7 @@ static NSString* nextPathname(NSString* path) {
         details = [NSString stringWithFormat:@"%@ from\n", files];
     }
     if (!e) {
-        NSInteger rc = NSAlertDefaultReturn;
+        NSInteger rc = NSAlertFirstButtonReturn;
         if (_destination.isAsking) {
             BOOL suppress = false;
             rc = [self runModalAlert: [NSString stringWithFormat:
@@ -1071,7 +1071,7 @@ static NSString* nextPathname(NSString* path) {
     }
     [self beginAlerts];
     [_alerts alert: a done: ^(NSInteger rc){
-        int answer = NSAlertErrorReturn;
+        int answer = kCancel;
         if (rc == NSAlertFirstButtonReturn) {
             answer = applyToAll.state == NSOffState ? kKeepBoth : kKeepBothToAll;
         } else if (rc == NSAlertSecondButtonReturn) {

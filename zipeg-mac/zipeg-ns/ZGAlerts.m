@@ -32,7 +32,7 @@
         alloc_count(self);
         _start = nanotime() / 1000000;
         for (int i = 0; i < countof(_spinner); i++) {
-            NSString* name = [NSString stringWithFormat: @"spinner%d.png", i + 1];
+            NSString* name = [NSString stringWithFormat: @"spinner%d.png", i];
             _spinner[i] = [[NSImage imageNamed: name] copy];
             assert(_spinner[i] != null);
             _spinner[i].size = NSMakeSize(20, 20);
