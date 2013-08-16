@@ -62,7 +62,7 @@ bool AutoRenamePath(UString &fullProcessedPath)
         }
     }
     if (i < 0) {
-        i = 2;
+        i = 1;
         name += suffix;
     }
     bool b = true;

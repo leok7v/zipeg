@@ -733,6 +733,8 @@ static NSString* nextPathname(NSString* path) {
     if (n >= 0) {
         name = [name substringFrom: 0 to: spix + 1];
     } else {
+        // IMPORTANT: make sure this is the same number as in FilePathAutoRename.cpp
+        // TODO: make two implementation into one via delegate - less fragile
         n = 1; // Finder starts with " 2" (which may be a bug or a feature) we will start with " 1"
         name = [name stringByAppendingString: @" "];
     }
@@ -945,18 +947,28 @@ static NSString* nextPathname(NSString* path) {
 
 - (void) askOverwrite: (NSString*) name appltToAll: (BOOL) ata done: (void (^)(int)) done {
     NSAlert* a = NSAlert.new;
-    [a addButtonWithTitle: @"Keep Both"];
-    [a addButtonWithTitle: @"Replace"];
+    NSString* next = nextPathname(name);
+    NSString* keepTooltip = [NSString stringWithFormat: @"\"Keep Both\" will postfix "
+                             "the destination file with a new version number:\n%@", next.lastPathComponent];
+    NSString* replaceTooltip = [NSString stringWithFormat:
+                                @"\"Replace\" will move existing file\n«%@»\ninto Trash.",
+                                name.lastPathComponent];
+    NSString* skipTooltip = @"\"Skip\" will skip unpacking this item and will keep existing file as it is.";
+    [a addButtonWithTitle: @"Keep Both"].toolTip = keepTooltip;
+    [a addButtonWithTitle: @"Replace"].toolTip = replaceTooltip;
     if (ata) {
-        [a addButtonWithTitle: @"Skip"];
+        [a addButtonWithTitle: @"Skip"].toolTip = skipTooltip;
     }
-    [a addButtonWithTitle: @"Stop"];
+    [a addButtonWithTitle: @"Stop"].toolTip = @"Will stop unpacking any further items.";
     [a setMessageText: [NSString stringWithFormat:@"Overwrite file «%@»?",  name]];
-    [a setInformativeText: @"Overwritten files are placed into Trash Bin"];
+    [a setInformativeText: @"Hover over buttons for more detailed explanaition.\n"
+                            "Overwritten files are placed into Trash Bin."];
     a.alertStyle = NSInformationalAlertStyle;
     NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
     applyToAll.title = @"Apply to All";
     applyToAll.buttonType = NSSwitchButton;
+    applyToAll.toolTip = @"This choice will be applied to the rest\n"
+                          "of the items that are being unpacked.";
     [applyToAll sizeToFit];
     if (ata) {
         a.accessoryView = applyToAll;
