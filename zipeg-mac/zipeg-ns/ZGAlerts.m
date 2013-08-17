@@ -352,6 +352,8 @@
 }
 
 - (void) setupProgressBar {
+    // TODO: 534 is just a guess. I need to measure Alert windows and store their width in UserDefaults and use it
+    // later
     NSSize size = NSMakeSize(534, 90);
     self.size = size;
     if (_contentView == null) {
