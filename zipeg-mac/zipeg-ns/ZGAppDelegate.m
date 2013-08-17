@@ -38,6 +38,7 @@
 }
 
 - (BOOL) openLastDocument {
+#ifdef _DEBUG
     NSDocumentController* dc = NSDocumentController.sharedDocumentController;
     NSArray* rds = dc.recentDocumentURLs;
     if (rds != null && rds.count > 0) { // If there is a recent document, try to open it.
@@ -49,18 +50,34 @@
             return true;
         }
     }
+#endif
     return false;
 }
+
+// TODO: for multi-document model below has no effect. Looks like we need Document controller override :(
+// to distingish between Pro and non-Pro
 
 // http://stackoverflow.com/questions/7564290/why-isnt-applicationshouldopenuntitledfile-being-called
 
 - (BOOL) applicationShouldOpenUntitledFile: (NSApplication*) app {
+#ifdef _DEBUG
     // http://www.cocoawithlove.com/2008/05/open-previous-document-on-application.html
     // On startup, when asked to open an untitled file, open the last opened file instead
     if (!_applicationHasStarted) {
         return [self openLastDocument];
     }
     return true;
+#else
+    return false; // TODO: should true in Pro
+#endif
+}
+
+- (BOOL) applicationOpenUntitledFile: (NSApplication*) app {
+#ifndef _DEBUG
+    return false;
+#else
+    return true;
+#endif
 }
 
 - (void) cancelAll {

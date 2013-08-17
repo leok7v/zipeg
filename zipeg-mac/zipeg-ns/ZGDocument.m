@@ -35,6 +35,7 @@
     NSObject<ZGItemFactory>* _archive;
     NSObject<ZGItemProtocol>* _root;
     NSWindow* __weak _window;
+    // TODO: all observers should be __weak
     id _windowWillCloseObserver;
     id _clipViewFrameDidChangeObserver;
     id _clipViewBoundsDidChangeObserver;
