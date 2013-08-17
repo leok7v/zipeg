@@ -7,11 +7,15 @@
 
 id addObserver(NSString* n, id o, void(^b)(NSNotification*)) {
     assert(n != null && b != null);
-    return [NSNotificationCenter.defaultCenter addObserverForName: n object: o
-                                                            queue: NSOperationQueue.mainQueue usingBlock: b];
+    return [NSNotificationCenter.defaultCenter
+                addObserverForName: n
+                            object: o
+                             queue: NSOperationQueue.mainQueue
+                        usingBlock: b];
 }
 
 id removeObserver(id observer) {
+    assert(observer == null || [NSStringFromClass(((NSObject*)observer).class) isEqual: @"__NSObserver"]);
     [NSNotificationCenter.defaultCenter removeObserver: observer];
     return null;
 }

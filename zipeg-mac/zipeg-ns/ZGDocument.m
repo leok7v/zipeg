@@ -908,30 +908,32 @@ static NSString* nextPathname(NSString* path) {
             }
         } else if (rc == NSAlertSecondButtonReturn) { // Replace
             [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: path]]
-                                   completionHandler: ^(NSDictionary* moved, NSError *error){
-                                       trace("moved=%@ %@", moved, error);
-                                       if (error == null) {
-                                           _trashedDestination = moved;
-                                           NSURL* url = [NSURL fileURLWithPath: path];
-                                           trace("url=%@", url);
-                                           BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: null];
-                                           assert(!e);
-                                           if ([self extractToNonexistentFolder: path]) {
-                                               NSURL* dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
-                                               [self addExtractOperation: items to: dest DnD: dnd];
-                                               return;
-                                           } else {
-                                               [self posixError: path];
-                                           }
-                                       } else {
-                                           NSAlert* a = [NSAlert alertWithError: error];
-                                           [self beginAlerts];
-                                           [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
-                                       }
-                                       assert(_operationQueue.operationCount == 0);
-                                       _trueDestination = null;
-                                       _temporaryUnpackingFolder = null;
-                                   }];
+                                   completionHandler:
+                 ^(NSDictionary* moved, NSError *error) {
+                     // TODO: it should be done later when unpack finished. this will eliminate _trashedDestination
+                     trace("moved=%@ %@", moved, error);
+                     if (error == null) {
+                         _trashedDestination = moved;
+                         trace("url=%@", [NSURL fileURLWithPath: path]);
+                         BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: null];
+                         assert(!e);
+                         if ([self extractToNonexistentFolder: path]) {
+                             NSURL* dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
+                             [self addExtractOperation: items to: dest DnD: dnd];
+                             return;
+                         } else {
+                             [self posixError: path];
+                         }
+                     } else {
+                         NSAlert* a = [NSAlert alertWithError: error];
+                         [self beginAlerts];
+                         [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
+                     }
+                     assert(_operationQueue.operationCount == 0);
+                     _trueDestination = null;
+                     _temporaryUnpackingFolder = null;
+                 }
+            ];
             return;
         } else if (rc == NSAlertThirdButtonReturn) { // Merge
             dest = [NSURL fileURLWithPath: path];

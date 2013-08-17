@@ -19,7 +19,7 @@ static NSSearchPathDirectory dirs[] = {
 @end
 
 @interface ZGAskButtonCell : NSPopUpButtonCell {
-    ZGDestination* _notify;
+    ZGDestination* __weak _notify;
 }
 
 @end
@@ -82,7 +82,9 @@ static NSSearchPathDirectory dirs[] = {
     NSPathComponentCell* _nextToArchivePathComponentCell;
     NSMenuItem* _nextToArchiveMenuItem;
     NSURL* _nextToArchiveURL;
-    id _destinationObserver;
+    // TODO: all observers must be weak because system is holding reference till we call remove... right?
+    id __weak _destinationObserver;
+    id __weak _windowWillCloseObserver;
     int _notify_count; // prevents readingUserDefaults on own notification and writingUserDefaults right after reading
 }
 
@@ -122,13 +124,13 @@ static NSSearchPathDirectory dirs[] = {
         self.subviews = @[_label, _selected, _ask, _to, _disclosure, _pathControl, _reveal];
         [self readUserDefaults];
         _destinationObserver = addObserver(@"zipeg.destination.update", null, ^(NSNotification* n){
-            if (_notify_count == 0) {
-                _notify_count++;
-                // trace(@"observed readUserDefaults %@", _document.window.title);
-                [self readUserDefaults];
-                _notify_count--;
-            }
+            [self readUserDefaults];
         });
+        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _window,
+            ^(NSNotification* n) {
+                _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+                _destinationObserver = removeObserver(_destinationObserver);
+            });
     }
     return self;
 }
@@ -136,10 +138,12 @@ static NSSearchPathDirectory dirs[] = {
 - (void) dealloc {
     dealloc_count(self);
     [_pathControl removeObserver: self forKeyPath: @"URL"];
-    _destinationObserver = removeObserver(@"zipeg.destination.update");
+    _destinationObserver = removeObserver(_destinationObserver);
+    _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
     _pathControl.target = null;
     _pathControl.action = null;
     _pathControl.delegate = null;
+    _ask.target = null;
     _to.target = null;
     _pathControl = null;
     _label = null;
@@ -149,25 +153,30 @@ static NSSearchPathDirectory dirs[] = {
 }
 
 - (void) readUserDefaults {
-    NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
-    NSNumber* ask = [ud objectForKey: @"zipeg.destination.ask"];
-    [_ask selectItemWithTag: ask == null ? 0 : ask.intValue];
-    NSNumber* selected = [ud objectForKey: @"zipeg.destination.selected"];
-    [_selected  selectItemWithTag: selected == null ? 0 : selected.intValue];
-    NSNumber* reveal = [ud objectForKey: @"zipeg.destination.reveal"];
-    [_reveal selectItemWithTag: reveal == null ? 0 : reveal.intValue];
-    NSString* s = [ud objectForKey: @"zipeg.destination.url"];
-    if (s != null) {
-        NSURL* url = [NSURL URLWithString: s];
-        if (isEqual(url, _nextToArchiveURL)) {
-            [self nextToArchive: _disclosure];
-        } else {
-            BOOL d = false;
-            if (![NSFileManager.defaultManager fileExistsAtPath: url.path isDirectory: &d] || !d) {
-                url = usersDocuments();
+    if (_notify_count == 0) {
+        // trace(@"observed readUserDefaults %@", _document.window.title);
+        _notify_count++;
+        NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
+        NSNumber* ask = [ud objectForKey: @"zipeg.destination.ask"];
+        [_ask selectItemWithTag: ask == null ? 0 : ask.intValue];
+        NSNumber* selected = [ud objectForKey: @"zipeg.destination.selected"];
+        [_selected  selectItemWithTag: selected == null ? 0 : selected.intValue];
+        NSNumber* reveal = [ud objectForKey: @"zipeg.destination.reveal"];
+        [_reveal selectItemWithTag: reveal == null ? 0 : reveal.intValue];
+        NSString* s = [ud objectForKey: @"zipeg.destination.url"];
+        if (s != null) {
+            NSURL* url = [NSURL URLWithString: s];
+            if (isEqual(url, _nextToArchiveURL)) {
+                [self nextToArchive: _disclosure];
+            } else {
+                BOOL d = false;
+                if (![NSFileManager.defaultManager fileExistsAtPath: url.path isDirectory: &d] || !d) {
+                    url = usersDocuments();
+                }
+                self.pathControlURL = url;
             }
-            self.pathControlURL = url;
         }
+        _notify_count--;
     }
 }
 
