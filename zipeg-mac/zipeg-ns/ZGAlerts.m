@@ -17,6 +17,7 @@
 @interface ZGAlerts() {
     @public NSAlert* _alert; // strong
     void(^_block)(NSInteger rc); // strong
+    ZGBlock* _delayedDismiss;
     NSView* __weak _contentView;
     ZGDocument* __weak _document;
     ZGProgress* _progress;
@@ -270,6 +271,7 @@
         dispatch_source_cancel(_timer);
         _timer = null;
     }
+    _delayedDismiss = _delayedDismiss.cancel;
     _document = null;
     _progress = null;
     _contentView.subviews = @[];
@@ -322,22 +324,31 @@
 }
 
 - (void) dismissAlert: (NSInteger) rc resize: (BOOL) b {
-    if (_alert != null || _block != null) {
-        setTarget(_contentView, self, _alert);
+    if (_block != null) {
         void (^done) (NSInteger rc) = _block;
         _block = null;
-        _alert = null;
-        _contentView.subviews = @[_progress];
         if (done != null) {
             done(rc);
         }
-        if (b) {
-            _contentView.size = _initialContentViewSize;
-            _contentView.superview.size = _initialContentViewSize;
-            self.size = _initialContentViewSize;
+    }
+    if (_alert != null) {
+        setTarget(_contentView, self, _alert);
+        _alert = null;
+        _contentView.subviews = @[_progress];
+        if (_timer != null) {
+            dispatch_source_cancel(_timer);
         }
-        dispatch_source_cancel(_timer);
         _timer = null;
+        if (_delayedDismiss != null) {
+            _delayedDismiss = _delayedDismiss.cancel;
+        }
+        if (b) {
+            _delayedDismiss = [ZGUtils invokeLater:^{
+                _contentView.size = _initialContentViewSize;
+                _contentView.superview.size = _initialContentViewSize;
+                self.size = _initialContentViewSize;
+            } delay: 1.0];
+        }
     }
 }
 
@@ -383,6 +394,7 @@ static void setTarget(NSView* v, id old, id target) {
         [self dismissAlert: NSAlertErrorReturn resize: false];
     }
     [a layout];
+    _delayedDismiss = _delayedDismiss.cancel;
     _alert = a;
     _block = d;
     NSWindow* w = a.window;
@@ -398,6 +410,7 @@ static void setTarget(NSView* v, id old, id target) {
         if (_alert != null) {
             NSImageView* iv = (NSImageView*)[_contentView findViewByClassName: @"NSImageView"];
             assert(iv != null);
+            // TODO: http://stackoverflow.com/questions/2795882/how-can-i-animate-a-content-switch-in-an-nsimageview
             iv.image = _boxes.currentSprite;
         }
     };
@@ -432,6 +445,9 @@ static void setTarget(NSView* v, id old, id target) {
 @end
 
 /*
+ 
+TODO: make sure ALL alerts use addButton and not  NSAlertDefaultReturn /... crap
+
 NSAlert notes:
 
  for addButtonWithTitle (visually right to left) NSAlert adds button with tags
