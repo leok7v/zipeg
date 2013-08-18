@@ -38,7 +38,7 @@
 }
 
 - (BOOL) openLastDocument {
-#ifdef _DEBUG
+#ifdef DEBUG
     NSDocumentController* dc = NSDocumentController.sharedDocumentController;
     NSArray* rds = dc.recentDocumentURLs;
     if (rds != null && rds.count > 0) { // If there is a recent document, try to open it.
@@ -60,7 +60,7 @@
 // http://stackoverflow.com/questions/7564290/why-isnt-applicationshouldopenuntitledfile-being-called
 
 - (BOOL) applicationShouldOpenUntitledFile: (NSApplication*) app {
-#ifdef _DEBUG
+#ifdef DEBUG
     // http://www.cocoawithlove.com/2008/05/open-previous-document-on-application.html
     // On startup, when asked to open an untitled file, open the last opened file instead
     if (!_applicationHasStarted) {
@@ -73,7 +73,7 @@
 }
 
 - (BOOL) applicationOpenUntitledFile: (NSApplication*) app {
-#ifndef _DEBUG
+#ifndef DEBUG
     return false;
 #else
     return true;

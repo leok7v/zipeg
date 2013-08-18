@@ -262,6 +262,18 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 
 @implementation NSView(ZGExtensions)
 
++ (NSArray*) findViews: (NSView*) v byClassName: (NSString*) cn all: (NSMutableArray*) a {
+    if ([cn isEqualToString: NSStringFromClass(v.class)]) {
+        [a addObject: v];
+    }
+    if (v.subviews != null) {
+        for (id s in v.subviews) {
+            [self findViews: (NSView*)s byClassName: cn all: a];
+        }
+    }
+    return a;
+}
+
 + (NSView*) findView: (NSView*) v byClassName: (NSString*) cn tag: (int64_t) t {
     if ([cn isEqualToString: NSStringFromClass(v.class)]) {
         if (t == LLONG_MIN || v.tag == t) {
@@ -286,6 +298,11 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 
 - (NSView*) findViewByClassName: (NSString*) className tag: (int) t {
     return [NSView findView: self byClassName: className tag: t];
+}
+
+- (NSArray*) findViewsByClassName: (NSString*) className {
+    NSMutableArray* a = [NSMutableArray arrayWithCapacity: 4];
+    return [NSView findViews: self byClassName: className all: a];
 }
 
 

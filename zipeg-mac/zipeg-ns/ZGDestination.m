@@ -112,7 +112,7 @@ static NSSearchPathDirectory dirs[] = {
         _to.target = self;
         _disclosure = createDirsButton(@"M", _font, r, _to.frame);
         _pathControl = createPathControl(_font, r, _disclosure.frame);
-        _reveal = createAskButton(@[ @" and reveal in Finder ", @"  but don't reveal " ],
+        _reveal = createAskButton(@[ @" and show in Finder ", @"  but don't show " ],
                                   _font, r, _pathControl.frame, self);
         _pathControl.action = @selector(pathControlSingleClick:);
         _pathControl.target = self;
@@ -526,7 +526,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
         [m addItem: NSMenuItem.separatorItem];
         [m addItem: _nextToArchiveMenuItem];
     }
-    NSString* title = NSLocalizedString(@"Reveal in Finder", @"");
+    NSString* title = NSLocalizedString(@"Show in Finder", @"");
     NSMenuItem* mi = [NSMenuItem.alloc initWithTitle:title action: @selector(revealInFinder:) keyEquivalent:@""];
     mi.target = self;
     [m addItem: NSMenuItem.separatorItem];

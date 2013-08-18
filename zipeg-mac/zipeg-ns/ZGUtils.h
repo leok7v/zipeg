@@ -55,6 +55,7 @@ FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 @interface NSView(ZGExtensions)
 - (NSView*) findViewByClassName: (NSString*) cn;
 - (NSView*) findViewByClassName: (NSString*) className tag: (int) t;
+- (NSArray*) findViewsByClassName: (NSString*) className;
 - (void) setOrigin: (NSPoint) pt;
 - (void) setSize: (NSSize) sz;
 @end

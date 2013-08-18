@@ -259,7 +259,7 @@
         alloc_count(self);
         _document = d;
         [self setupProgressBar];
-        _boxes = [ZGAnimatedImage.alloc initWith: @"box" frames: 7 size: NSMakeSize(64, 64) fps: 0.2];
+        _boxes = [ZGAnimatedImage.alloc initWith: @"box" frames: 10 size: NSMakeSize(64, 64) fps: 0.2];
     }
     return self;
 }
@@ -352,9 +352,8 @@
 }
 
 - (void) setupProgressBar {
-    // TODO: 534 is just a guess. I need to measure Alert windows and store their width in UserDefaults and use it
-    // later
-    NSSize size = NSMakeSize(534, 90);
+    NSNumber* width = [NSUserDefaults.standardUserDefaults objectForKey: @"zipeg.alerts.width"];
+    NSSize size = NSMakeSize(width == null ? 531 : width.floatValue, 90);
     self.size = size;
     if (_contentView == null) {
         _contentView = self.contentView;
@@ -388,6 +387,7 @@ static void setTarget(NSView* v, id old, id target) {
     _block = d;
     NSWindow* w = a.window;
     NSView* acv = w.contentView;
+    [NSUserDefaults.standardUserDefaults setObject: @(acv.frame.size.width) forKey: @"zipeg.alerts.width"];
     CGFloat width = MAX(acv.frame.size.width, old.width);
     NSSize size = NSMakeSize(width, acv.frame.size.height + old.height);
     _contentView.size = size;
@@ -404,10 +404,6 @@ static void setTarget(NSView* v, id old, id target) {
     b();
     setTarget(_contentView, a, self);
     self.size = size;
-    NSTextField* input = (NSTextField*)[_contentView findViewByClassName: @"NSTextField"];
-    if (input != null) {
-        [self makeFirstResponder: input];
-    }
     _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
     if (_timer != null) {
         dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC);
@@ -415,6 +411,14 @@ static void setTarget(NSView* v, id old, id target) {
         dispatch_source_set_timer(_timer, startTime, interval, 8000);
         dispatch_source_set_event_handler(_timer, b);
         dispatch_resume(_timer);
+    }
+    [self makeKeyAndOrderFront: self]; // window.moveToFront
+    NSArray* tfs = [_contentView findViewsByClassName: @"NSTextField"];
+    for (NSTextField* tf in tfs) {
+        if (tf.isEditable) {
+            [self makeFirstResponder: tf];
+            break;
+        }
     }
 }
 
