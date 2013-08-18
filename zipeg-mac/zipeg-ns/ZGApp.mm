@@ -105,6 +105,8 @@ static void loadIcons() {
        [e.charactersIgnoringModifiers isEqualToString:@"z"]) {
         dumpAllViews();
         NSLog(@"\n");
+        traceObservers();
+        NSLog(@"\n");
         trace_allocs();
         NSLog(@"\n");
     }
@@ -118,6 +120,7 @@ static void loadIcons() {
 }
 
 - (void) exit  {
+    traceObservers();
     trace_allocs();
 }
 
@@ -138,6 +141,7 @@ static void loadIcons() {
     // somehow, NSToolbar takes a long time to dealloc in ARC; seems like it is sitting on a timer
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        traceObservers();
         trace_allocs();
     });
 }

@@ -5,19 +5,48 @@
 #import "ZGItemProtocol.h"
 #import "ZGDocument.h"
 
+#define NOT_A_VALUE 0xFFFFFFFFFFFFFFFFULL
+
+static NSMutableDictionary* observers;
+
 id addObserver(NSString* n, id o, void(^b)(NSNotification*)) {
     assert(n != null && b != null);
-    return [NSNotificationCenter.defaultCenter
-                addObserverForName: n
-                            object: o
-                             queue: NSOperationQueue.mainQueue
-                        usingBlock: b];
+    id observer = [NSNotificationCenter.defaultCenter
+                   addObserverForName: n
+                               object: o
+                                queue: NSOperationQueue.mainQueue
+                           usingBlock: b];
+    if (observers == null) {
+        observers = [NSMutableDictionary dictionaryWithCapacity:100];
+    }
+    NSNumber* a = @((uint64_t)(__bridge void*)observer);
+    NSString* v = observers[a];
+    assert(v == null);
+    observers[a] = n;
+    return observer;
 }
 
 id removeObserver(id observer) {
+    assert(observers != null);
+    if (observer != null) {
+        NSNumber* a = @((uint64_t)(__bridge void*)observer);
+        assert(observers[a] != null);
+        [observers removeObjectForKey: a];
+    }
     assert(observer == null || [NSStringFromClass(((NSObject*)observer).class) isEqual: @"__NSObserver"]);
     [NSNotificationCenter.defaultCenter removeObserver: observer];
     return null;
+}
+
+void traceObservers() {
+    for (NSNumber* a in observers.allKeys) {
+        NSString* n = observers[a];
+        id observer = (__bridge NSObject*)(void*)a.longLongValue;
+        NSLog(@"observer[%@]=%@", n, observer);
+    }
+    if (observers.count == 0) {
+        NSLog(@"on observers");
+    }
 }
 
 uint64_t timestamp(const char* label) {
@@ -28,19 +57,17 @@ uint64_t nanotime() {
     return NanoTime::time();
 }
 
-#define NOT_A_VALUE 0xFFFFFFFFFFFFFFFFULL
-
-static HashMapS2L map(500, NOT_A_VALUE);
+static HashMapS2L mem(500, NOT_A_VALUE);
 
 uint64_t alloc_count(id i) {
     @synchronized (ZGUtils.class) {
         NSObject* o = (NSObject*)i;
         const char* cn = NSStringFromClass(o.class).UTF8String;
-        uint64_t v = map.get(cn);
+        uint64_t v = mem.get(cn);
         if (v == NOT_A_VALUE) {
             v = 0;
         }
-        map.put(cn, ++v);
+        mem.put(cn, ++v);
         return v;
     }
 }
@@ -49,21 +76,21 @@ uint64_t dealloc_count(id i) {
     @synchronized (ZGUtils.class) {
         NSObject* o = (NSObject*)i;
         const char* cn = NSStringFromClass(o.class).UTF8String;
-        uint64_t v = map.get(cn);
+        uint64_t v = mem.get(cn);
         assert(v != NOT_A_VALUE); // dealloc before alloc?!
         assert(v > 0); // too many deallocs
-        map.put(cn, --v);
+        mem.put(cn, --v);
         return v;
     }
 }
 
 void trace_allocs() {
     @synchronized (ZGUtils.class) {
-        int n = map.getCapacity();
+        int n = mem.getCapacity();
         for (int i = 0; i < n; i++) {
-            const char* k = map.keyAt(i);
+            const char* k = mem.keyAt(i);
             if (k != null) {
-                int64_t v = map.get(k);
+                int64_t v = mem.get(k);
                 if (v != NOT_A_VALUE) {
                     NSLog(@"%s %lld", k, v);
                 }

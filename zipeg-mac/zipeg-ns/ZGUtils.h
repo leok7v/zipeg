@@ -17,6 +17,7 @@ FOUNDATION_EXPORT void subtreeDescription(NSView* v);
 
 FOUNDATION_EXPORT id addObserver(NSString* name, id object, void(^block)(NSNotification*));
 FOUNDATION_EXPORT id removeObserver(id observer); // always returns null - see usages
+FOUNDATION_EXPORT void traceObservers();
 
 FOUNDATION_EXPORT BOOL responds(id o, SEL sel);
 FOUNDATION_EXPORT id call(id o, SEL sel);
