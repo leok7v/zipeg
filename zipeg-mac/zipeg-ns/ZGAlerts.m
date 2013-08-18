@@ -267,10 +267,7 @@
 
 - (void) dealloc {
     dealloc_count(self);
-    if (_timer != null) {
-        dispatch_source_cancel(_timer);
-        _timer = null;
-    }
+    [self killTimer];
     _delayedDismiss = _delayedDismiss.cancel;
     _document = null;
     _progress = null;
@@ -278,6 +275,13 @@
     _contentView = null;
     _alert = null;
     _block = null;
+}
+
+- (void) killTimer {
+    if (_timer != null) {
+        dispatch_source_cancel(_timer);
+        _timer = null;
+    }
 }
 
 - (void) progress: (int64_t) pos of: (int64_t) total {
@@ -323,6 +327,12 @@
     [self dismissAlert: NSAlertErrorReturn resize: true];
 }
 
+- (void) restoreSize {
+    _contentView.size = _initialContentViewSize;
+    _contentView.superview.size = _initialContentViewSize;
+    self.size = _initialContentViewSize;
+}
+
 - (void) dismissAlert: (NSInteger) rc resize: (BOOL) b {
     if (_block != null) {
         void (^done) (NSInteger rc) = _block;
@@ -335,19 +345,14 @@
         setTarget(_contentView, self, _alert);
         _alert = null;
         _contentView.subviews = @[_progress];
-        if (_timer != null) {
-            dispatch_source_cancel(_timer);
-        }
-        _timer = null;
+        [self killTimer];
         if (_delayedDismiss != null) {
             _delayedDismiss = _delayedDismiss.cancel;
         }
         if (b) {
-            _delayedDismiss = [ZGUtils invokeLater:^{
-                _contentView.size = _initialContentViewSize;
-                _contentView.superview.size = _initialContentViewSize;
-                self.size = _initialContentViewSize;
-            } delay: 1.0];
+            _delayedDismiss = [ZGUtils invokeLater: ^{ [self restoreSize]; } delay: 1.0];
+        } else {
+            [self restoreSize];
         }
     }
 }
@@ -412,6 +417,7 @@ static void setTarget(NSView* v, id old, id target) {
             assert(iv != null);
             // TODO: http://stackoverflow.com/questions/2795882/how-can-i-animate-a-content-switch-in-an-nsimageview
             iv.image = _boxes.currentSprite;
+            iv.needsDisplay = true;
         }
     };
     b();
