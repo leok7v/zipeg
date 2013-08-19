@@ -48,7 +48,7 @@
 
     NSString* _preNextLastPathComponent;
     NSString* _temporaryUnpackingFolder;
-    NSString* _trueDestination;
+    NSString* _finalDestination;
     NSDictionary* _trashedDestination;
 }
 
@@ -475,6 +475,7 @@ static NSTableView* createTableView(NSRect r) {
         // TODO: how to make document modified without this hack?
         [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
     } else {
+        // TODO: multipart - open first file!
         [self scheduleAlerts];
         _alerts.topText = [NSString stringWithFormat: @"Opening: %@", _url.path.lastPathComponent];
         _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
@@ -769,13 +770,7 @@ static NSString* nextPathname(NSString* path) {
     return nonexistentName(name, ext, right);
 }
 
-- (BOOL) extractToNonexistentFolder: (NSString*) path {
-    BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path];
-    assert(!e);
-    if (e) {
-        return false;
-    }
-    _trueDestination = path;
+- (BOOL) mkdirTempFolder: (NSString*) path {
     NSString* parent = path.stringByDeletingLastPathComponent;
     int32_t pid = getpid();
     for (;;) {
@@ -786,8 +781,8 @@ static NSString* nextPathname(NSString* path) {
             break;
         }
     }
-    [ZGApp registerUnpackingFolder: _temporaryUnpackingFolder to: _trueDestination];
-    if (!isEqual(ZGApp.allUnpackingFolders[_temporaryUnpackingFolder], _trueDestination)) {
+    [ZGApp registerUnpackingFolder: _temporaryUnpackingFolder to: _finalDestination];
+    if (!isEqual(ZGApp.allUnpackingFolders[_temporaryUnpackingFolder], _finalDestination)) {
         assert(false);
         return false;
     }
@@ -805,9 +800,10 @@ static NSString* nextPathname(NSString* path) {
 
 - (void) extract: (NSArray*) items to: (NSURL*) dest DnD: (BOOL) dnd {
     // TODO: __MACOSX/.../._.DS_Store (resource fork!) still exists!
-    assert(_trueDestination == null);
+    assert(_finalDestination == null);
     assert(_temporaryUnpackingFolder == null);
-    _trueDestination = null;
+    // TODO: multipart - change "folder.part1" to "folder"
+    _finalDestination = dest.path;
     _temporaryUnpackingFolder = null;
     if (items == null) {
         _itemsToExtract = _archive.numberOfItems - _archive.numberOfFolders;
@@ -831,8 +827,6 @@ static NSString* nextPathname(NSString* path) {
     dest = [NSURL fileURLWithPath:[dest.path stringByAppendingPathComponent: lpc]];
     trace("url=%@", dest);
     NSString* path = dest.path;
-    BOOL d = false;
-    BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
     NSString* details = @"";
     NSString* files = @"";
     if (_itemsToExtract > 1) {
@@ -845,6 +839,9 @@ static NSString* nextPathname(NSString* path) {
     } else {
         details = [NSString stringWithFormat:@"%@ from\n", files];
     }
+    _preNextLastPathComponent = path.lastPathComponent; // without any _number suffixes
+    BOOL d = false;
+    BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
     if (!e) {
         NSInteger rc = NSAlertFirstButtonReturn;
         if (_destination.isAsking) {
@@ -861,7 +858,7 @@ static NSString* nextPathname(NSString* path) {
             }
         }
         if (rc == NSAlertFirstButtonReturn) {
-            if ([self extractToNonexistentFolder: path]) {
+            if ([self mkdirTempFolder: path]) {
                 dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
                 [self addExtractOperation: items to: dest DnD: dnd];
                 return;
@@ -872,19 +869,18 @@ static NSString* nextPathname(NSString* path) {
     } else { // there is a folder or file in a way, need new name
         NSInteger rc = NSAlertFirstButtonReturn;
         NSString* next = nextPathname(path);
-        _preNextLastPathComponent = path.lastPathComponent; // without any _number suffixes
         if (_destination.isAsking) {
             BOOL suppress = false;
             NSString* keepTooltip = [NSString stringWithFormat:
-                                      @"\"Keep Both\" will change the destination to: "
-                                      "«%@»", next];
+                                      @"\"Keep Both\" will unpack into a new version of a destination folder: "
+                                      "«%@»", next.lastPathComponent];
             NSString* replaceTooltip = [NSString stringWithFormat:
-                                      @"\"Replace\" will move existing folder\n«%@»\ninto Trash Bin "
-                                        "and will unpack items\ninto newly created folder.",
+                                      @"\"Replace\" will move existing folder\n«%@» into Trash Bin "
+                                        "and will unpack items to newly created folder.",
                                         dest.path.lastPathComponent];
-            NSString* mergeTooltip = @"\"Merge\" will unpack items into existing folder\n"
-                                      "merging them over already existing items.\n"
-                                      "Use with caution. \"Keep Both\" is much safer alternative.";
+            NSString* mergeTooltip = @"\"Merge\" will unpack items into already existing folder "
+                                      "overwriting any present items. Use with caution. "
+                                      "\"Keep Both\" is much safer alternative.";
             rc = [self runModalAlert: [NSString stringWithFormat:
                                        @"About to unpack %@«%@» into existing folder:\n«%@»?\n"
                                        "How do you want to proceed?", details, _url.path.lastPathComponent, dest.path]
@@ -899,7 +895,7 @@ static NSString* nextPathname(NSString* path) {
         }
         if (rc == NSAlertFirstButtonReturn) { // Keep Both
             path = next;
-            if ([self extractToNonexistentFolder: path]) {
+            if ([self mkdirTempFolder: path]) {
                 dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
                 [self addExtractOperation: items to: dest DnD: dnd];
                 return;
@@ -907,34 +903,13 @@ static NSString* nextPathname(NSString* path) {
                 [self posixError: path];
             }
         } else if (rc == NSAlertSecondButtonReturn) { // Replace
-            [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: path]]
-                                   completionHandler:
-                 ^(NSDictionary* moved, NSError *error) {
-                     // TODO: it should be done later when unpack finished. this will eliminate _trashedDestination
-                     trace("moved=%@ %@", moved, error);
-                     if (error == null) {
-                         _trashedDestination = moved;
-                         trace("url=%@", [NSURL fileURLWithPath: path]);
-                         BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: null];
-                         assert(!e);
-                         if ([self extractToNonexistentFolder: path]) {
-                             NSURL* dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
-                             [self addExtractOperation: items to: dest DnD: dnd];
-                             return;
-                         } else {
-                             [self posixError: path];
-                         }
-                     } else {
-                         NSAlert* a = [NSAlert alertWithError: error];
-                         [self beginAlerts];
-                         [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
-                     }
-                     assert(_operationQueue.operationCount == 0);
-                     _trueDestination = null;
-                     _temporaryUnpackingFolder = null;
-                 }
-            ];
-            return;
+            if ([self mkdirTempFolder: path]) {
+                NSURL* dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
+                [self addExtractOperation: items to: dest DnD: dnd];
+                return;
+            } else {
+                [self posixError: path];
+            }
         } else if (rc == NSAlertThirdButtonReturn) { // Merge
             dest = [NSURL fileURLWithPath: path];
             trace("url=%@", dest);
@@ -944,13 +919,13 @@ static NSString* nextPathname(NSString* path) {
         }
     }
     assert(_operationQueue.operationCount == 0);
-    _trueDestination = null;
+    _finalDestination = null;
     _temporaryUnpackingFolder = null;
 }
 
 - (void) addExtractOperation: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
     trace("_temporaryUnpackingFolder=%@", _temporaryUnpackingFolder);
-    trace("_trueDestination=%@", _trueDestination);
+    trace("_finalDestination=%@", _finalDestination);
     trace("_trashedDestination=%@", _trashedDestination);
     trace("_url=%@", url.debugDescription);
     ExtractItemsOperation* operation = [ExtractItemsOperation.alloc
@@ -980,25 +955,12 @@ static NSString* nextPathname(NSString* path) {
                 NSAlert* a = [NSAlert alertWithError: error];
                 [self beginAlerts];
                 [_alerts alert: a done: ^(NSInteger rc) { [self endAlerts]; }];
+                _finalDestination = null;
+                _temporaryUnpackingFolder = null;
+                _trashedDestination = null;
             } else {
-                [self moveToTrueDestination];
-                // http://cocoathings.blogspot.com/2013/01/playing-system-sounds.html
-                // see: /System/Library/Sounds
-                // Basso Blow Bottle Frog Funk Glass Hero Morse Ping Pop Purr Sosumi Submarine Tink
-                [[NSSound soundNamed:@"done"] play];
-                [self endAlerts];
-                if (_destination.isReveal && !dnd) { // Reveal in Finder
-                    [NSWorkspace.sharedWorkspace openURLs: @[url]
-                                  withAppBundleIdentifier: @"com.apple.Finder"
-                                                  options: NSWorkspaceLaunchDefault
-                           additionalEventParamDescriptor: null
-                                        launchIdentifiers: null];
-                }
-                [_window makeFirstResponder: _lastFirstResponder];
+                [self moveToFinalDestination: dnd];
             }
-            _trueDestination = null;
-            _temporaryUnpackingFolder = null;
-            _trashedDestination = null;
         });
     }];
 }
@@ -1007,46 +969,84 @@ static NSString* nextPathname(NSString* path) {
     if (_trashedDestination != null) {
         BOOL b = true;
         assert(_trashedDestination.count == 1); // we are not expecting more than one folder being trashed
-        for (NSString* from in _trashedDestination.allKeys) {
-            NSString* to = _trashedDestination[from];
+        for (NSString* _from in _trashedDestination.allKeys) {
+            NSString* from = from.mutableCopy;
+            NSString* to = ((NSString*)_trashedDestination[_from]).mutableCopy;
             b = rename(to.UTF8String, from.UTF8String) == 0;
+            if (!b) {
+                [self posixError: to];
+            }
         }
-        if (!b) {
-            // TODO: report errno
-        }
-        if (_temporaryUnpackingFolder != null) {
-            // TODO: this will not work - need recursive rmdir
-            rmdir(_temporaryUnpackingFolder.UTF8String);
-        }
-    }
-    if (_temporaryUnpackingFolder != null) {
-        [ZGApp unregisterUnpackingFolder: _temporaryUnpackingFolder];
+        _trashedDestination = null;
     }
 }
 
-- (void) moveToTrueDestination {
-    if (_trueDestination == null && _temporaryUnpackingFolder == null) {
-        return;
-    }
-    // TODO: this might be a good place to collapse .../attachment/attachment/... in the file system
-    NSArray* c = [NSFileManager.defaultManager contentsOfDirectoryAtPath: _temporaryUnpackingFolder error: null];
-    NSString* cp = c != null && c.count == 1 ? [_temporaryUnpackingFolder stringByAppendingPathComponent: c[0]] : null;
-    // TODO: this does not work for next()-ed folder names!
-    BOOL collapse = cp != null &&
-                   ([_trueDestination.lastPathComponent equalsIgnoreCase: c[0]] ||
-                    [_preNextLastPathComponent equalsIgnoreCase: c[0]]);
-    BOOL b = true;
-    if (collapse) {
-        b = rename(cp.UTF8String, _trueDestination.UTF8String) == 0;
-        rmdir(_temporaryUnpackingFolder.UTF8String);
+- (void) moveToFinalDestination: (BOOL) dnd {
+    BOOL e = _finalDestination != null &&
+             [NSFileManager.defaultManager fileExistsAtPath: _finalDestination isDirectory: null];
+    if (_temporaryUnpackingFolder == null || !e) {
+        [self _moveToFinalDestination: dnd];
     } else {
-        b = rename(_temporaryUnpackingFolder.UTF8String, _trueDestination.UTF8String) == 0;
+        [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: _finalDestination]]
+                               completionHandler:
+         ^(NSDictionary* moved, NSError *error) {
+             trace("moved=%@ %@", moved, error);
+             _trashedDestination = moved;
+             if (error == null) {
+                 [self _moveToFinalDestination: dnd];
+             } else {
+                 [self rmdirsTempFolder];
+                 [self beginAlerts];
+                 [_alerts alert: [NSAlert alertWithError: error] done: ^(NSInteger rc) { [self endAlerts]; }];
+             }
+             assert(_operationQueue.operationCount == 0);
+             _finalDestination = null;
+             _temporaryUnpackingFolder = null;
+         }];
     }
-    if (!b) {
-        [self restoreTrashed];
-        // TODO: report errno
+}
+
+- (void) _moveToFinalDestination: (BOOL) dnd {
+    if (_finalDestination != null && _temporaryUnpackingFolder != null) {
+        NSArray* c = [NSFileManager.defaultManager contentsOfDirectoryAtPath: _temporaryUnpackingFolder error: null];
+        NSString* cp = c != null && c.count == 1 ? [_temporaryUnpackingFolder stringByAppendingPathComponent: c[0]] : null;
+        BOOL collapse = cp != null &&
+        ([_finalDestination.lastPathComponent equalsIgnoreCase: c[0]] ||
+         [_preNextLastPathComponent equalsIgnoreCase: c[0]]);
+        BOOL b = true;
+        if (collapse) {
+            b = rename(cp.UTF8String, _finalDestination.UTF8String) == 0;
+            rmdir(_temporaryUnpackingFolder.UTF8String);
+        } else {
+            b = rename(_temporaryUnpackingFolder.UTF8String, _finalDestination.UTF8String) == 0;
+        }
+        if (!b) {
+            [self restoreTrashed];
+            [self rmdirsTempFolder];
+        }
+        [ZGApp unregisterUnpackingFolder: _temporaryUnpackingFolder];
     }
-    [ZGApp unregisterUnpackingFolder: _temporaryUnpackingFolder];
+    [[NSSound soundNamed:@"done"] play];
+    [self endAlerts];
+    if (_destination.isReveal && !dnd) { // Reveal in Finder
+        [NSWorkspace.sharedWorkspace openURLs: @[[NSURL fileURLWithPath: _finalDestination]]
+                      withAppBundleIdentifier: @"com.apple.Finder"
+                                      options: NSWorkspaceLaunchDefault
+               additionalEventParamDescriptor: null
+                            launchIdentifiers: null];
+    }
+    [_window makeFirstResponder: _lastFirstResponder];
+    _finalDestination = null;
+    _temporaryUnpackingFolder = null;
+    _trashedDestination = null;
+}
+
+- (void) rmdirsTempFolder {
+    [ZGUtils rmdirsOnBackgroundThread: _temporaryUnpackingFolder done: ^(BOOL b) {
+        if (b) {
+            [ZGApp unregisterUnpackingFolder: _temporaryUnpackingFolder];
+        }
+    }];
 }
 
 - (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
@@ -1082,9 +1082,9 @@ static NSString* nextPathname(NSString* path) {
     if (ata) {
         [a addButtonWithTitle: @"Skip"].toolTip = skipTooltip;
     }
-    [a addButtonWithTitle: @"Stop"].toolTip = @"Will stop unpacking any further items.";
+    [a addButtonWithTitle: @"Stop"].toolTip = @"Will stop unpacking the remaining items.";
     [a setMessageText: [NSString stringWithFormat:@"Overwrite file\n«%@»?",  name]];
-    [a setInformativeText: @"Hover over buttons for more detailed explanaition.\n"
+    [a setInformativeText: @"Hover over buttons for more info.\n"
                             "Overwritten files are placed into Trash Bin."];
     a.alertStyle = NSInformationalAlertStyle;
     NSButton* applyToAll = [NSButton.alloc initWithFrame:NSMakeRect(0, 0, 100, 24)];
@@ -1137,6 +1137,38 @@ static NSString* nextPathname(NSString* path) {
     sema = null;
     // timestamp("moveToTrash"); // 1.5 - 6 milliseconds
     return b;
+}
+
+
+static NSNumber* multipartNumber(NSString* s) {
+    NSString* ext = [s pathExtension];
+    if ([ext equalsIgnoreCase: @"rar"] || [ext equalsIgnoreCase: @"zip"] || [ext equalsIgnoreCase: @"7z"]) {
+        int i = [s lastIndexOfIgnoreCase:@".part"];
+        if (i > 0 && isdigit([s characterAtIndex: i + 5])) {
+            int k = i + 6;
+            while (isdigit([s characterAtIndex: k])) {
+                k++;
+            }
+            if (k != i) {
+                return null;
+            }
+            NSNumberFormatter* nf = NSNumberFormatter.new;
+            [nf setNumberStyle: NSNumberFormatterDecimalStyle];
+            return [nf numberFromString: [s substringFrom: i + 5 to: k]];
+        }
+    }
+    return null;
+}
+
+static NSString* multipartBasename(NSString* s) {
+    NSString* ext = [s pathExtension];
+    if ([ext equalsIgnoreCase: @"rar"] || [ext equalsIgnoreCase: @"zip"] || [ext equalsIgnoreCase: @"7z"]) {
+        int i = [s lastIndexOfIgnoreCase:@".part"];
+        if (i > 0 && isdigit([s characterAtIndex: i + 5])) {
+            return [[s substringFrom: 0 to: i + 1] stringByAppendingPathExtension: ext];
+        }
+    }
+    return null;
 }
 
 - (void) openArchiveForOperation: (ZGOperation*) op {
