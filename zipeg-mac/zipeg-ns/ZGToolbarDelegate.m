@@ -206,7 +206,7 @@ static NSMenu* createSearchMenu() {
  willBeInsertedIntoToolbar: (BOOL) willBeInserted {
     NSToolbarItem* ti = null;
     if ([itemIdent isEqual: ExtractId]) {
-        ti = createButton(ExtractId, @"Unpack", @"Extract Content of the Archive",
+        ti = createButton(ExtractId, @"Unpack", @"Unpack Content of the Archive",
                           @"play-n.png", @selector(extract:));
         ti.target = self;
     } else if([itemIdent isEqual: SearchId]) {

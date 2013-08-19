@@ -380,29 +380,6 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 
 @end
 
-@implementation NSColor(ZGExtensions)
-
-+ (NSColor*) sourceListBackgroundColor {
-    static NSColor* sourceListBackgroundColor = null;
-    if (sourceListBackgroundColor == null) {
-        sourceListBackgroundColor = [NSColor colorWithCatalogName:@"System" colorName: @"_sourceListBackgroundColor"];
-        if (sourceListBackgroundColor == null) {
-            NSTableView *tv = [[NSTableView alloc] initWithFrame: NSZeroRect];
-            tv.selectionHighlightStyle = NSTableViewSelectionHighlightStyleSourceList;
-            sourceListBackgroundColor = tv.backgroundColor;
-        }
-        if (sourceListBackgroundColor == null) {
-            sourceListBackgroundColor =
-            [NSColor colorWithCalibratedRed:0.905882
-                                      green:0.929412
-                                       blue:0.964706 alpha:1.0];
-            
-        }
-    }
-    return sourceListBackgroundColor;
-}
-
-@end
 
 @implementation ZGBlock {
 @public
@@ -471,8 +448,8 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
             }
         };
         if (seconds > 0) {
-            const dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC));
-            dispatch_after(popTime, dispatch_get_main_queue(), i);
+            const dispatch_time_t dt = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC));
+            dispatch_after(dt, dispatch_get_main_queue(), i);
         } else {
             dispatch_async(dispatch_get_current_queue(), i);
         }

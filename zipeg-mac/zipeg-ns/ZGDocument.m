@@ -579,6 +579,10 @@ static NSTableView* createTableView(NSRect r) {
     a.alertStyle = NSInformationalAlertStyle;
     a.icon = [NSImage imageNamed: @"transparent-1x1.png"];
     a.showsSuppressionButton = s != null;
+    if (s != null) {
+        a.suppressionButton.toolTip = @"You can re-enable suppressed alerts by choosing\n"
+                                       "\"ask\" instead of \"always\" under \"Unpack\" button.";
+    }
     [self beginAlerts];
     [_alerts alert: a done: ^(NSInteger rc) {
         answer = rc;
@@ -852,8 +856,6 @@ static NSString* nextPathname(NSString* path) {
                              buttons: @[ @"Proceed", @"Stop" ]
                             tooltips: null
                                 info: @"Destination folder does not exist. It will be created.\n"
-                                       "You can re-enable suppressed alerts by choosing\n"
-                                       "\"ask\" instead of \"always\" under \"Unpack\" button later."
                           suppressed: &suppress];
             if (suppress) {
                 _destination.asking = false;
@@ -883,16 +885,14 @@ static NSString* nextPathname(NSString* path) {
                                         dest.path.lastPathComponent];
             NSString* mergeTooltip = @"\"Merge\" will unpack items into existing folder\n"
                                       "merging them over already existing items.\n"
-                                      "Use with caution. \"Keep Both\" is much safe alternative.";
+                                      "Use with caution. \"Keep Both\" is much safer alternative.";
             rc = [self runModalAlert: [NSString stringWithFormat:
                                        @"About to unpack %@«%@» into existing folder:\n«%@»?\n"
                                        "How do you want to proceed?", details, _url.path.lastPathComponent, dest.path]
                              buttons: @[ @"Keep Both", @"Replace", @"Merge", @"Stop" ]
                             tooltips: @[ keepTooltip, replaceTooltip, mergeTooltip, @"Do not unpack" ]
                                 info: @"Hover over buttons for more detailed explanaition.\n"
-                                       "Isn't it easier just drag and drop?\n"
-                                       "You can re-enable suppressed alerts by choosing\n"
-                                       "\"ask\" instead of \"always\" under \"Unpack\" button later."
+                                       "(isn't it easier just to drag and drop sometimes?)\n"
                           suppressed: &suppress];
             if (suppress) {
                 _destination.asking = false;

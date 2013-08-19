@@ -8,7 +8,7 @@ uint64_t NanoTime::time() {
     uint64_t start;
     static mach_timebase_info_data_t    sTimebaseInfo;
     start = mach_absolute_time();
-    if ( sTimebaseInfo.denom == 0 ) {
+    if (sTimebaseInfo.denom == 0 ) {
         (void) mach_timebase_info(&sTimebaseInfo);
     }
     start = start * sTimebaseInfo.numer / sTimebaseInfo.denom;

@@ -2,6 +2,8 @@
 #import "ZGDocument.h"
 #import "ZGApp.h"
 
+#define FPS 0.25 // frames per second for Alert icons animation
+
 @class ZGProgress;
 
 @interface ZGAnimatedImage : NSObject {
@@ -58,17 +60,21 @@
 - (NSImage*) currentSprite {
     int64_t now = nanotime() / 1000000;
     int64_t delta = now - _start;
-    int ix = (delta / 50) % (int)_sprites.count;
+    int ix = (int)(delta * _fps / 1000) % (int)_sprites.count; // milliseconds
     return _sprites[ix];
 }
 
 - (void) drawIntoView: (NSView*) v point: (NSPoint) pt {
-    NSImage* image = self.currentSprite;
-    [image drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
-    _next = [ZGUtils invokeLater: ^{
-        v.needsDisplayInRect = NSMakeRect(pt.x, pt.y, image.size.width, image.size.height);
-        _next = null;
-    } delay: 1.0 / _fps];
+    if (((ZGAlerts*)v.window)->_count > 0) {
+        NSImage* image = self.currentSprite;
+        [image drawAtPoint: pt fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
+        if (_next == null) {
+            _next = [ZGUtils invokeLater: ^{
+                v.needsDisplayInRect = NSMakeRect(pt.x, pt.y, image.size.width, image.size.height);
+                _next = null;
+            } delay: 1.0 / _fps];
+        }
+    }
 }
 
 @end
@@ -99,7 +105,7 @@
         _stop_p = [[NSImage imageNamed: @"stop-p-32x32@2.png"] copy];
         _stop_p.size = NSMakeSize(18, 18);
         _stop = _stop_n;
-        _spinner = [ZGAnimatedImage.alloc initWith: @"spinner" frames: 12 size: NSMakeSize(20, 20) fps: 12];
+        _spinner = [ZGAnimatedImage.alloc initWith: @"spinner" frames: 12 size: NSMakeSize(20, 20) fps: 20];
         NSMutableParagraphStyle* style = NSMutableParagraphStyle.new;
         style.alignment = NSCenterTextAlignment;
         _textAttributes = @{ NSFontAttributeName: [NSFont systemFontOfSize: NSFont.smallSystemFontSize],
@@ -161,6 +167,9 @@
 }
 
 - (void) drawRect: (NSRect) r {
+    if (((ZGAlerts*)self.window)->_count == 0) {
+        return;
+    }
     r = self.bounds;
     NSColor* c0 = [NSColor colorWithCalibratedRed: .95 green: .97 blue: 1 alpha: 1];
     NSColor* c1 = [NSColor colorWithCalibratedRed: .89 green: .91 blue: .94 alpha: 1];
@@ -260,7 +269,7 @@
         alloc_count(self);
         _document = d;
         [self setupProgressBar];
-        _boxes = [ZGAnimatedImage.alloc initWith: @"box" frames: 10 size: NSMakeSize(64, 64) fps: 0.2];
+        _boxes = [ZGAnimatedImage.alloc initWith: @"box" frames: 10 size: NSMakeSize(64, 64) fps: FPS];
     }
     return self;
 }
@@ -331,6 +340,7 @@
     _contentView.size = _initialContentViewSize;
     _contentView.superview.size = _initialContentViewSize;
     self.size = _initialContentViewSize;
+    _contentView.subviews = @[_progress];
 }
 
 - (void) dismissAlert: (NSInteger) rc resize: (BOOL) b {
@@ -344,7 +354,6 @@
     if (_alert != null) {
         setTarget(_contentView, self, _alert);
         _alert = null;
-        _contentView.subviews = @[_progress];
         [self killTimer];
         if (_delayedDismiss != null) {
             _delayedDismiss = _delayedDismiss.cancel;
@@ -410,6 +419,7 @@ static void setTarget(NSView* v, id old, id target) {
     _contentView.size = size;
     _contentView.superview.size = size;
     [acv removeFromSuperview];
+    _contentView.subviews = @[_progress];
     [_contentView addSubview: acv];
     void (^__block b)() = ^() {
         if (_alert != null) {
@@ -425,8 +435,8 @@ static void setTarget(NSView* v, id old, id target) {
     self.size = size;
     _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
     if (_timer != null) {
-        dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC);
-        uint64_t interval = 5 * NSEC_PER_SEC; // every 5 seconds, converted to nanosecs
+        dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, FPS * NSEC_PER_SEC);
+        uint64_t interval = (1 / FPS) * NSEC_PER_SEC; // every 2 seconds, converted to nanosecs
         dispatch_source_set_timer(_timer, startTime, interval, 8000);
         dispatch_source_set_event_handler(_timer, b);
         dispatch_resume(_timer);

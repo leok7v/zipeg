@@ -66,10 +66,6 @@ FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 - (void) selectItem: (id) i;
 @end
 
-@interface NSColor(ZGExtensions)
-+ (NSColor*) sourceListBackgroundColor;
-@end
-
 @interface ZGBlock : NSObject
 @property (readonly, nonatomic) BOOL isCanceled;
 @property (readonly, nonatomic) BOOL isDone;
