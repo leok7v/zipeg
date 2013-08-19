@@ -20,7 +20,7 @@ static ZGFileSystemItem *g_root;
     leafNode = [[NSMutableArray alloc] init];
 }
 
-- (id)initWithPath:(NSString *)path parent:(ZGFileSystemItem *)parentItem {
+- (id) initWithPath: (NSString*) path parent:(ZGFileSystemItem*) parentItem {
     self = [super init];
     if (self) {
         _name = path.lastPathComponent.copy;
@@ -29,8 +29,7 @@ static ZGFileSystemItem *g_root;
     return self;
 }
 
-- (void)dealloc {
-//    trace(@"");
+- (void) dealloc {
 }
 
 - (NSString*) fullPath {
@@ -40,7 +39,7 @@ static ZGFileSystemItem *g_root;
     return _fullpath;
 }
 
-- (NSMutableArray *)children { // Creates, caches, and returns the array of children. Loads children incrementally
+- (NSMutableArray*) children { // Creates, caches, and returns the array of children. Loads children incrementally
     if (_children == leafNode) {
         return null;
     } else if (_children == nil) {
@@ -107,7 +106,7 @@ static ZGFileSystemItem *g_root;
 }
 
 
-- (id)init {
+- (id) init {
     self = [super init];
     if (self) {
         _root = g_root;

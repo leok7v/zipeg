@@ -20,8 +20,7 @@
     return self;
 }
 
-- (void)dealloc {
-    trace(@"");
+- (void) dealloc {
     dealloc_count(self);
 }
 

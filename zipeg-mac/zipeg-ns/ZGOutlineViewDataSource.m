@@ -22,7 +22,6 @@
 }
 
 - (void)dealloc {
-    trace(@"");
     dealloc_count(self);
 }
 

@@ -12,7 +12,6 @@
 @implementation ZGBitset
 
 - (void)dealloc {
-//  trace(@"");
     free(_bits);
     dealloc_count(self);
 }

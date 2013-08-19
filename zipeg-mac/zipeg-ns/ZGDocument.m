@@ -221,9 +221,8 @@
 }
 
 - (void) dealloc {
-    trace(@"");
     dealloc_count(self);
-    [NSNotificationCenter.defaultCenter removeObserver:self];
+    [NSNotificationCenter.defaultCenter removeObserver: self];
     [ZGApp deferedTraceAllocs];
 }
 

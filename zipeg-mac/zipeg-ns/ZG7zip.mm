@@ -98,7 +98,6 @@ static NSMutableArray *leafNode;
 
 - (void) dealloc {
     dealloc_count(self);
-    //  trace(@"");
 }
 
 - (void) addChild: (NSObject<ZGItemProtocol>*) child {
@@ -241,11 +240,10 @@ struct D : P7Z::Delegate {
 }
 
 - (void) dealloc {
-    // trace(@"");
+    dealloc_count(self);
     if (a != null) {
         [self close];
     }
-    dealloc_count(self);
 }
 
 - (NSString*) pathname: (int) i {

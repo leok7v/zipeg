@@ -12,7 +12,8 @@
 
 - (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
-    if (self) {
+    if (self != null) {
+        alloc_count(self);
         _document = doc;
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _document.window,
             ^(NSNotification* n) {
@@ -23,8 +24,8 @@
     return self;
 }
 
-- (void)dealloc {
-//    trace(@"");
+- (void) dealloc {
+    dealloc_count(self);
 }
 
 

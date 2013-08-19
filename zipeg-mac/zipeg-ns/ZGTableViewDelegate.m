@@ -33,7 +33,6 @@
 }
 
 - (void) dealloc {
-    trace(@"%@", self);
     [self cancelDelayed];
     dealloc_count(self);
 }
