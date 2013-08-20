@@ -511,12 +511,11 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 }
 
 - (BOOL) isCancelled {
-    if (_op != null && _op.cancelRequested) {
+    if (_op != null && _op.cancelRequested && !_op.isCancelled) {
         if ([document askOnBackgroundThreadForCancel]) {
             [_op cancel];
-        } else {
-            _op.cancelRequested = false;
         }
+        _op.cancelRequested = false;
     }
     if (_op != null && _op.isCancelled) {
         // trace(@"cancelled");
