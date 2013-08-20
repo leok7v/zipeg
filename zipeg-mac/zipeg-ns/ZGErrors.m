@@ -2,13 +2,20 @@
 #import "MacMem.h"
 
 NSString *const ZGAppErrorDomain = @"com.zipeg.errors";
-NSError* ZGOOM;
+NSError* OOM;
+NSError* InternalError;
 
 NSError* ZGOutOfMemoryError() {
-    return ZGOOM;
+    return OOM;
+}
+
+NSError* ZGInternalError() {
+    return InternalError;
 }
 
 void ZGErrorsInit() {
-    ZGOOM = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile userInfo:
-             @{ NSLocalizedDescriptionKey: ZG_ERROR_LOCALIZED_DESCRIPTION(ZGOutOfMemory) }];
+    OOM = [NSError errorWithDomain: ZGAppErrorDomain code: kOutOfMemory userInfo:
+             @{ NSLocalizedDescriptionKey: ZG_ERROR_LOCALIZED_DESCRIPTION(kOutOfMemory) }];
+    InternalError = [NSError errorWithDomain: ZGAppErrorDomain code: kInternalError userInfo:
+             @{ NSLocalizedDescriptionKey: ZG_ERROR_LOCALIZED_DESCRIPTION(kInternalError) }];
 }

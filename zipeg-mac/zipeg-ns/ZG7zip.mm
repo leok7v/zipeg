@@ -653,9 +653,9 @@ static NSString* starifyMultipartFilename(NSString* s) {
     }
     if (![url isFileURL]) {
         NSMutableDictionary *details = [NSMutableDictionary dictionary];
-        [details setValue:ZG_ERROR_LOCALIZED_DESCRIPTION(ZGIsNotAFile) forKey:NSLocalizedDescriptionKey];
-        [details setValue:url forKey:NSURLErrorKey];
-        *err = [NSError errorWithDomain:ZGAppErrorDomain code:ZGIsNotAFile userInfo:details];
+        [details setValue: ZG_ERROR_LOCALIZED_DESCRIPTION(kIsNotAFile) forKey:NSLocalizedDescriptionKey];
+        [details setValue: url forKey:NSURLErrorKey];
+        *err = [NSError errorWithDomain: ZGAppErrorDomain code: kIsNotAFile userInfo:details];
         // [NSApp presentError:*err];
         return false;
     }
@@ -707,7 +707,7 @@ static NSString* starifyMultipartFilename(NSString* s) {
             }
             // TODO: NSUnderlyingErrorKey does nothing. Investigate later...
             NSError* e = [NSError errorWithDomain: ZGAppErrorDomain
-                                             code: ZGArchiverError
+                                             code: kArchiverError
                                          userInfo: @{ NSLocalizedDescriptionKey: _error }
                          ];
             *err = [NSError errorWithDomain: NSCocoaErrorDomain code: NSFileReadCorruptFileError
@@ -836,10 +836,14 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 
 - (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                       to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
-    return [document askOnBackgroundThreadOverwriteFrom: (const char*) fromName
-                                                   time: (int64_t) fromTime size: (int64_t) fromSize
-                                                     to: (const char*) toName time: (int64_t) toTime
-                                                   size: (int64_t) toSize];
+    int r = [document askOnBackgroundThreadOverwriteFrom: (const char*) fromName
+                                                    time: (int64_t) fromTime size: (int64_t) fromSize
+                                                      to: (const char*) toName time: (int64_t) toTime
+                                                    size: (int64_t) toSize];
+    if (r == kCancel && _op != null) {
+        [_op cancel];
+    }
+    return r;
 }
 
 - (const wchar_t*) password {
@@ -944,9 +948,9 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     assert(![NSThread isMainThread]);
     if (![url isFileURL]) {
         NSMutableDictionary *details = [NSMutableDictionary dictionary];
-        [details setValue: ZG_ERROR_LOCALIZED_DESCRIPTION(ZGIsNotAFile) forKey: NSLocalizedDescriptionKey];
+        [details setValue: ZG_ERROR_LOCALIZED_DESCRIPTION(kIsNotAFile) forKey: NSLocalizedDescriptionKey];
         [details setValue:url forKey: NSURLErrorKey];
-        NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile userInfo: details];
+        NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: kIsNotAFile userInfo: details];
         block(err);
         return;
     }
@@ -981,10 +985,10 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
                                            userInfo: @{ NSFilePathErrorKey: _archiveFilePath }];
             block(err);
         } else if (_error == null) {
-            block(b ? null : ZGOutOfMemoryError()); // TODO: ZGInternalError()
+            block(b ? null : ZGInternalError());
         } else {
             // TODO: better diag
-            NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: ZGIsNotAFile
+            NSError* err = [NSError errorWithDomain: ZGAppErrorDomain code: kIsNotAFile
                                            userInfo: @{ NSFilePathErrorKey: _archiveFilePath,
                           NSLocalizedDescriptionKey: _error }];
             block(err);

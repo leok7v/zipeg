@@ -149,7 +149,6 @@ static void loadIcons() {
 #define kUnpackingFolders @"com.zipeg.unpacking.folders"
 
 + (void) registerUnpackingFolder: (NSString*) path to: (NSString*) dest {
-    trace("%@ -> %@", path, dest);
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
     NSDictionary* d = [ud dictionaryForKey: kUnpackingFolders];
     if (d != null) {
@@ -163,7 +162,6 @@ static void loadIcons() {
 }
 
 + (void) unregisterUnpackingFolder: (NSString*) path {
-    trace("%@", path);
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
     NSDictionary* d = [ud dictionaryForKey: kUnpackingFolders];
     if (d != null) {

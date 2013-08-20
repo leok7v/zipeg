@@ -475,12 +475,9 @@ static NSTableView* createTableView(NSRect r) {
         // TODO: how to make document modified without this hack?
         [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
     } else {
-        NSString* path = [self checkForMultipart];
-        if (path == null) {
-            _url = null;
+        if (![self checkForMultipart]) {
             [_window performClose: self];
         } else {
-            _url = [NSURL fileURLWithPath: path];
             [self scheduleAlerts];
             _alerts.topText = [NSString stringWithFormat: @"Opening: %@", _url.path.lastPathComponent];
             _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
@@ -490,11 +487,11 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (NSString*) checkForMultipart {
+- (BOOL) checkForMultipart {
     NSString* base = multipartBasename(_url.path);
     NSNumber* n = s2n(multipartNumber(_url.path));
     if (base == null || n == null) {
-        return _url.path;
+        return true;
     }
     NSString* fp = _url.path.stringByDeletingLastPathComponent;
     NSArray* files = [NSFileManager.defaultManager contentsOfDirectoryAtPath: fp error: null];
@@ -536,7 +533,8 @@ static NSTableView* createTableView(NSRect r) {
     if (!isEqual(sorted[0], n) || missing.length > 0) {
         NSString* n0 = sorted[0];
         NSString* ns = numbers[n0];
-        NSString* name = [baseNoExt stringByAppendingFormat: @"part%@.%@", ns, _url.path.pathExtension];
+        NSString* name = [baseNoExt stringByAppendingFormat: @".part%@.%@", ns, _url.path.pathExtension];
+        _alerts.topText = [NSString stringWithFormat: @"Opening: %@", name];
         if (!isEqual(n0, n)) {
             NSString* message = [NSString stringWithFormat:
                                  @"%@ does not seem to be the fist part of multipart archive.\n"
@@ -549,17 +547,18 @@ static NSTableView* createTableView(NSRect r) {
             }
             NSInteger rc = [self runModalAlert: message
                                        buttons: @[ name, _url.path.lastPathComponent, @"Stop" ]
-                                      tooltips: @[ [NSString stringWithFormat: @"try to open %@", name],
-                            [NSString stringWithFormat: @"try to open %@", _url.path.lastPathComponent],
+                                      tooltips: @[
+                            [NSString stringWithFormat: @"try to open «%@»", name],
+                            [NSString stringWithFormat: @"try to open «%@»", _url.path.lastPathComponent],
                             @"Do not open this archive" ]
                                           info: info
                                     suppressed: null];
             if (rc == NSAlertFirstButtonReturn) {
-                return _url.path;
+                _url = [NSURL fileURLWithPath: [fp stringByAppendingPathComponent: name]];
             } else if (rc == NSAlertSecondButtonReturn) {
-                return [fp stringByAppendingPathComponent: name];
+                // keep _url as it was
             } else {
-                return null;
+                return false;
             }
         } else if (missing.length > 0) {
             NSString* message = [NSString stringWithFormat:
@@ -571,13 +570,13 @@ static NSTableView* createTableView(NSRect r) {
                                           info: @""
                                     suppressed: null];
             if (rc == NSAlertFirstButtonReturn) {
-                return _url.path;
+                return true;
             } else {
-                return null;
+                return false;
             }
         }
     }
-    return _url.path;
+    return true;
 }
 
 - (void) windowDidBecomeKey {
@@ -748,7 +747,7 @@ static NSTableView* createTableView(NSRect r) {
                                    delegate: self
                             didSaveSelector: @selector(document:didSave:block:)
                                 contextInfo: (__bridge void *)(^(){
-        trace(@"save");
+        // trace(@"save");
     })];
     return true;
 }
@@ -916,12 +915,12 @@ static NSString* nextPathname(NSString* path) {
     }
     if (_destination.isNextToArchive) {
         dest = [NSURL fileURLWithPath: [_url.path stringByDeletingLastPathComponent]];
-        trace("dest=%@", dest);
+        // trace("dest=%@", dest);
     }
     NSString* base = multipartBasename(_url.path.lastPathComponent);
     NSString* lpc = (base != null ? base : _url.path.lastPathComponent).stringByDeletingPathExtension;
     dest = [NSURL fileURLWithPath:[dest.path stringByAppendingPathComponent: lpc]];
-    trace("dest=%@", dest);
+    // trace("dest=%@", dest);
     NSString* path = dest.path;
     NSString* details = @"";
     NSString* files = @"";
@@ -937,6 +936,7 @@ static NSString* nextPathname(NSString* path) {
     }
     _preNextLastPathComponent = path.lastPathComponent; // without any _number suffixes
     _finalDestination = dest.path;
+    _alerts.topText = [NSString stringWithFormat: @"Unpacking: %@", _finalDestination.lastPathComponent];
     BOOL d = false;
     BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
     if (!e) {
@@ -1009,7 +1009,7 @@ static NSString* nextPathname(NSString* path) {
             }
         } else if (rc == NSAlertThirdButtonReturn) { // Merge
             dest = [NSURL fileURLWithPath: path];
-            trace("dest=%@", dest);
+            // trace("dest=%@", dest);
             [self addExtractOperation: items to: dest DnD: dnd];
             return;
         } else { // Stop
@@ -1021,10 +1021,10 @@ static NSString* nextPathname(NSString* path) {
 }
 
 - (void) addExtractOperation: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
-    trace("_temporaryUnpackingFolder=%@", _temporaryUnpackingFolder);
-    trace("_finalDestination=%@", _finalDestination);
-    trace("_trashedDestination=%@", _trashedDestination);
-    trace("_url=%@", url.debugDescription);
+    // trace("_temporaryUnpackingFolder=%@", _temporaryUnpackingFolder);
+    // trace("_finalDestination=%@", _finalDestination);
+    // trace("_trashedDestination=%@", _trashedDestination);
+    // trace("_url=%@", url.debugDescription);
     ExtractItemsOperation* operation = [ExtractItemsOperation.alloc
                                         initWithDocument: self
                                         items: items
@@ -1041,10 +1041,8 @@ static NSString* nextPathname(NSString* path) {
         [_outlineView deselectAll: null]; // remove confusing selection
     }
     [self scheduleAlerts];
-    _alerts.topText = [NSString stringWithFormat: @"Unpacking: %@", _url.path.lastPathComponent];
     [_archive extract: items to: url operation: op done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            _alerts.topText = _url.path.lastPathComponent;
             [_alerts progress: 0 of: 0];
             if (error != null) {
                 [self restoreTrashed];
@@ -1087,7 +1085,7 @@ static NSString* nextPathname(NSString* path) {
         [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: _finalDestination]]
                                completionHandler:
          ^(NSDictionary* moved, NSError *error) {
-             trace("moved=%@ %@", moved, error);
+             // trace("moved=%@ %@", moved, error);
              _trashedDestination = moved;
              if (error == null) {
                  [self _moveToFinalDestination: dnd];
@@ -1290,7 +1288,6 @@ static NSString* multipartBasename(NSString* s) {
     }
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
-        _alerts.topText = _url.path.lastPathComponent;
         [_alerts progress: 0 of: 0];
         if (a != null) {
             [self endAlerts];
@@ -1371,7 +1368,7 @@ static NSString* multipartBasename(NSString* s) {
         assert([NSThread isMainThread]);
         if (_operationQueue.operationCount > 0) {
             NSString* info = _archive == null ? @"" : // opening archive - no data corruption expected
-            @"(Some folders and file may be left behind corrupted or incomplete.)";
+            @"(Some folders and files may be left behind corrupted or incomplete.)";
             NSAlert* a = [NSAlert alertWithMessageText: @"Do you want to cancel current operation?"
                                          defaultButton: @"Stop"
                                        alternateButton: @"Keep Going"

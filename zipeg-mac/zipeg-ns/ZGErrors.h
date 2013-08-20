@@ -7,15 +7,16 @@ FOUNDATION_EXPORT NSString *const ZGAppErrorDomain;
 void ZGErrorsInit();
 
 enum {
-    ZGInternalError = 1000,
-    ZGIsNotAFile = 1001,
-    ZGIsNotAFolder = 1002,
-    ZGFileIsNotReachable = 1003,
-    ZGArchiverError = 1004,
-    ZGOutOfMemory = 1999
+    kInternalError = 1000,
+    kIsNotAFile = 1001,
+    kIsNotAFolder = 1002,
+    kFileIsNotReachable = 1003,
+    kArchiverError = 1004,
+    kOutOfMemory = 1999
 };
 
-NSError* ZGOutOfMemoryError();
+FOUNDATION_EXPORT NSError* ZGOutOfMemoryError();
+FOUNDATION_EXPORT NSError* ZGInternalError();
 
 #define ZG_ERROR_KEY(code)                    [NSString stringWithFormat:@"%d", code]
 #define ZG_ERROR_LOCALIZED_DESCRIPTION(code)  NSLocalizedStringFromTable(ZG_ERROR_KEY(code), @"ZGErrors", nil)
@@ -23,4 +24,3 @@ NSError* ZGOutOfMemoryError();
 #ifdef __cplusplus
 }
 #endif
-

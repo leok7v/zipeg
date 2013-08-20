@@ -68,7 +68,7 @@
     }
     return true;
 #else
-    return false; // TODO: should true in Pro
+    return false; // TODO: might be true in Pro
 #endif
 }
 

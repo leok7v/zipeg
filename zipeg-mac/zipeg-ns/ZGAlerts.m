@@ -337,10 +337,11 @@
 }
 
 - (void) restoreSize {
-    _contentView.size = _initialContentViewSize;
-    _contentView.superview.size = _initialContentViewSize;
+    // The order of resizes is very important. The window has to be resized first
     self.size = _initialContentViewSize;
     _contentView.subviews = @[_progress];
+    _contentView.size = _initialContentViewSize;
+    _contentView.superview.size = _initialContentViewSize;
 }
 
 - (void) dismissAlert: (NSInteger) rc resize: (BOOL) b {
@@ -359,9 +360,7 @@
             _delayedDismiss = _delayedDismiss.cancel;
         }
         if (b) {
-            _delayedDismiss = [ZGUtils invokeLater: ^{ [self restoreSize]; } delay: 1.0];
-        } else {
-            [self restoreSize];
+            _delayedDismiss = [ZGUtils invokeLater: ^{ [self restoreSize]; } delay: 0.75];
         }
     }
 }
