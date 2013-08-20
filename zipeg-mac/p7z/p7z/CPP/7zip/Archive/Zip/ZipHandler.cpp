@@ -563,20 +563,6 @@ HRESULT CZipDecoder::Decode(
       if (wzAesMode || pkAesMode)
       {
         charPassword = UnicodeStringToMultiByte((const wchar_t *)password, CP_ACP);
-        /*
-        for (int i = 0;; i++)
-        {
-          wchar_t c = password[i];
-          if (c == 0)
-            break;
-          if (c >= 0x80)
-          {
-            res = NExtract::NOperationResult::kDataError;
-            return S_OK;
-          }
-          charPassword += (char)c;
-        }
-        */
       }
       else
       {
@@ -728,10 +714,13 @@ HRESULT CZipDecoder::Decode(
     if (_wzAesDecoderSpec->CheckMac(inStream, authOk) != S_OK)
       authOk = false;
   }
-  
-  res = ((crcOK && authOk) ?
-    NExtract::NOperationResult::kOK :
-    NExtract::NOperationResult::kCRCError);
+  if (!authOk) {
+      res = NExtract::NOperationResult::kAuthError;
+  } else if (!crcOK) {
+      res = NExtract::NOperationResult::kCRCError;
+  } else {
+      res = NExtract::NOperationResult::kOK;
+  }
   return S_OK;
 }
 

@@ -233,12 +233,12 @@ bool P7Z::reportException(int e) {
         default: s = buff;
             sprintf(buff, "error %d [0x%08x]", e, e);
     }
-    delegate->error(s);
+    delegate->error("", s);
     return false; // MUST ALWAYS RETURN FALSE (see usages)
 }
 
 bool P7Z::reportException(const char* e) {
-    delegate->error(e);
+    delegate->error("", e);
     return false; // MUST ALWAYS RETURN FALSE (see usages)
 }
 
@@ -246,9 +246,9 @@ bool P7Z::reportException(const wchar_t* e) {
     UString us = e;
     AString as;
     if (ConvertUnicodeToUTF8(us, as) && as.Length() > 0) {
-        delegate->error(as);
+        delegate->error("", as);
     } else {
-        delegate->error("internal error");
+        delegate->error("", "internal error");
     }
     return false; // MUST ALWAYS RETURN FALSE (see usages)
 }
@@ -446,6 +446,7 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
                 case NArchive::NExtract::NAskMode::kSkip: s = "skip"; break;
                 default: sprintf(buff, "askExtractMode=%d", askExtractMode); s = buff;
             }
+            file = name;
             // trace("PrepareOperation: name=%ls isFolder=%d %s position=%lld\n", name, isFolder, s, position != null ? *position : 0);
             return S_OK;
         }
@@ -453,30 +454,40 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
         virtual HRESULT MessageError(const wchar_t *message) {
             trace("MessageError: %ls\n", message);
             AString e;
-            if (ConvertUnicodeToUTF8(message, e)) {
-                ctx->delegate->error(e);
+            AString f;
+            if (ConvertUnicodeToUTF8(file, f) && ConvertUnicodeToUTF8(message, e)) {
+                if (!ctx->delegate->error(f, e)) {
+                    return E_ABORT;
+                }
             } else {
-                ctx->delegate->error("internal error");
+                if (!ctx->delegate->error("", "unconvertable unicode string")) {
+                    return E_ABORT;
+                }
             }
             return S_OK;
         }
                                  
         virtual HRESULT SetOperationResult(Int32 r, bool encrypted) {
-            const char* s = null;
-            char buff[128] = {0};
+            const wchar_t* s = null;
+            wchar_t buff[128] = {0};
             switch (r) {
                 case NArchive::NExtract::NOperationResult::kOK:
-                    s = "OK"; break;
+                    s = L"OK"; break;
                 case NArchive::NExtract::NOperationResult::kUnSupportedMethod:
-                    s = "UnsupportedMethod"; break;
+                    s = L"Unsupported Method"; break;
                 case NArchive::NExtract::NOperationResult::kDataError:
-                    s = "DataError"; break;
+                    s = L"Data Error"; break;
                     trace("SetOperationResult: \n"); break;
                 case NArchive::NExtract::NOperationResult::kCRCError:
-                    s = "CRCError"; break;
-                default: sprintf(buff, "result=%d", r); s = buff;
+                    s = L"CRC Error"; break;
+                case NArchive::NExtract::NOperationResult::kAuthError:
+                    s = L"Authentication Error"; break;
+                default: wprintf(buff, "error %d", r); s = buff;
             }
-            // trace("SetOperationResult: result=%s encrypted=%d\n", s, encrypted);
+            if (r != NArchive::NExtract::NOperationResult::kOK) {
+                trace("SetOperationResult: result=%ls encrypted=%d\n", s, encrypted);
+                return MessageError(s);
+            }
             return S_OK;
         }
 
@@ -492,6 +503,7 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
         int64_t total;
         int64_t completed;
         UString password;
+        UString file;
     };
     assert(archiveLink != null);
     if (archiveLink == null) {

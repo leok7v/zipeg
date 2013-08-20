@@ -670,7 +670,9 @@ static NSTableView* createTableView(NSRect r) {
         i++;
     }
     a.messageText = message;
-    a.informativeText = info;
+    if (info != null) {
+        a.informativeText = info;
+    }
     a.alertStyle = NSInformationalAlertStyle;
     a.icon = [NSImage imageNamed: @"transparent-1x1.png"];
     a.showsSuppressionButton = s != null;
@@ -1458,6 +1460,35 @@ static NSString* multipartBasename(NSString* s) {
     sema = null;
     return answer;
 }
+
+- (BOOL) askOnBackgroundThreadToContinue: (NSString*) path error: (NSString*) e {
+    assert(![NSThread isMainThread]);
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    BOOL __block keepGoing = false;
+    if (path == null || path.length == 0) {
+        path = _archive.root.name;
+    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        assert([NSThread isMainThread]);
+        if (_operationQueue.operationCount > 0) {
+            NSString* message = [NSString stringWithFormat: @"Error: %@ while unpacking:\n%@\n"
+                                "Do you want to ignore this error and try to continue?", e, path];
+            NSInteger rc = [self runModalAlert: message
+                                       buttons: @[ @"Ignore", @"Stop" ]
+                                      tooltips: @[ @"Ignore error and keep going", @"Abort unpacking operation"]
+                                          info: null
+                                    suppressed: null];
+            keepGoing = rc == NSAlertFirstButtonReturn;
+            [self scheduleAlerts];
+            dispatch_semaphore_signal(sema);
+        }
+    });
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    dispatch_release(sema);
+    sema = null;
+    return keepGoing;
+}
+
 
 - (void) checkTimeToShowHeroView {
     if (_timeToShowHeroView > 0 && nanotime() > _timeToShowHeroView) {

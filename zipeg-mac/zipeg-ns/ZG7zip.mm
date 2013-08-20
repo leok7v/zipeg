@@ -49,7 +49,7 @@ struct D;
 - (BOOL) isFilteredOut: (int) index;
 - (BOOL) isLeafFolder: (int) index;
 - (BOOL) isFolder: (int) index;
-- (void) error: (const char*) text;
+- (BOOL) file: (const char*) file error: (const char*) text;
 - (BOOL) moveToTrash: (const char*) pathname;
 - (int)  askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;
@@ -195,8 +195,8 @@ struct D : P7Z::Delegate {
     ZG7zip* __unsafe_unretained delegate;
     D(ZG7zip* __unsafe_unretained d) { delegate = d; }
     virtual ~D() {}
-    virtual void error(const char* text) {
-        [delegate error: text];
+    virtual bool error(const char* file, const char* text) {
+        return [delegate file: file error: text];
     }
     virtual const wchar_t* password(P7Z*) { return [delegate password]; }
     virtual bool moveToTrash(P7Z*, const char* pathname) {
@@ -638,7 +638,7 @@ static NSString* starifyMultipartFilename(NSString* s) {
 
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
             document: (ZGDocument*) doc
-           operation: (ZGOperation*) op error:(NSError**) err
+           operation: (ZGOperation*) op error: (NSError**) err
                 done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) done {
     // This method must be called on the background thread
     assert(![NSThread isMainThread]);
@@ -825,8 +825,14 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return !self.isCancelled;
 }
 
-- (void) error: (const char*) message {
+- (BOOL) file: (const char*) file error: (const char*) message {
     _error = [NSString stringWithUTF8String: message];
+    bool b = [document askOnBackgroundThreadToContinue:
+              [NSString stringWithUTF8String: file == null ? "" : file] error: _error];
+    if (!b && _op != null) {
+        [_op cancel];
+    }
+    return b;
 }
 
 - (BOOL) moveToTrash: (const char*) pathname {

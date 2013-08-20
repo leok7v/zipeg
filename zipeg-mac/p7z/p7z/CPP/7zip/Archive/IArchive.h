@@ -53,7 +53,8 @@ namespace NArchive
         kOK = 0,
         kUnSupportedMethod,
         kDataError,
-        kCRCError
+        kCRCError,
+        kAuthError
       };
     }
   }

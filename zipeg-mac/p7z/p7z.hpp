@@ -22,7 +22,7 @@ public:
         kAutoRenameAll = 6
     };
     struct Delegate {
-        virtual void error(const char* error) = 0; // exception text is reported here
+        virtual bool error(const char* file, const char* error) = 0; // true to ignore and continue
         virtual const wchar_t* password(P7Z*) = 0;
         virtual bool moveToTrash(P7Z*,  const char* pathname) = 0;
         virtual int  askOverwrite(P7Z*, const char* fromName, int64_t fromTime, int64_t fromSize,
