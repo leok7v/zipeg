@@ -81,7 +81,7 @@
 
 @implementation ZGBackPanel
 
-- (id) initWithDocument: (ZGDocument*) d andFrame:(NSRect) r {
+- (id) initWithDocument: (ZGDocument*) d andFrame: (NSRect) r {
     self = [super initWithFrame: r];
     if (self) { // it takes space to prevent titlebar with toolbar to over-draw
         self.autoresizingMask = kSizableWH;
@@ -185,7 +185,7 @@
     return self;
 }
 
-- (id)initWithType:(NSString *)typeName error:(NSError **)outError {
+- (id)initWithType: (NSString*) typeName error: (NSError**) outError {
     return [super initWithType: typeName error: outError];
 }
 
@@ -742,11 +742,11 @@ static NSTableView* createTableView(NSRect r) {
     }
 }
 
-- (BOOL) writeToURL:(NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
+- (BOOL) writeToURL: (NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
     [self runModalSavePanelForSaveOperation: NSSaveOperation
                                    delegate: self
                             didSaveSelector: @selector(document:didSave:block:)
-                                contextInfo: (__bridge void *)(^(){
+                                contextInfo: (__bridge void*) (^(){
         // trace(@"save");
     })];
     return true;
@@ -758,11 +758,11 @@ static NSTableView* createTableView(NSRect r) {
 
 
 - (BOOL) readFromURL: (NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
-    return [self readFromURL:absoluteURL ofType:typeName encoding:(CFStringEncoding)-1 error:outError];
+    return [self readFromURL:absoluteURL ofType:typeName encoding: (CFStringEncoding)-1 error:outError];
 }
 
 - (BOOL) readFromURL: (NSURL*) absoluteURL ofType: (NSString*) typeName encoding: (CFStringEncoding) encoding
-        error:(NSError **)error {
+        error: (NSError**) error {
     // this is called before window is created or setup
     _url = absoluteURL;
     _encoding = encoding;
@@ -916,6 +916,7 @@ static NSString* nextPathname(NSString* path) {
         _itemsToExtract = numberOfLeafs(items, &_foldersToExtract);
     }
     if (dnd) {
+        _alerts.topText = [NSString stringWithFormat: @"Unpacking to: %@", dest.lastPathComponent];
         [self addExtractOperation: items to: dest DnD: dnd];
         return;
     }
@@ -1517,7 +1518,7 @@ static NSString* multipartBasename(NSString* s) {
     [_archive setFilter: s operation: op done: block];
 }
 
-- (BOOL) writeSelectionToPasteboard:(NSPasteboard *)pasteboard {
+- (BOOL) writeSelectionToPasteboard: (NSPasteboard*) pasteboard {
     // This method will be called for services, or for drags originating from the preview column ZipEntryView, and it calls the previous method
     return false; // TODO: depending on FirstResponder being table or outline view
 }
@@ -1530,7 +1531,7 @@ static NSString* multipartBasename(NSString* s) {
     }
 }
 
-+ (void) exportData:(NSPasteboard *)pasteboard userData:(NSString *)data error:(NSString **)error {
++ (void) exportData: (NSPasteboard*) pasteboard userData: (NSString*) data error: (NSString**) error {
     // TODO:
     ZGDocument *d = [[[NSApp makeWindowsPerform: @selector(windowController) inOrder:YES] windowController] document];
     if (d) {
