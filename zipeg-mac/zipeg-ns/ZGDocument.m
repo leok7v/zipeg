@@ -814,8 +814,16 @@ static NSString* nonexistentName(NSString* name, NSString* ext, int64_t value) {
 }
 
 static NSString* nextPathname(NSString* path) {
-    NSString* ext = path.pathExtension;
-    NSString* name = path.stringByDeletingPathExtension;
+    NSString* ext = null;
+    NSString* name = null;
+    int dix = [path.lastPathComponent indexOf: @"."];
+    int six = [path.lastPathComponent indexOf: @"/"];
+    if ((six < 0 && dix > 0) || dix > six + 1) {
+        ext = path.pathExtension;
+        name = path.stringByDeletingPathExtension;
+    } else { // ".file" or "file_without_extension"
+        name = path;
+    }
     int64_t n = -1;
     int spix = [name lastIndexOf: @" "];
     if (spix >= 0) {
@@ -900,6 +908,7 @@ static NSString* nextPathname(NSString* path) {
     // TODO: multipart - change "folder.part1" to "folder"
     _temporaryUnpackingFolder = null;
     if (items == null) {
+        [_outlineView deselectAll: null]; // remove confusing selection for ALL
         _itemsToExtract = _archive.numberOfItems - _archive.numberOfFolders;
         _foldersToExtract = _archive.numberOfFolders;
     } else {
@@ -914,7 +923,7 @@ static NSString* nextPathname(NSString* path) {
         items = null;
     }
     if (_destination.isNextToArchive) {
-        dest = [NSURL fileURLWithPath: [_url.path stringByDeletingLastPathComponent]];
+        dest = [NSURL fileURLWithPath: _url.path.stringByDeletingLastPathComponent];
         // trace("dest=%@", dest);
     }
     NSString* base = multipartBasename(_url.path.lastPathComponent);
@@ -935,17 +944,42 @@ static NSString* nextPathname(NSString* path) {
         details = [NSString stringWithFormat:@"%@ from\n", files];
     }
     _preNextLastPathComponent = path.lastPathComponent; // without any _number suffixes
+    NSObject<ZGItemProtocol>* singleFile;
+    NSObject<ZGItemProtocol>* singleFolder;
+    NSObject<ZGItemProtocol>* item = null;
+    if (items == null && _archive.numberOfItems == 1) {
+        item = _archive.root.children[0];
+    } else if (items.count == 1) {
+        item = items[0];
+    } else if (_archive.root.children.count == 1) {
+        item = _archive.root.children[0];
+    }
+    if (item != null && isEqual(item.name, _preNextLastPathComponent)) {
+        if (item.children == null) {
+            trace("single file extract: %@", item.name);
+            singleFile = item;
+        } else {
+            trace("single folder extract: %@", item.name);
+            singleFolder = item;
+        }
+    }
     _finalDestination = dest.path;
-    _alerts.topText = [NSString stringWithFormat: @"Unpacking: %@", _finalDestination.lastPathComponent];
+    _alerts.topText = [NSString stringWithFormat: @"Unpacking to: %@", _finalDestination.lastPathComponent];
     BOOL d = false;
     BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
     if (!e) {
         NSInteger rc = NSAlertFirstButtonReturn;
         if (_destination.isAsking) {
+            NSString* message = null;
+            if (singleFile == null) {
+                message = [NSString stringWithFormat: @"About to unpack %@«%@»\ninto folder:\n«%@»\n"
+                            "Do you want to proceed?", details, _archive.root.name, dest.path];
+            } else {
+                message = [NSString stringWithFormat: @"About to unpack file «%@»\ninto folder:\n«%@»\n"
+                           "Do you want to proceed?", singleFile.name, dest.path.stringByDeletingLastPathComponent];
+            }
             BOOL suppress = false;
-            rc = [self runModalAlert: [NSString stringWithFormat:
-                                       @"About to unpack %@«%@»\ninto folder:\n«%@»\n"
-                                       "Do you want to proceed?", details, _url.path.lastPathComponent, dest.path]
+            rc = [self runModalAlert: message
                              buttons: @[ @"Proceed", @"Stop" ]
                             tooltips: null
                                 info: @"Destination folder does not exist. It will be created.\n"
@@ -962,6 +996,46 @@ static NSString* nextPathname(NSString* path) {
             } else {
                 [self posixError: path];
             }
+        }
+    } else if (singleFile != null) { // there is a folder or a file in a way, need new name
+        NSInteger rc = NSAlertFirstButtonReturn;
+        NSString* next = nextPathname(path);
+        if (_destination.isAsking) {
+            BOOL suppress = false;
+            NSString* keepTooltip = [NSString stringWithFormat:
+                                     @"\"Keep Both\" will unpack into a new version of a file: "
+                                     "«%@»", next.lastPathComponent];
+            NSString* replaceTooltip = [NSString stringWithFormat:
+                                        @"\"Replace\" will move existing file\n«%@» into Trash Bin "
+                                        "before unpacking an item.",
+                                        dest.path.lastPathComponent];
+            rc = [self runModalAlert: [NSString stringWithFormat:
+                                       @"About to unpack file «%@»\noverwriting existing item in:\n«%@»?\n"
+                                       "How do you want to proceed?", singleFile.name,
+                                       dest.path.stringByDeletingLastPathComponent]
+                             buttons: @[ @"Keep Both", @"Replace", @"Stop" ]
+                            tooltips: @[ keepTooltip, replaceTooltip, @"Do not unpack" ]
+                                info: @"Hover over buttons for more info.\n"
+                                       "(isn't it easier just to drag and drop sometimes?)\n"
+                          suppressed: &suppress];
+            if (suppress) {
+                _destination.asking = false;
+            }
+        }
+        if (rc == NSAlertFirstButtonReturn) { // Keep Both
+            path = next;
+            _finalDestination = path;
+        }
+        if (rc == NSAlertFirstButtonReturn || rc == NSAlertSecondButtonReturn) {
+            if ([self mkdirTempFolder: path]) {
+                dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
+                [self addExtractOperation: items to: dest DnD: dnd];
+                return;
+            } else {
+                [self posixError: path];
+            }
+        } else {
+            // Stop
         }
     } else { // there is a folder or file in a way, need new name
         NSInteger rc = NSAlertFirstButtonReturn;
@@ -980,10 +1054,10 @@ static NSString* nextPathname(NSString* path) {
                                       "\"Keep Both\" is much safer alternative.";
             rc = [self runModalAlert: [NSString stringWithFormat:
                                        @"About to unpack %@«%@» into existing folder:\n«%@»?\n"
-                                       "How do you want to proceed?", details, _url.path.lastPathComponent, dest.path]
+                                       "How do you want to proceed?", details, _archive.root.name, dest.path]
                              buttons: @[ @"Keep Both", @"Replace", @"Merge", @"Stop" ]
                             tooltips: @[ keepTooltip, replaceTooltip, mergeTooltip, @"Do not unpack" ]
-                                info: @"Hover over buttons for more detailed explanaition.\n"
+                                info: @"Hover over buttons for more info.\n"
                                        "(isn't it easier just to drag and drop sometimes?)\n"
                           suppressed: &suppress];
             if (suppress) {
@@ -992,6 +1066,9 @@ static NSString* nextPathname(NSString* path) {
         }
         if (rc == NSAlertFirstButtonReturn) { // Keep Both
             path = next;
+            _finalDestination = path;
+        }
+        if (rc == NSAlertFirstButtonReturn || rc == NSAlertSecondButtonReturn) { // Keep Both | Replace
             if ([self mkdirTempFolder: path]) {
                 dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
                 [self addExtractOperation: items to: dest DnD: dnd];
@@ -999,20 +1076,13 @@ static NSString* nextPathname(NSString* path) {
             } else {
                 [self posixError: path];
             }
-        } else if (rc == NSAlertSecondButtonReturn) { // Replace
-            if ([self mkdirTempFolder: path]) {
-                NSURL* dest = [NSURL fileURLWithPath: _temporaryUnpackingFolder];
-                [self addExtractOperation: items to: dest DnD: dnd];
-                return;
-            } else {
-                [self posixError: path];
-            }
         } else if (rc == NSAlertThirdButtonReturn) { // Merge
-            dest = [NSURL fileURLWithPath: path];
+            dest = [NSURL fileURLWithPath: singleFolder == null ? path : path.stringByDeletingLastPathComponent];
             // trace("dest=%@", dest);
             [self addExtractOperation: items to: dest DnD: dnd];
             return;
-        } else { // Stop
+        } else {
+            // Stop
         }
     }
     assert(_operationQueue.operationCount == 0);
@@ -1037,9 +1107,6 @@ static NSString* nextPathname(NSString* path) {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
     assert(_archive != null);
-    if (items == null || items.count == 0) {
-        [_outlineView deselectAll: null]; // remove confusing selection
-    }
     [self scheduleAlerts];
     [_archive extract: items to: url operation: op done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -1121,10 +1188,13 @@ static NSString* nextPathname(NSString* path) {
         }
         [ZGApp unregisterUnpackingFolder: _temporaryUnpackingFolder];
     }
-    [[NSSound soundNamed:@"done"] play];
+    [[NSSound soundNamed: @"done"] play];
     [self endAlerts];
-    if (_destination.isReveal && !dnd) { // Reveal in Finder
-        [NSWorkspace.sharedWorkspace openURLs: @[[NSURL fileURLWithPath: _finalDestination]]
+    BOOL d = false;
+    BOOL e = [NSFileManager.defaultManager fileExistsAtPath: _finalDestination isDirectory: &d];
+    if (_destination.isReveal && !dnd && e) { // Reveal in Finder
+        [NSWorkspace.sharedWorkspace openURLs: @[[NSURL fileURLWithPath: d ? _finalDestination :
+                                                  _finalDestination.stringByDeletingLastPathComponent]]
                       withAppBundleIdentifier: @"com.apple.Finder"
                                       options: NSWorkspaceLaunchDefault
                additionalEventParamDescriptor: null

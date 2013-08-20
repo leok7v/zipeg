@@ -33,8 +33,8 @@ bool AutoRenamePath(UString &fullProcessedPath)
   slashPos = MyMax(slashPos, slash1Pos);
 #endif
 
-  UString name, extension;
-  if (dotPos > slashPos && dotPos > 0)
+  UString name, extension; //  "foo/.bar" does not have `extension'
+  if (slashPos < 0 && dotPos > 0 || dotPos > slashPos + 1)
   {
     name = fullProcessedPath.Left(dotPos);
     extension = fullProcessedPath.Mid(dotPos);
