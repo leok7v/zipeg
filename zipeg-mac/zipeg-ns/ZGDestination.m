@@ -486,26 +486,6 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     }
 }
 
-/* TODO: no need anymore
-- (NSArray*) pathComponentArray {
-    NSMutableArray* pathComponentArray = [NSMutableArray new];
-    NSURL* u = [NSURL URLWithString: @"http://www.zipeg.com"];
-    NSPathComponentCell* c = [self componentCellWithTitle: @"next to archive" url: u];
-    [pathComponentArray addObject: c];
-    return pathComponentArray;
-}
-
-- (NSPathComponentCell*) componentCellWithTitle: (NSString*) s url: (NSURL*) u {
-    NSPathComponentCell* c = [NSPathComponentCell new];
-    c.image = [NSWorkspace.sharedWorkspace iconForFile: NSBundle.mainBundle.bundlePath];
-    c.URL   = u;
-    c.title = s;
-    c.state = NSOffState;
-    c.font  = _font;
-    return c;
-}
-*/
-
 - (void) pathControl: (NSPathControl*) pc willPopUpMenu: (NSMenu*) m {
     if (_nextToArchiveMenuItem == null) {
         NSString* title = NSLocalizedString(@"next to archive", @"");

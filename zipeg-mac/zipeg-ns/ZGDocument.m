@@ -475,13 +475,109 @@ static NSTableView* createTableView(NSRect r) {
         // TODO: how to make document modified without this hack?
         [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
     } else {
-        // TODO: multipart - open first file!
-        [self scheduleAlerts];
-        _alerts.topText = [NSString stringWithFormat: @"Opening: %@", _url.path.lastPathComponent];
-        _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
-        OpenArchiveOperation *operation = [OpenArchiveOperation.alloc initWithDocument: self];
-        [_operationQueue addOperation: operation];
+        NSString* path = [self checkForMultipart];
+        if (path == null) {
+            _url = null;
+            [_window performClose: self];
+        } else {
+            _url = [NSURL fileURLWithPath: path];
+            [self scheduleAlerts];
+            _alerts.topText = [NSString stringWithFormat: @"Opening: %@", _url.path.lastPathComponent];
+            _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
+            OpenArchiveOperation *operation = [OpenArchiveOperation.alloc initWithDocument: self];
+            [_operationQueue addOperation: operation];
+        }
     }
+}
+
+- (NSString*) checkForMultipart {
+    NSString* base = multipartBasename(_url.path);
+    NSNumber* n = s2n(multipartNumber(_url.path));
+    if (base == null || n == null) {
+        return _url.path;
+    }
+    NSString* fp = _url.path.stringByDeletingLastPathComponent;
+    NSArray* files = [NSFileManager.defaultManager contentsOfDirectoryAtPath: fp error: null];
+    NSMutableDictionary* numbers = [NSMutableDictionary dictionaryWithCapacity: files.count * 3 / 2];
+    NSString* baseNoExt = base.stringByDeletingPathExtension.lastPathComponent;
+    for (NSString* file in files) {
+        if ([file startsWith: baseNoExt]) {
+            NSString* ns = multipartNumber(file);
+            NSNumber* nm = s2n(ns);
+            if (nm != null) {
+                numbers[nm] = ns;
+            }
+        }
+    }
+    NSString* missing = @"";
+    NSArray* sorted = null;
+    if (numbers.count > 0) {
+        sorted = [numbers keysSortedByValueUsingComparator: ^NSComparisonResult(id o0, id o1) {
+            NSNumber* n0 = o0;
+            NSNumber* n1 = o1;
+            return [n0 compare: n1];
+        }];
+        NSNumber* prev = null;
+        for (NSNumber* k in sorted) {
+            if (prev != null) {
+                NSNumber* n0 = prev;
+                NSNumber* n1 = k;
+                if (n1.intValue != n0.intValue + 1) {
+                    if (missing.length > 0) {
+                        missing = [missing stringByAppendingFormat: @", part%d", n0.intValue + 1];
+                    } else {
+                        missing = [missing stringByAppendingFormat: @"part%d", n0.intValue + 1];
+                    }
+                }
+            }
+            prev = k;
+        }
+    }
+    if (!isEqual(sorted[0], n) || missing.length > 0) {
+        NSString* n0 = sorted[0];
+        NSString* ns = numbers[n0];
+        NSString* name = [baseNoExt stringByAppendingFormat: @"part%@.%@", ns, _url.path.pathExtension];
+        if (!isEqual(n0, n)) {
+            NSString* message = [NSString stringWithFormat:
+                                 @"%@ does not seem to be the fist part of multipart archive.\n"
+                                 "Do you want to open %@ instead?",
+                                 _url.path.lastPathComponent, name];
+            NSString* info = @"";
+            if (missing.length > 0) {
+                info = [NSString stringWithFormat: @"WARNING: also some parts of the archive seems "
+                        "to be missing:\n%@", missing];
+            }
+            NSInteger rc = [self runModalAlert: message
+                                       buttons: @[ name, _url.path.lastPathComponent, @"Stop" ]
+                                      tooltips: @[ [NSString stringWithFormat: @"try to open %@", name],
+                            [NSString stringWithFormat: @"try to open %@", _url.path.lastPathComponent],
+                            @"Do not open this archive" ]
+                                          info: info
+                                    suppressed: null];
+            if (rc == NSAlertFirstButtonReturn) {
+                return _url.path;
+            } else if (rc == NSAlertSecondButtonReturn) {
+                return [fp stringByAppendingPathComponent: name];
+            } else {
+                return null;
+            }
+        } else if (missing.length > 0) {
+            NSString* message = [NSString stringWithFormat:
+                                 @"WARNING: some parts of the archive seems "
+                                 "to be missing:\n%@", missing];
+            NSInteger rc = [self runModalAlert: message
+                                       buttons: @[ @"Proceed", @"Stop" ]
+                                      tooltips: @[ @"Proceed anyway", @"Do not open this archive" ]
+                                          info: @""
+                                    suppressed: null];
+            if (rc == NSAlertFirstButtonReturn) {
+                return _url.path;
+            } else {
+                return null;
+            }
+        }
+    }
+    return _url.path;
 }
 
 - (void) windowDidBecomeKey {
@@ -803,7 +899,6 @@ static NSString* nextPathname(NSString* path) {
     assert(_finalDestination == null);
     assert(_temporaryUnpackingFolder == null);
     // TODO: multipart - change "folder.part1" to "folder"
-    _finalDestination = dest.path;
     _temporaryUnpackingFolder = null;
     if (items == null) {
         _itemsToExtract = _archive.numberOfItems - _archive.numberOfFolders;
@@ -821,11 +916,12 @@ static NSString* nextPathname(NSString* path) {
     }
     if (_destination.isNextToArchive) {
         dest = [NSURL fileURLWithPath: [_url.path stringByDeletingLastPathComponent]];
-        trace("url=%@", dest);
+        trace("dest=%@", dest);
     }
-    NSString* lpc = _url.path.lastPathComponent.stringByDeletingPathExtension;
+    NSString* base = multipartBasename(_url.path.lastPathComponent);
+    NSString* lpc = (base != null ? base : _url.path.lastPathComponent).stringByDeletingPathExtension;
     dest = [NSURL fileURLWithPath:[dest.path stringByAppendingPathComponent: lpc]];
-    trace("url=%@", dest);
+    trace("dest=%@", dest);
     NSString* path = dest.path;
     NSString* details = @"";
     NSString* files = @"";
@@ -840,6 +936,7 @@ static NSString* nextPathname(NSString* path) {
         details = [NSString stringWithFormat:@"%@ from\n", files];
     }
     _preNextLastPathComponent = path.lastPathComponent; // without any _number suffixes
+    _finalDestination = dest.path;
     BOOL d = false;
     BOOL e = [NSFileManager.defaultManager fileExistsAtPath: path isDirectory: &d];
     if (!e) {
@@ -912,7 +1009,7 @@ static NSString* nextPathname(NSString* path) {
             }
         } else if (rc == NSAlertThirdButtonReturn) { // Merge
             dest = [NSURL fileURLWithPath: path];
-            trace("url=%@", dest);
+            trace("dest=%@", dest);
             [self addExtractOperation: items to: dest DnD: dnd];
             return;
         } else { // Stop
@@ -970,8 +1067,8 @@ static NSString* nextPathname(NSString* path) {
         BOOL b = true;
         assert(_trashedDestination.count == 1); // we are not expecting more than one folder being trashed
         for (NSString* _from in _trashedDestination.allKeys) {
-            NSString* from = from.mutableCopy;
-            NSString* to = ((NSString*)_trashedDestination[_from]).mutableCopy;
+            NSString* from = [NSString stringWithFormat: @"%@", _from];
+            NSString* to = [NSString stringWithFormat: @"%@", _trashedDestination[_from]];
             b = rename(to.UTF8String, from.UTF8String) == 0;
             if (!b) {
                 [self posixError: to];
@@ -1139,8 +1236,17 @@ static NSString* nextPathname(NSString* path) {
     return b;
 }
 
+static NSNumber* s2n(NSString* s) {
+    if (s == null) {
+        return null;
+    } else {
+        NSNumberFormatter* nf = NSNumberFormatter.new;
+        nf.numberStyle = NSNumberFormatterDecimalStyle;
+        return [nf numberFromString: s];
+    }
+}
 
-static NSNumber* multipartNumber(NSString* s) {
+static NSString* multipartNumber(NSString* s) {
     NSString* ext = [s pathExtension];
     if ([ext equalsIgnoreCase: @"rar"] || [ext equalsIgnoreCase: @"zip"] || [ext equalsIgnoreCase: @"7z"]) {
         int i = [s lastIndexOfIgnoreCase:@".part"];
@@ -1149,23 +1255,21 @@ static NSNumber* multipartNumber(NSString* s) {
             while (isdigit([s characterAtIndex: k])) {
                 k++;
             }
-            if (k != i) {
+            if (k != s.stringByDeletingPathExtension.length) {
                 return null;
             }
-            NSNumberFormatter* nf = NSNumberFormatter.new;
-            [nf setNumberStyle: NSNumberFormatterDecimalStyle];
-            return [nf numberFromString: [s substringFrom: i + 5 to: k]];
+            return [s substringFrom: i + 5 to: k];
         }
     }
     return null;
 }
 
 static NSString* multipartBasename(NSString* s) {
-    NSString* ext = [s pathExtension];
+    NSString* ext = s.pathExtension;
     if ([ext equalsIgnoreCase: @"rar"] || [ext equalsIgnoreCase: @"zip"] || [ext equalsIgnoreCase: @"7z"]) {
         int i = [s lastIndexOfIgnoreCase:@".part"];
         if (i > 0 && isdigit([s characterAtIndex: i + 5])) {
-            return [[s substringFrom: 0 to: i + 1] stringByAppendingPathExtension: ext];
+            return [[s substringFrom: 0 to: i] stringByAppendingPathExtension: ext];
         }
     }
     return null;
@@ -1205,12 +1309,12 @@ static NSString* multipartBasename(NSString* s) {
             [self beginAlerts];
             [_alerts alert: a done: ^(NSInteger rc) {
                 [self endAlerts];
-                [_window performClose: _window];
+                [_window performClose: self];
             }];
         } else {
             // error == null - aborted by user
             [self endAlerts];
-            [_window performClose: _window];
+            [_window performClose: self];
         }
     });
 }
@@ -1306,20 +1410,18 @@ static NSString* multipartBasename(NSString* s) {
             [_alerts progress: pos of: total];
         });
     }
-    return true; // TODO: may read the state of cancel button even from background thread
+    return true;
 }
 
 - (BOOL) progressFileOnBackgroundThread: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles {
     assert(![NSThread isMainThread]);
-    // TODO: connect to progress bar(s)
-    // trace(@"%llu of %llu", fileno, totalNumberOfFiles);
     [self checkTimeToShowHeroView];
     if (totalNumberOfFiles > 0 && 0 <= fileno && fileno <= totalNumberOfFiles) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [_alerts progress: fileno of: totalNumberOfFiles];
         });
     }
-    return true; // TODO: may read the state of cancel button even from background thread
+    return true;
 }
 
 - (void) search: (NSString*) s {
@@ -1348,7 +1450,7 @@ static NSString* multipartBasename(NSString* s) {
     [_archive setFilter: s operation: op done: block];
 }
 
-- (BOOL)writeSelectionToPasteboard:(NSPasteboard *)pasteboard {
+- (BOOL) writeSelectionToPasteboard:(NSPasteboard *)pasteboard {
     // This method will be called for services, or for drags originating from the preview column ZipEntryView, and it calls the previous method
     return false; // TODO: depending on FirstResponder being table or outline view
 }
@@ -1361,7 +1463,7 @@ static NSString* multipartBasename(NSString* s) {
     }
 }
 
-+ (void)exportData:(NSPasteboard *)pasteboard userData:(NSString *)data error:(NSString **)error {
++ (void) exportData:(NSPasteboard *)pasteboard userData:(NSString *)data error:(NSString **)error {
     // TODO:
     ZGDocument *d = [[[NSApp makeWindowsPerform: @selector(windowController) inOrder:YES] windowController] document];
     if (d) {

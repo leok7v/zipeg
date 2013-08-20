@@ -49,11 +49,11 @@ static ZGFileSystemItem *g_root;
         valid = [fm fileExistsAtPath: fp isDirectory: &isDir];
         if (valid && isDir) {
             trace(@"fullPath %@", fp);
-            NSArray* array = [fm contentsOfDirectoryAtPath:fp error:nil];
+            NSArray* array = [fm contentsOfDirectoryAtPath: fp error: null];
             NSUInteger numChildren = array.count;
             _children = [[NSMutableArray alloc] initWithCapacity: numChildren];
             for (int i = 0; i < numChildren; i++) {
-                NSObject<ZGItemProtocol> *newChild = [[ZGFileSystemItem alloc] initWithPath: array[i] parent:self];
+                NSObject<ZGItemProtocol> *newChild = [[ZGFileSystemItem alloc] initWithPath: array[i] parent: self];
                 trace(@"  %@", array[i]);
                 [_children addObject:(ZGFileSystemItem*)newChild];
             }

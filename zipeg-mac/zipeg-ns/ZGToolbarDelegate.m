@@ -356,32 +356,6 @@ static NSMenu* createSearchMenu() {
 
 - (void) extract: (id) sender {
     if (_document.root != null) {
-        /*
-        NSOpenPanel* p = [NSOpenPanel openPanel];
-        p.title = @"title"; // not visible
-        p.prompt = @"propmt";
-        p.message = @"message";
-        p.nameFieldLabel = @"Folder: ";
-        NSString* s = _document.window.title;
-        // s is not absolute path: stringByDeletingLastPathComponent won't work (will return @""
-        int ix = [s lastIndexOf:@"."] ;
-        if (ix > 0) {
-            s = [s substringFrom: 0 to: ix];
-        }
-        p.nameFieldStringValue = [s stringByReplacingOccurrencesOfString:@"*" withString:@""];
-        p.allowsOtherFileTypes = true;
-        p.canCreateDirectories = true;
-        p.canChooseDirectories = true;
-        p.canChooseFiles = false;
-        p.allowsMultipleSelection = false;
-        NSButton* btn = [[NSButton alloc] initWithFrame: NSMakeRect(0, 0, 30, 30)];
-        btn.stringValue = @"Button";
-        p.accessoryView = btn;
-        [p beginSheetModalForWindow: _document.window completionHandler: ^(NSInteger result) {
-            trace(@"result %ld %@", result, p.directoryURL);
-            p.delegate = null;
-        }];
-        */
         [_document extract];
     }
 }
