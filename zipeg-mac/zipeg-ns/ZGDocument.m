@@ -1475,7 +1475,7 @@ static NSString* multipartBasename(NSString* s) {
                                 "Do you want to ignore this error and try to continue?", e, path];
             NSInteger rc = [self runModalAlert: message
                                        buttons: @[ @"Ignore", @"Stop" ]
-                                      tooltips: @[ @"Ignore error and keep going", @"Abort unpacking operation"]
+                                      tooltips: @[ @"Ignore error and keep going", @"Abort unpacking" ]
                                           info: null
                                     suppressed: null];
             keepGoing = rc == NSAlertFirstButtonReturn;

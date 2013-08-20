@@ -826,9 +826,9 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 }
 
 - (BOOL) file: (const char*) file error: (const char*) message {
-    _error = [NSString stringWithUTF8String: message];
     bool b = [document askOnBackgroundThreadToContinue:
-              [NSString stringWithUTF8String: file == null ? "" : file] error: _error];
+              [NSString stringWithUTF8String: file == null ? "" : file]
+              error: [NSString stringWithUTF8String: message]];
     if (!b && _op != null) {
         [_op cancel];
     }

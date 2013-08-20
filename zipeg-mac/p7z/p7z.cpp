@@ -452,7 +452,7 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
         }
                                  
         virtual HRESULT MessageError(const wchar_t *message) {
-            trace("MessageError: %ls\n", message);
+            // trace("MessageError: %ls\n", message);
             AString e;
             AString f;
             if (ConvertUnicodeToUTF8(file, f) && ConvertUnicodeToUTF8(message, e)) {
@@ -485,7 +485,7 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
                 default: wprintf(buff, "error %d", r); s = buff;
             }
             if (r != NArchive::NExtract::NOperationResult::kOK) {
-                trace("SetOperationResult: result=%ls encrypted=%d\n", s, encrypted);
+                // trace("SetOperationResult: result=%ls encrypted=%d\n", s, encrypted);
                 return MessageError(s);
             }
             return S_OK;
