@@ -55,6 +55,7 @@ struct D;
                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;
 - (const wchar_t*) password;
 - (NSString*) pathname: (int) index;
+- (NSDictionary*) props: (int) index;
 
 @end
 
@@ -115,6 +116,29 @@ static NSMutableArray *leafNode;
     } else {
         return [ZGGenericItem fullPath: self];
     }
+}
+
+- (NSDictionary*) properties {
+    return _index >= 0 ? [_archive props: _index] : @{};
+}
+
+- (NSNumber*) size {
+    NSObject* o = self.properties[@"Size"];
+    if ([o isKindOfClass: ZGNumber.class]) {
+        ZGNumber* n = (ZGNumber*)o;
+        return @(n.longLongValue);
+    } else if (self.children != null) {
+        return @(self.children.count);
+    }
+    return null;
+}
+
+- (NSDate*) time {
+    NSObject* o = self.properties[@"MTime"];
+    if ([o isKindOfClass: NSDate.class]) {
+        return (NSDate*)o;
+    }
+    return null;
 }
 
 - (NSString*) description {
@@ -250,6 +274,10 @@ struct D : P7Z::Delegate {
     return _paths[i];
 }
 
+- (NSDictionary*) props: (int) i {
+    return _props[i];
+}
+
 - (void) close {
     // trace(@"");
     if (a != null) {
@@ -311,8 +339,8 @@ static void reportProgress(ZG7zip* z, int ix) {
             // NSObject* attr = _props[i][@"Attrib"];
             // trace("%@ attr=%@ isDir=%@ isFolder=%d", item.name, attr, isDir, isFolder);
             if (isFolder) {
-                [_isFolders setBit:i to:true];
-                [_isLeafFolders setBit:i to:true];
+                [_isFolders setBit: i to: true];
+                [_isLeafFolders setBit: i to: true];
                 _numberOfFolders++;
             }
             _items[pathname] = item;
@@ -429,7 +457,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
         [_isFilteredOut clear];
         b = true;
     } else {
-        timestamp("setFilter");
+        // timestamp("setFilter");
         // making sure search strings like "foo*bar.txt" will work:
         NSStringCompareOptions opts = NSCaseInsensitiveSearch;
         if ([filterText rangeOfString:@"*"].location != NSNotFound) {
@@ -476,7 +504,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
                 }
             }
         }
-        timestamp("setFilter");
+        // timestamp("setFilter");
     }
     dispatch_async(dispatch_get_main_queue(), ^{
         // I have to post asynchronously because I need to replace
@@ -789,7 +817,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
             }
         } else if (o != null) {
             NSObject *o = p7zValueToObject(*values[i]);
-            if ([_pnames[i] hasSuffix:@"Time"]) {
+            if ([_pnames[i] hasSuffix: @"Time"] || [_pnames[i] hasSuffix: @"MTime"] || [_pnames[i] hasSuffix: @"ATime"]) {
                 unsigned long long ticks = ((ZGNumber*)o).unsignedLongLongValue;
                 o = ticks != 0 ? [NSDate dateWithTicksSince1601:ticks] : null;
             }

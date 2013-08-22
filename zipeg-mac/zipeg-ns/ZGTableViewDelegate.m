@@ -167,15 +167,24 @@
     }
 }
 
-- (void)tableView:(NSTableView *)tableView didClickTableColumn:(NSTableColumn *)tableColumn {
-    trace(@"TODO: extend to more than one column");
+- (void)tableView: (NSTableView*) tv didClickTableColumn: (NSTableColumn*) tc {
     // see: -tableView:sortDescriptorsDidChange: in TableViewDataSource
     //      which sets sortDescriptorPrototype to null on 3rd click on column header
-    NSTableColumn* tc = tableView.tableColumns[0];
     if (tc.sortDescriptorPrototype == null) {
-        NSSortDescriptor *sd = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES
-                                                              selector:@selector(localizedCaseInsensitiveCompare:)];
-        tc.sortDescriptorPrototype = sd; // do not reload data, sort will happen on next click
+        int i = 0;
+        int ix = -1;
+        for (NSTableColumn* t in tv.tableColumns) {
+            if (t == tc) {
+                ix = i;
+            } else {
+                // t.sortDescriptorPrototype = null;
+            }
+            i++;
+        }
+        if (ix >= 0) {
+            tc.sortDescriptorPrototype = getSortDescriptor(ix);
+            // do not reload data, sort will happen on next click
+        }
     }
 }
 

@@ -1,9 +1,13 @@
 #import "ZGDocument.h"
+#import "ZGNumber.h"
 #import "ZGtableViewDataSource.h"
 #import "ZGOutlineViewDelegate.h"
 
 @interface ZGTableViewDataSource () {
     ZGDocument* __weak _document;
+    NSNumberFormatter* _decimalFormatter;
+    NSNumberFormatter* _floatFormatter;
+    NSDateFormatter* _dateFormatter;
     NSObject<ZGItemProtocol>* __weak _item;
     NSMutableArray* _sorted;
 }
@@ -16,6 +20,17 @@
     if (self != null) {
         alloc_count(self);
         _document = doc;
+        _decimalFormatter = NSNumberFormatter.new;
+        _decimalFormatter.numberStyle = NSNumberFormatterDecimalStyle;
+        _floatFormatter = NSNumberFormatter.new;
+        _floatFormatter.numberStyle = NSNumberFormatterDecimalStyle;
+        _floatFormatter.minimumFractionDigits = 1;
+        _floatFormatter.maximumFractionDigits = 1;
+        _dateFormatter = NSDateFormatter.new;
+        _dateFormatter.locale = NSLocale.currentLocale;
+        _dateFormatter.dateStyle = NSDateFormatterMediumStyle;
+        _dateFormatter.timeStyle = kCFDateFormatterShortStyle;
+        // _dateFormatter.dateFormat = @"yyyy-MM-dd 'at' HH:mm";
     }
     return self;
 }
@@ -59,14 +74,53 @@
     return c != null ? c.count : 0;
 }
 
+- (NSString*) sizeToString: (NSNumber*) n folder: (BOOL) f {
+    int64_t v = n.longLongValue;
+    double  d = -1;
+    NSString* suffix = f ? @"items" : @"bytes";
+    if (!f) {
+        if (v > 2ULL * 1024 * 1024 * 1024) {
+            suffix = @"GB";
+            d = v / (1024. * 1024 * 1024);
+            v = v / (1024 * 1024 * 1024);
+        } else if (v > 2 * 1024 * 1024) {
+            suffix = @"MB";
+            d = v / (1024. * 1024);
+            v = v / (1024 * 1024);
+        } else if (v > 2 * 1024) {
+            suffix = @"KB";
+            d = v / 1024.;
+            v = v / 1024;
+        }
+    }
+    NSString* s;
+    if (d > 1 && d < 10 && (v / 10) * 10 != v) {
+        s = [_floatFormatter stringFromNumber: [NSNumber numberWithDouble: d]];
+    } else {
+        s = [_decimalFormatter stringFromNumber: [NSNumber numberWithLongLong: v]];
+    }
+    s = [NSString stringWithFormat: @"%@ %@", s, suffix];
+    return s;
+}
+
+- (NSString*) dateToString: (NSDate*) d {
+    NSString* s = [_dateFormatter stringFromDate: d];
+    return s;
+}
+
 - (id) tableView: (NSTableView*) tv objectValueForTableColumn: (NSTableColumn*) column row: (NSInteger) row {
     NSMutableArray* c = [self children];
     assert(c != null);
     NSObject<ZGItemProtocol>* it = c[row];
     if (column == tv.tableColumns[0]) {
         return it.name;
+    } else if (column == tv.tableColumns[1]) {
+        BOOL f = it.children != null;
+        NSObject* o = f ? @(it.children.count) : it.size;
+        return [o isKindOfClass: NSNumber.class] ? [self sizeToString: (NSNumber*)o folder: f] :  @"";
     } else {
-        return [NSString stringWithFormat:@"info [%ld]", (long)row];
+        NSObject* o = it.time;
+        return [o isKindOfClass: NSDate.class] ? [self dateToString: (NSDate*)o] :  @"";
     }
 }
 
@@ -88,8 +142,14 @@
             NSSortDescriptor* n = sortDescriptors[0];
             if (o.ascending == false && n.ascending == true) {
                 // instead of sorting remove sort descriptor prototype
-                NSTableColumn* tc = tableView.tableColumns[0];
-                tc.sortDescriptorPrototype = null; // this will reset header state to unsorted
+                for (NSTableColumn* tc in tableView.tableColumns) {
+                    if (tc.sortDescriptorPrototype != null) {
+                        NSSortDescriptor* sd = tc.sortDescriptorPrototype;
+                        if (isEqual(sd.key, o.key)) {
+                            tc.sortDescriptorPrototype = null; // this will reset header state to unsorted
+                        }
+                    }
+                }
                 _sorted = null;
                 [tableView reloadData];
                 return;
@@ -97,10 +157,10 @@
         }
         if (sortDescriptors != null && sortDescriptors.count > 0) {
             if (_sorted == null) { // has not been sorted yet
-                _sorted = [NSMutableArray arrayWithArray:it.children];
+                _sorted = [NSMutableArray arrayWithArray: it.children];
             }
             // TODO: sort directories to the top
-            [_sorted sortUsingDescriptors: _document.tableView.sortDescriptors];
+            [_sorted sortUsingDescriptors: sortDescriptors];
             [tableView reloadData];
         }
     }
@@ -119,21 +179,6 @@
 
 - (NSArray*) tableView: (NSTableView*) tv namesOfPromisedFilesDroppedAtDestination: (NSURL*) d
              forDraggedRowsWithIndexes: (NSIndexSet*) rowIndexes {
-/* TODO: remove me:
-    NSMutableArray *urls  = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
-    NSMutableArray *items = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
-    NSUInteger i = [rowIndexes firstIndex];
-    while (i != NSNotFound) {
-        NSObject<ZGItemProtocol>* it = [self itemAtRow: i];
-        [items addObject: it];
-        NSURL* u =[NSURL fileURLWithPath:[d.path stringByAppendingPathComponent: it.name] isDirectory: false];
-        trace(@"it=%@ fileURL=%@", it.description, u);
-        [urls addObject: u.path.lastPathComponent];
-        i = [rowIndexes indexGreaterThanIndex: i];
-    }
-    [_document extract: items to: d DnD: true];
-    return urls;
-*/
     NSArray* items = [self itemsForRows: rowIndexes];
     NSMutableArray *urls  = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
     for (NSObject<ZGItemProtocol>* it in items) {

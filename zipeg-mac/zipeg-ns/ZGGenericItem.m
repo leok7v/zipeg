@@ -69,5 +69,17 @@
     return _fullpath;
 }
 
+- (NSDictionary*) properties {
+    return @{};
+}
+
+- (NSNumber*) size {
+    return null;
+}
+
+- (NSDate*) time {
+    return null;
+}
+
 
 @end

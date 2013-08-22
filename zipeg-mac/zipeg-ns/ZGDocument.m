@@ -325,32 +325,37 @@ static NSOutlineView* createOutlineView(NSRect r, NSTableViewSelectionHighlightS
     return ov;
 }
 
+NSSortDescriptor* getSortDescriptor(int i) {
+    SEL sels[] = {@selector(localizedCaseInsensitiveCompare:), @selector(compare:), @selector(compare:)};
+    NSArray* names = @[ @"name", @"size", @"time" ];
+    return [NSSortDescriptor sortDescriptorWithKey: names[i]
+                                         ascending: true
+                                          selector: sels[i]];
+}
+
 static NSTableView* createTableView(NSRect r) {
     NSTableView* tv = [NSTableView.alloc initWithFrame: r];
     tv.focusRingType = NSFocusRingTypeNone;
-    NSTableColumn* tableColumn = NSTableColumn.new;
+    NSTableColumn* tc = NSTableColumn.new;
     
-    [tv addTableColumn: tableColumn];
-    tableColumn.dataCell = ZGImageAndTextCell.new;
-    tableColumn.minWidth = 92;
-    tableColumn.maxWidth = 3000;
-    tableColumn.editable = true;
-    assert(tv.tableColumns[0] == tableColumn);
-    NSSortDescriptor *sd = [NSSortDescriptor
-        sortDescriptorWithKey: @"name" ascending:YES
-                     selector: @selector(localizedCaseInsensitiveCompare:)];
-    tableColumn.sortDescriptorPrototype = sd;
-    tableColumn.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
+    [tv addTableColumn: tc];
+    tc.dataCell = ZGImageAndTextCell.new;
+    tc.minWidth = 92;
+    tc.maxWidth = 3000;
+    tc.editable = true;
+    assert(tv.tableColumns[0] == tc);
+    tc.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
     for (int i = 1; i < 3; i++) {
-        tableColumn = NSTableColumn.new;
-        [tv addTableColumn: tableColumn];
-        assert(tv.tableColumns[i] == tableColumn);
-        tableColumn.dataCell = NSTextFieldCell.new;
-        tableColumn.minWidth = 92;
-        tableColumn.maxWidth = 3000;
-        tableColumn.editable = true;
+        tc = NSTableColumn.new;
+        [tv addTableColumn: tc];
+        assert(tv.tableColumns[i] == tc);
+        NSTextFieldCell* tfc = NSTextFieldCell.new;
+        tfc.alignment = NSRightTextAlignment;
+        tc.dataCell = tfc;
+        tc.minWidth = 92;
+        tc.maxWidth = 3000;
+        tc.editable = true;
     }
-    
     tv.autoresizingMask = kSizableWH;
     tv.allowsColumnReordering = true;
     tv.allowsColumnResizing = true;
@@ -360,13 +365,16 @@ static NSTableView* createTableView(NSRect r) {
     tv.allowsTypeSelect = true;
     tv.usesAlternatingRowBackgroundColors = true;
     //  _tableView.menu = _tableRowContextMenu; // TODO:
+    NSArray* columnNames = @[@"Name", @"Size", @"Date Modified"];
     NSFont* font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
     for (int i = 0; i < tv.tableColumns.count; i++) {
-        NSTableColumn* tc = tv.tableColumns[i];
+        tc = tv.tableColumns[i];
         NSTableHeaderCell* hc = tc.headerCell;
         hc.font = font;
+        hc.stringValue = columnNames[i];
+        hc.alignment = NSRightTextAlignment;
+        tc.sortDescriptorPrototype = getSortDescriptor(i);
     }
-    
     [tv setDraggingSourceOperationMask : NSDragOperationCopy forLocal: NO];
     [tv setDraggingSourceOperationMask : NSDragOperationGeneric forLocal: YES];
     [tv registerForDraggedTypes: @[NSFilenamesPboardType, NSFilesPromisePboardType]];
@@ -411,7 +419,7 @@ static NSTableView* createTableView(NSRect r) {
     _contentView.autoresizingMask = kSizableWH;
     _contentView.autoresizesSubviews = true;
     assert(!_contentView.wantsLayer);
-    // NSOutlineView backgrown drawing code is broken if content view wants layer (by my own experiments) and also:
+    // NSOutlineView backgrownd drawing code is broken if content view wants layer (by my own experiments) and also:
     // http://stackoverflow.com/questions/6638702/nstableview-redraw-not-updating-display-selection-sticking
     NSRect bounds = _contentView.bounds;
     bounds.origin.y += 30;
@@ -1488,7 +1496,6 @@ static NSString* multipartBasename(NSString* s) {
     sema = null;
     return keepGoing;
 }
-
 
 - (void) checkTimeToShowHeroView {
     if (_timeToShowHeroView > 0 && nanotime() > _timeToShowHeroView) {

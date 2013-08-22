@@ -101,7 +101,7 @@
     return self.kind == number.kind && [self compare:number] == 0;
 }
 
-- (NSString *)description {
+- (NSString *) debugDescription {
     switch (self.kind) {
         case kI1 : return [NSString stringWithFormat: @"[ZGNumber int8 0x%02llx %lld str=%@]", _storage, _storage, [self stringValue]];
         case kI2 : return [NSString stringWithFormat: @"[ZGNumber int16 0x%04llx %lld str=%@]", _storage, _storage, [self stringValue]];
@@ -118,6 +118,10 @@
             assert(false);
             return [NSString stringWithFormat: @"malformed ZGNumber kind=%d 0x%016llx %lld", self.kind, _storage, _storage];
     }
+}
+
+- (NSString *) description {
+    return self.stringValue;
 }
 
 @end

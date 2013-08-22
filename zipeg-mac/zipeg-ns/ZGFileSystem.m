@@ -32,6 +32,18 @@ static ZGFileSystemItem *g_root;
 - (void) dealloc {
 }
 
+- (NSDictionary*) properties {
+    return @{};
+}
+
+- (NSNumber*) size {
+    return null;
+}
+
+- (NSDate*) time {
+    return null;
+}
+
 - (NSString*) fullPath {
     if (_fullpath == null) {
         _fullpath = [ZGGenericItem fullPath: self];

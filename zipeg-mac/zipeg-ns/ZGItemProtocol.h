@@ -2,6 +2,9 @@
 
 @protocol ZGItemProtocol
 @property (nonatomic, readonly) NSString* name;
+@property (nonatomic, readonly) NSNumber* size;
+@property (nonatomic, readonly) NSDate*   time;
+@property (nonatomic, readonly) NSDictionary* properties;
 @property (nonatomic, readonly) NSString* fullPath;
 @property (nonatomic, readonly) NSMutableArray *children; // nil for leaf
 @property (nonatomic, readonly) NSMutableArray *folderChildren; // nil for leaf

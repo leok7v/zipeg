@@ -11,6 +11,7 @@ enum {              // answers for askOnBackgroundThreadOverwriteFrom
     kKeepBothToAll = 6,
 };
 
+NSSortDescriptor* getSortDescriptor(int i);
 
 @interface ZGDocument : NSDocument<NSToolbarDelegate> {
 
