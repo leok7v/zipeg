@@ -19,17 +19,33 @@
 #include <sys/stat.h> // mkdir
 
 
-/* // TODO: (this is for layout debug and diagnostics) remove me
-@interface ZGRedBox : NSView @end
+ // TODO: (this is for layout debug and diagnostics) remove me
+@interface ZGRedBox : NSView {
+    NSColor* _background;
+}
+@end
 
 @implementation ZGRedBox
+
+- (id) init {
+    self = [super initWithFrame: NSMakeRect(0, 0, 93, 93)];
+    if (self) {
+        _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"textured_paper.png"]];
+        _background = NSColor.whiteColor;
+    }
+    return self;
+}
+
 - (void) drawRect: (NSRect) r {
-    [NSColor.redColor setFill];
-    NSRectFill(r);
+    [NSGraphicsContext.currentContext saveGraphicsState];
+    [NSGraphicsContext.currentContext setPatternPhase: NSMakePoint(0, self.frame.size.height)];
+    [_background setFill];
+    NSRectFill(self.bounds);
+    [NSGraphicsContext.currentContext restoreGraphicsState];
     [super drawRect: r];
 }
 @end
-*/
+
 
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* _archive;
@@ -264,6 +280,14 @@
                 _outlineView.hidden = true;
                 [_outlineView removeFromSuperview];
                 _splitView.subviews = @[_splitView.subviews[1]];
+/* TODO:
+                _splitView.subviews = @[_splitView.subviews[1], ZGRedBox.new];
+                [_splitViewDelegate setWeight: 0.8 atIndex: 0];
+                [_splitViewDelegate setWeight: 0.2 atIndex: 1];
+                [_splitViewDelegate setMinimumSize: 360 atIndex: 0];
+                [_splitViewDelegate setMinimumSize:  93 atIndex: 1];
+                [_splitViewDelegate layout: _splitView];
+*/
             }
         }
         if (_tableViewDatatSource == null) {
@@ -288,14 +312,14 @@
     }
 }
 
-static NSSplitView* createSplitView(NSRect r, NSView* left, NSView* right) {
+static NSSplitView* createSplitView(NSRect r, NSView* left, NSView* center, NSView* right) {
     NSSplitView* sv = [NSSplitView.alloc initWithFrame: r];
     sv.vertical = true;
     sv.dividerStyle = NSSplitViewDividerStyleThin;
     sv.autoresizingMask = kSizableWH | kSizableLR;
     sv.autoresizesSubviews = true;
     sv.autosaveName = @"Zipeg Split View";
-    sv.subviews = @[left, right];
+    sv.subviews = @[left, center /*, right*/];
     return sv;
 }
 
@@ -353,7 +377,7 @@ static NSTableView* createTableView(NSRect r) {
     tc.maxWidth = 3000;
     tc.editable = true;
     assert(tv.tableColumns[0] == tc);
-    tc.resizingMask = NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask;
+    tc.resizingMask = /* NSTableColumnAutoresizingMask | */ NSTableColumnUserResizingMask;
     for (int i = 1; i < 3; i++) {
         tc = NSTableColumn.new;
         [tv addTableColumn: tc];
@@ -364,6 +388,7 @@ static NSTableView* createTableView(NSRect r) {
         tc.minWidth = 92;
         tc.maxWidth = 3000;
         tc.editable = true;
+        tc.resizingMask = /* NSTableColumnAutoresizingMask | */ NSTableColumnUserResizingMask;
     }
     tv.autoresizingMask = kSizableWH;
     tv.allowsColumnReordering = true;
@@ -402,7 +427,7 @@ static NSTableView* createTableView(NSRect r) {
         _outlineView = createOutlineView(bounds, _highlightStyle);
         assert(_outlineView != null);
         _outlineView.delegate = _outlineViewDelegate;
-        _splitView.subviews = @[createScrollView(bounds, _outlineView), _splitView.subviews[1]];
+        _splitView.subviews = @[createScrollView(bounds, _outlineView), _splitView.subviews[1] /*, ZGRedBox.new*/];
         [_outlineView deselectAll: null];
         [self reloadData];
     }
@@ -449,10 +474,23 @@ static NSTableView* createTableView(NSRect r) {
    
     _splitView = createSplitView(bounds,
                                  createScrollView(tbounds, _outlineView),
-                                 createScrollView(tbounds, _tableView));
+                                 createScrollView(tbounds, _tableView),
+                                 null /*ZGRedBox.new*/);
     assert(_splitView != null);
     _splitViewDelegate = [ZGSplitViewDelegate.alloc initWithDocument: self];
     _splitView.delegate = _splitViewDelegate;
+    [_splitViewDelegate setWeight: 0.4 atIndex: 0];
+    [_splitViewDelegate setWeight: 0.6 atIndex: 1];
+    [_splitViewDelegate setMinimumSize:  93 atIndex: 0];
+    [_splitViewDelegate setMinimumSize:  360 atIndex: 1];
+/*
+    [_splitViewDelegate setWeight: 0.3 atIndex: 0];
+    [_splitViewDelegate setWeight: 0.6 atIndex: 1];
+    [_splitViewDelegate setWeight: 0.1 atIndex: 2];
+    [_splitViewDelegate setMinimumSize:  93 atIndex: 0];
+    [_splitViewDelegate setMinimumSize: 360 atIndex: 1];
+    [_splitViewDelegate setMinimumSize:  93 atIndex: 2];
+*/
     _splitView.hidden = true;
     _heroView = [ZGHeroView.alloc initWithDocument: self andFrame: _contentView.bounds];
     _heroView.autoresizingMask = kSizableWH;
@@ -1386,6 +1424,7 @@ static NSString* multipartBasename(NSString* s) {
             [self reloadData];
             _heroView.hidden = true;
             _timeToShowHeroView = 0;
+            [_splitViewDelegate layout: _splitView];
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder: _outlineView];

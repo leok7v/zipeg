@@ -123,7 +123,7 @@
             itc.representedObject = it;
         } else if ([cell isKindOfClass: [NSTextFieldCell class]]) {
             // assume this is table
-            NSObject* o = [tds tableView:view objectValueForTableColumn:tableColumn row:i];
+            NSObject* o = [tds tableView: view objectValueForTableColumn: tableColumn row: i];
             NSTextFieldCell* tc = (NSTextFieldCell*)cell;
             tc.stringValue = o.description;
         } else {
@@ -135,10 +135,11 @@
             NSInteger levelForRow = [ov levelForRow:i];
             x = indentationPerLevel * (levelForRow + 1);
         }
-        maxWidth = MAX(maxWidth, size.width + x); // emiprecally found extra pixels
+        maxWidth = MAX(maxWidth, size.width + x); // empirically found extra pixels
         maxHeight = MAX(maxHeight, size.height);
     }
 //  timestamp("minMaxVisibleColumnContentSize");
+//  trace(@"minMaxVisibleColumnContentSize tc[%d] %@", cx, NSStringFromSize(NSMakeSize(maxWidth, maxHeight)));
     return NSMakeSize(maxWidth, maxHeight);
 }
 
@@ -146,7 +147,7 @@
     assert(v != null);
     int n = (int)v.tableColumns.count;
     for (int i = 0; i < n; i++) {
-        NSSize size = [ZGTableViewDelegate minMaxVisibleColumnContentSize:v columnIndex: i];
+        NSSize size = [ZGTableViewDelegate minMaxVisibleColumnContentSize: v columnIndex: i];
         if (size.width > 0 && size.height > 0) {
             NSTableColumn* tableColumn = v.tableColumns[i];
             tableColumn.width = MAX(tableColumn.width, size.width + 16);
