@@ -227,6 +227,15 @@
 }
 
 - (void) makeWindowControllers {
+    _isNew = _url == null;
+#ifndef DEBUG // Pro Feature
+    if (_isNew) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [_window performClose: self];
+        });
+        return;
+    }
+#endif
     assert(_operationQueue != null);
     ZGWindowController* wc = ZGWindowController.new;
     [self addWindowController: wc];
@@ -410,7 +419,6 @@ static NSTableView* createTableView(NSRect r) {
 
 - (void) setupDocumentWindow: (NSWindowController*) controller { // TODO: rename me
     // setupDocumentWindow is called after readFromURL
-    _isNew = _url == null;
     _window = controller.window;
     assert(_window != null);
     _window.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
