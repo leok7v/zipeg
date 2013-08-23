@@ -94,6 +94,7 @@
 
 - (void) layout: (NSSplitView*) sv  {
     NSArray* sss = [NSUserDefaults.standardUserDefaults objectForKey: [self key: sv]];
+    sss = null;
     // it direction of a splitter has been changed from initial .nib layout we need to relayout all views.
     CGFloat total = 0;
     int i = 0;

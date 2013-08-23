@@ -19,33 +19,34 @@
 #include <sys/stat.h> // mkdir
 
 
- // TODO: (this is for layout debug and diagnostics) remove me
-@interface ZGRedBox : NSView {
+@interface ZGPreview : NSView {
     NSColor* _background;
 }
 @end
 
-@implementation ZGRedBox
+@implementation ZGPreview
 
-- (id) init {
-    self = [super initWithFrame: NSMakeRect(0, 0, 93, 93)];
-    if (self) {
-        _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"textured_paper.png"]];
-        _background = NSColor.whiteColor;
+- (id) initWithFrame: (NSRect) r {
+    self = [super initWithFrame: r];
+    if (self != null) {
+        // _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"textured_paper.png"]];
+        // _background = NSColor.whiteColor;
+        _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"subtle_white_feathers"]];
     }
     return self;
 }
 
 - (void) drawRect: (NSRect) r {
     [NSGraphicsContext.currentContext saveGraphicsState];
-    [NSGraphicsContext.currentContext setPatternPhase: NSMakePoint(0, self.frame.size.height)];
-    [_background setFill];
+    CGFloat y = NSMaxY([self convertRect: self.bounds toView: null]);
+    CGFloat x = NSMinX([self convertRect: self.bounds toView: null]);
+    [NSGraphicsContext.currentContext setPatternPhase: NSMakePoint(x, y)];
+    [_background set];
     NSRectFill(self.bounds);
     [NSGraphicsContext.currentContext restoreGraphicsState];
     [super drawRect: r];
 }
 @end
-
 
 @interface ZGDocument() {
     NSObject<ZGItemFactory>* _archive;
@@ -247,6 +248,7 @@
 #ifndef DEBUG // Pro Feature
     if (_isNew) {
         dispatch_async(dispatch_get_main_queue(), ^{
+            [self close];
             [_window performClose: self];
         });
         return;
@@ -279,15 +281,12 @@
             if (_splitView.subviews.count > 1) {
                 _outlineView.hidden = true;
                 [_outlineView removeFromSuperview];
-                _splitView.subviews = @[_splitView.subviews[1]];
-/* TODO:
-                _splitView.subviews = @[_splitView.subviews[1], ZGRedBox.new];
+                _splitView.subviews = @[_splitView.subviews[1], _splitView.subviews[2]];
                 [_splitViewDelegate setWeight: 0.8 atIndex: 0];
                 [_splitViewDelegate setWeight: 0.2 atIndex: 1];
                 [_splitViewDelegate setMinimumSize: 360 atIndex: 0];
                 [_splitViewDelegate setMinimumSize:  93 atIndex: 1];
                 [_splitViewDelegate layout: _splitView];
-*/
             }
         }
         if (_tableViewDatatSource == null) {
@@ -312,14 +311,13 @@
     }
 }
 
-static NSSplitView* createSplitView(NSRect r, NSView* left, NSView* center, NSView* right) {
+static NSSplitView* createSplitView(NSRect r) {
     NSSplitView* sv = [NSSplitView.alloc initWithFrame: r];
     sv.vertical = true;
     sv.dividerStyle = NSSplitViewDividerStyleThin;
     sv.autoresizingMask = kSizableWH | kSizableLR;
     sv.autoresizesSubviews = true;
     sv.autosaveName = @"Zipeg Split View";
-    sv.subviews = @[left, center /*, right*/];
     return sv;
 }
 
@@ -427,7 +425,7 @@ static NSTableView* createTableView(NSRect r) {
         _outlineView = createOutlineView(bounds, _highlightStyle);
         assert(_outlineView != null);
         _outlineView.delegate = _outlineViewDelegate;
-        _splitView.subviews = @[createScrollView(bounds, _outlineView), _splitView.subviews[1] /*, ZGRedBox.new*/];
+        _splitView.subviews = @[createScrollView(bounds, _outlineView), _splitView.subviews[1], _splitView.subviews[2]];
         [_outlineView deselectAll: null];
         [self reloadData];
     }
@@ -458,39 +456,42 @@ static NSTableView* createTableView(NSRect r) {
     bounds.origin.y += 30;
     bounds.size.height -= 60;
  
-    NSRect tbounds = bounds;
-    tbounds.size.width /= 2;
-    tbounds.origin.x = 0;
-    tbounds.origin.y = 0;
-    _outlineView = createOutlineView(tbounds, _highlightStyle);
+    NSRect bounds1 = bounds;
+    bounds1.size.width = bounds.size.width * 0.3;
+    bounds1.origin.x = 0;
+    bounds1.origin.y = 0;
+    _outlineView = createOutlineView(bounds1, _highlightStyle);
     assert(_outlineView != null);
     _outlineViewDelegate = [ZGOutlineViewDelegate.alloc initWithDocument: self];
     _outlineView.delegate = _outlineViewDelegate;
     
-    _tableView = createTableView(tbounds);
+    NSRect bounds2 = bounds;
+    bounds2.size.width = bounds.size.width * 0.6;
+    bounds2.origin.x = 0;
+    bounds2.origin.y = 0;
+    _tableView = createTableView(bounds2);
     assert(_tableView != null);
     _tableViewDelegate = [ZGTableViewDelegate.alloc initWithDocument: self];
     _tableView.delegate = _tableViewDelegate;
    
-    _splitView = createSplitView(bounds,
-                                 createScrollView(tbounds, _outlineView),
-                                 createScrollView(tbounds, _tableView),
-                                 null /*ZGRedBox.new*/);
+    _splitView = createSplitView(bounds);
+    NSRect bounds3 = bounds;
+    bounds3.size.width = bounds.size.width * 0.1;
+    bounds3.origin.x = 0;
+    bounds3.origin.y = 0;
+    _splitView.subviews = @[createScrollView(bounds1, _outlineView),
+                            createScrollView(bounds2, _tableView),
+                            [ZGPreview.alloc initWithFrame: bounds3]];
     assert(_splitView != null);
     _splitViewDelegate = [ZGSplitViewDelegate.alloc initWithDocument: self];
     _splitView.delegate = _splitViewDelegate;
-    [_splitViewDelegate setWeight: 0.4 atIndex: 0];
-    [_splitViewDelegate setWeight: 0.6 atIndex: 1];
-    [_splitViewDelegate setMinimumSize:  93 atIndex: 0];
-    [_splitViewDelegate setMinimumSize:  360 atIndex: 1];
-/*
     [_splitViewDelegate setWeight: 0.3 atIndex: 0];
     [_splitViewDelegate setWeight: 0.6 atIndex: 1];
     [_splitViewDelegate setWeight: 0.1 atIndex: 2];
     [_splitViewDelegate setMinimumSize:  93 atIndex: 0];
     [_splitViewDelegate setMinimumSize: 360 atIndex: 1];
     [_splitViewDelegate setMinimumSize:  93 atIndex: 2];
-*/
+
     _splitView.hidden = true;
     _heroView = [ZGHeroView.alloc initWithDocument: self andFrame: _contentView.bounds];
     _heroView.autoresizingMask = kSizableWH;
@@ -526,8 +527,10 @@ static NSTableView* createTableView(NSRect r) {
     _contentView.subviews = @[background];
     background.subviews = @[_splitView, _destination, _heroView];
     if (_isNew) {
+#ifdef DEBUG
         // TODO: how to make document modified without this hack?
         [self performSelector: @selector(_updateDocumentEditedAndAnimate:) withObject: @true];
+#endif
     } else {
         if (![self checkForMultipart]) {
             [_window performClose: self];
@@ -683,11 +686,11 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (BOOL) hasUnautosavedChanges {
-    return _isNew;
+    return false; // _isNew;
 }
 
 - (BOOL) isDocumentEdited {
-    return _isNew;
+    return false; // _isNew;
 }
 
 - (void) cancelAll {

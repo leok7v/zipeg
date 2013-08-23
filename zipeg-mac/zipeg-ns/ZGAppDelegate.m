@@ -12,9 +12,15 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *) notification {
     NSApplication.sharedApplication.presentationOptions = NSFullScreenWindowMask;
+#ifdef DEBUG
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
     [ud setObject:@[@"ru", @"en", @"es"] forKey:@"AppleLanguages"];
     [ud synchronize];
+#else
+    NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
+    [ud setObject:@[@"en", @"ru"] forKey:@"AppleLanguages"];
+    [ud synchronize];
+#endif
     ZGErrorsInit();
     _applicationHasStarted = true;
     NSDictionary* uf = ZGApp.allUnpackingFolders.copy;
