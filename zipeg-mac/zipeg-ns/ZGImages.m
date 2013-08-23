@@ -67,4 +67,40 @@ static ZGImages* _shared;
     return [_shared iconForFileType16x16: pathExtension];
 }
 
++ (NSImage*) thumbnail: (NSString*) path {
+    NSDictionary* dic = null;
+    NSURL* url = [NSURL fileURLWithPath : path];
+    CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)url, null);
+    if (source == null) {
+        CGImageSourceStatus status = CGImageSourceGetStatus(source);
+        NSLog(@"Error: file name : %@ - Status: %d", path, status);
+    } else {
+        CFDictionaryRef metadataRef =
+        CGImageSourceCopyPropertiesAtIndex ( source, 0, NULL );
+        if (metadataRef != null) {
+            NSDictionary* immutableMetadata = (__bridge NSDictionary*)metadataRef;
+            if ( immutableMetadata != null) {
+                dic = [ NSDictionary dictionaryWithDictionary : immutableMetadata];
+            }
+            CFRelease(metadataRef);
+        }
+        NSDictionary* opt = @{ (NSString*)kCGImageSourceThumbnailMaxPixelSize: @1024,
+                               (NSString*)kCGImageSourceCreateThumbnailFromImageIfAbsent: @false,
+                               (NSString*)kCGImageSourceCreateThumbnailWithTransform: @true};
+        CGImageRef thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef)opt);
+        trace("%@", thumbnail);
+        NSImage* t = [NSImage.alloc initWithCGImage: thumbnail];
+        trace("%@ %@", t, NSStringFromSize(t.size));
+        CFRelease(source);
+        source = null;
+        trace(@"%@", dic);
+        NSDictionary* tiff = dic[@"{TIFF}"];
+        NSDictionary* exif = dic[@"{Exif}"];
+        trace(@"TIFF=%@", tiff);
+        trace(@"Exif=%@", exif);
+
+    }
+    return null;
+}
+
 @end

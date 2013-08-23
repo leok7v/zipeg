@@ -332,20 +332,27 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     return [NSView findViews: self byClassName: className all: a];
 }
 
+@end
 
-- (void) setOrigin: (NSPoint) pt {
-    NSRect f = self.frame;
-    f.origin = pt;
-    self.frame = f;
-}
+@implementation NSImage(ZGExtensions)
 
-- (void) setSize: (NSSize) sz {
-    NSRect f = self.frame;
-    f.size = sz;
-    self.frame = f;
+- (id) initWithCGImage: (CGImageRef) ir {
+    if (ir == null) {
+        self = null;
+    } else {
+        NSBitmapImageRep* bir = [NSBitmapImageRep.alloc initWithCGImage: ir];
+        if (bir != null) {
+            self = [self initWithSize: bir.size];
+            if (self != null) {
+                [self addRepresentation: bir];
+            }
+        }
+    }
+    return self;
 }
 
 @end
+
 
 @implementation ZGOperation
 @synthesize cancelRequested;

@@ -34,6 +34,10 @@ FOUNDATION_EXPORT BOOL rmdirs(NSString* path);
 
 FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 
+@interface ZGOperation: NSOperation
+@property BOOL cancelRequested;
+@end
+
 @interface NSString(ZGExtensions)
 - (BOOL) equalsIgnoreCase: (NSString*) s;
 - (int) indexOf: (NSString*) s;
@@ -49,16 +53,15 @@ FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 - (NSString*) substringFrom: (int) fromInclusive to: (int) toExclusive;
 @end
 
-@interface ZGOperation: NSOperation
-@property BOOL cancelRequested;
+@interface NSImage(ZGExtensions)
+- (id) initWithCGImage: (CGImageRef) cgImage;
 @end
+
 
 @interface NSView(ZGExtensions)
 - (NSView*) findViewByClassName: (NSString*) cn;
 - (NSView*) findViewByClassName: (NSString*) className tag: (int) t;
 - (NSArray*) findViewsByClassName: (NSString*) className;
-- (void) setOrigin: (NSPoint) pt;
-- (void) setSize: (NSSize) sz;
 @end
 
 @interface NSOutlineView(ZGExtensions)

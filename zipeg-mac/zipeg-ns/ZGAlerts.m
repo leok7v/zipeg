@@ -340,8 +340,8 @@
     // The order of resizes is very important. The window has to be resized first
     self.size = _initialContentViewSize;
     _contentView.subviews = @[_progress];
-    _contentView.size = _initialContentViewSize;
-    _contentView.superview.size = _initialContentViewSize;
+    _contentView.frameSize = _initialContentViewSize;
+    _contentView.superview.frameSize = _initialContentViewSize;
 }
 
 - (void) dismissAlert: (NSInteger) rc resize: (BOOL) b {
@@ -415,8 +415,8 @@ static void setTarget(NSView* v, id old, id target) {
     [NSUserDefaults.standardUserDefaults setObject: @(acv.frame.size.width) forKey: @"zipeg.alerts.width"];
     CGFloat width = MAX(acv.frame.size.width, old.width);
     NSSize size = NSMakeSize(width, acv.frame.size.height + old.height);
-    _contentView.size = size;
-    _contentView.superview.size = size;
+    _contentView.frameSize = size;
+    _contentView.superview.frameSize = size;
     [acv removeFromSuperview];
     _contentView.subviews = @[_progress];
     [_contentView addSubview: acv];

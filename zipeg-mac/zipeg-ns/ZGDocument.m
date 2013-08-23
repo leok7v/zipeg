@@ -21,6 +21,7 @@
 
 @interface ZGPreview : NSView {
     NSColor* _background;
+    NSImage* _thumb;
 }
 @end
 
@@ -32,6 +33,7 @@
         // _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"textured_paper.png"]];
         // _background = NSColor.whiteColor;
         _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"subtle_white_feathers"]];
+        _thumb = [ZGImages thumbnail: @"/Users/leo/Pictures/2013 April Florida/photo-2.JPG"];
     }
     return self;
 }

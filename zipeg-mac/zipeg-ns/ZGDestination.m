@@ -271,7 +271,7 @@ static NSSearchPathDirectory dirs[] = {
         r.size.width = maxWidth - r.origin.x;
     }
     _pathControl.frame = r;
-    _reveal.origin = NSMakePoint(r.origin.x + r.size.width, _reveal.frame.origin.y);
+    _reveal.frameOrigin = NSMakePoint(r.origin.x + r.size.width, _reveal.frame.origin.y);
 }
 
 - (void)resizeSubviewsWithOldSize: (NSSize) was {
@@ -323,7 +323,7 @@ static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r, NSB
     bc.controlTint = NSClearControlTint;
     bc.font = font;
     bc.bordered = false;
-    btn.size = [btn.attributedStringValue size];
+    btn.frameSize = [btn.attributedStringValue size];
     [btn sizeToFit];
     return btn;
 }
