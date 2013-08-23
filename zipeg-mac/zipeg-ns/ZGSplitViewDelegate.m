@@ -6,7 +6,7 @@
     id _windowWillCloseObserver;
     ZGDocument* __weak _document;
     NSMutableDictionary* _minSize; // int view index -> float minimum size
-    NSMutableDictionary* _w2ix;  // float weight -> int view index
+    NSMutableDictionary* _w2ix;    // float weight -> int view index
 }
 @end
 
@@ -115,24 +115,24 @@
         v.frame = sv.isVertical? NSMakeRect(offset, 0, s, sv.bounds.size.height) :
         NSMakeRect(0, offset, sv.bounds.size.width, s);
         offset += s + divider;
-        NSLog(@"%@", NSStringFromRect(v.frame));
+        // trace(@"%@", NSStringFromRect(v.frame));
         i++;
     }
-    NSLog(@"%f %@", offset - divider, NSStringFromRect(sv.bounds));
+    // trace(@"%f %@", offset - divider, NSStringFromRect(sv.bounds));
     [self saveSplitSubviewSizes: sv];
 }
 
 // TODO: the code below does not work well
 - (void) splitViewXXX: (NSSplitView*) sv resizeSubviewsWithOldSize: (NSSize) oldSize {
     CGFloat delta = sv.isVertical ? sv.bounds.size.width - oldSize.width : sv.bounds.size.height - oldSize.height;
-    NSLog(@"delta=%f %@ old=%@", delta, NSStringFromSize(sv.bounds.size), NSStringFromSize(oldSize));
+    // trace(@"delta=%f %@ old=%@", delta, NSStringFromSize(sv.bounds.size), NSStringFromSize(oldSize));
     NSArray* sorted = [_w2ix.allKeys sortedArrayUsingComparator: ^ NSComparisonResult(id o0, id o1) {
         NSNumber* v0 = _w2ix[o0];
         NSNumber* v1 = _w2ix[o1];
-        // NSLog(@"compare(%@, %@)=%ld", v0, v1, [v1 compare: v0]);
+        // trace(@"compare(%@, %@)=%ld", v0, v1, [v1 compare: v0]);
         return [v1 compare: v0];
     }];
-    // NSLog(@"sorted=%@", sorted);
+    // trace(@"sorted=%@", sorted);
     BOOL force = false;
     if (sv.subviews == null || sv.subviews.count <= 1) {
         return;
@@ -150,7 +150,7 @@
                 }
             }
             force = force || sum == 0; // sticky
-            NSLog(@"sum=%f force=%d", sum, force);
+            // trace(@"sum=%f force=%d", sum, force);
         }
         if (force && sum == 0) {
             @throw @"setWeight was not called for SplitViewDelegate subviews";
@@ -164,7 +164,7 @@
                 CGFloat min = [self minSize: priority];
                 CGFloat s = [self splitView: sv subsize: priority.integerValue];
                 deltas[k++] = delta > 0 || s > min || force ? [_w2ix[priority] floatValue] / sum : 0;
-                NSLog(@"deltas[%d]=%f s=%f min=%f", k - 1, deltas[k - 1], s, min);
+                // trace(@"deltas[%d]=%f s=%f min=%f", k - 1, deltas[k - 1], s, min);
             }
         }
         k = 0;
@@ -175,7 +175,7 @@
                 NSSize size = sv.bounds.size;
                 CGFloat min = [self minSize: priority];
                 CGFloat d = delta * deltas[k];
-                NSLog(@"[%@] %@ d=%f delta=%f", priority, _w2ix[priority], d, delta);
+                // trace(@"[%@] %@ d=%f delta=%f", priority, _w2ix[priority], d, delta);
                 CGFloat s = [self splitView: sv subsize: priority.integerValue];
                 if (d > 0 || s + d >= min || force) {
                     delta -= d;
@@ -189,7 +189,7 @@
                 } else {
                     size.height = s;
                 }
-                NSLog(@"[%@] %@=%@ d=%f delta=%f", priority, _w2ix[priority], NSStringFromSize(size), d, delta);
+                // trace(@"[%@] %@=%@ d=%f delta=%f", priority, _w2ix[priority], NSStringFromSize(size), d, delta);
                 view.frameSize = size;
             }
             k++;
