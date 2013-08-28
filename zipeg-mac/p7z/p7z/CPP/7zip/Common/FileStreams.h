@@ -78,6 +78,7 @@ class COutFileStream:
 #endif
 public:
   virtual ~COutFileStream() {}
+  virtual void Attach(int fd) { File.Attach(fd); }
   bool Create(LPCTSTR fileName, bool createAlways)
   {
     ProcessedSize = 0;

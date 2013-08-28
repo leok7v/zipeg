@@ -61,7 +61,7 @@
     [self sizeToContent: _document.tableView];
 }
 
-- (void) tableView: (NSTableView *) v willDisplayCell: (id) cell
+- (void) tableView: (NSTableView*) v willDisplayCell: (id) cell
    forTableColumn: (NSTableColumn*) column row: (NSInteger) row {
     ZGTableViewDataSource* ds = (ZGTableViewDataSource*) v.dataSource;
     NSObject<ZGItemProtocol>* it = [ds itemAtRow: row];
@@ -200,7 +200,7 @@
     }
 }
 
-- (CGFloat) tableView: (NSTableView *) v sizeToFitWidthOfColumn: (NSInteger) cx {
+- (CGFloat) tableView: (NSTableView*) v sizeToFitWidthOfColumn: (NSInteger) cx {
     NSSize s = [ZGTableViewDelegate minMaxVisibleColumnContentSize:v columnIndex: (int)cx];
     return s.width;
 }
@@ -228,6 +228,13 @@
     if (v.numberOfRows > 0 && v.selectedRowIndexes.count == 0) {
         [v selectRowIndexes: [NSIndexSet indexSetWithIndex: 0] byExtendingSelection: false];
     }
+}
+
+- (void) tableViewSelectionDidChange: (NSNotification*) n {
+    NSIndexSet* set = _document.tableView.selectedRowIndexes;
+    ZGTableViewDataSource* tds = (ZGTableViewDataSource*)_document.tableView.dataSource;
+    NSArray* a = [tds itemsForRows: set];
+    [_document preview: a];
 }
 
 @end

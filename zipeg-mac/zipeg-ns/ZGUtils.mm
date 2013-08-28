@@ -4,6 +4,7 @@
 #import "MacMem.h"
 #import "ZGItemProtocol.h"
 #import "ZGDocument.h"
+#include <unistd.h>
 
 #define NOT_A_VALUE 0xFFFFFFFFFFFFFFFFULL
 
@@ -517,6 +518,55 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
         done(rmdirs(path));
     });
+}
+
++ (NSString*) createTemporaryFolder: (NSString*) name {
+    NSString* folder = null;
+    NSString* guid = NSProcessInfo.processInfo.globallyUniqueString;
+    NSString* t = [NSTemporaryDirectory() stringByAppendingPathComponent: [name stringByAppendingString: guid]];
+    const char* cc = [t fileSystemRepresentation];
+    if (cc != null) {
+        char* cs = strdup(cc);
+        if (cs != null) {
+            char* r = mkdtemp(cs);
+            if (r != null) {
+                NSAssert(r == cs, @"expected mkdtemp return value and parameter to be the same");
+                folder = [NSFileManager.defaultManager stringWithFileSystemRepresentation: r length: strlen(r)];
+            }
+            free(cs);
+        }
+    }
+    return folder;
+}
+
++ (int) createTemporaryFile: (NSString*) path result: (NSString**) res {
+    NSAssert([path startsWith: NSTemporaryDirectory()], @"path must start in NSTemporaryDirectory()");
+    int fd = -1;
+    NSString* ext = path.pathExtension;
+    NSString* name = (ext != null && ext.length > 0) ? path.stringByDeletingPathExtension : path;
+    int retry = 16;
+    while (retry > 0) {
+        NSString* guid = NSProcessInfo.processInfo.globallyUniqueString;
+        NSString* t = [name stringByAppendingString: guid];
+        if (ext != null && ext.length > 0) {
+            t = [t stringByAppendingPathExtension: ext];
+        }
+        const char* cc = [t fileSystemRepresentation];
+        if (cc != null) {
+            fd = open(cc, O_CREAT|O_RDWR|O_EXLOCK|O_CLOEXEC);
+            if (fd != -1) {
+                if (res != null) {
+                    *res = [NSFileManager.defaultManager stringWithFileSystemRepresentation: cc length: strlen(cc)];
+                    // trace("createTemporaryFile OK: %s", cc);
+                }
+                break;
+            } else {
+                // trace("createTemporaryFile failed for: %s %d", cc, errno);
+            }
+        }
+        retry--;
+    }
+    return fd;
 }
 
 @end

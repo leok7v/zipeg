@@ -138,6 +138,8 @@ public:
       const UStringVector &removePathParts,
       UInt64 packSize);
 
+  HRESULT GetStream(UInt32 index, ISequentialOutStream **outStream, Int32 askExtractMode, int fd);
+
 };
 
 #endif

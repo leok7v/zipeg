@@ -53,21 +53,21 @@
     return [self outlineView: v isGroupItem: i] ? 0 : 18;
 }
 
-- (void) outlineViewColumnDidResize:(NSNotification*) n {
+- (void) outlineViewColumnDidResize: (NSNotification*) n {
     // NSOutlineViewColumnDidResizeNotification @"NSTableColumn", @"NSOldWidth"
 //  trace(@"%@", n.userInfo);
 }
 
-- (void) outlineViewSelectionIsChanging: (NSNotification *) n {
+- (void) outlineViewSelectionIsChanging: (NSNotification*) n {
     // useless because it is only sent on mouse clicks not even on keyboard up/down
 }
 
-- (void)outlineViewSelectionDidChange:(NSNotification *)notification {
+- (void) outlineViewSelectionDidChange: (NSNotification*) n {
     ZGTableViewDelegate* d = _document.tableView.delegate;
     [d outlineViewSelectionDidChange];
 }
 
-- (void) outlineView: (NSOutlineView *) v willDisplayCell: (NSCell*) c forTableColumn: (NSTableColumn *) tc item: (id) i {
+- (void) outlineView: (NSOutlineView*) v willDisplayCell: (NSCell*) c forTableColumn: (NSTableColumn*) tc item: (id) i {
     if ([c isKindOfClass:[ZGImageAndTextCell class]] && [i conformsToProtocol:@protocol(ZGItemProtocol)]) {
         NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
         ZGImageAndTextCell* itc = (ZGImageAndTextCell*)c;
@@ -167,7 +167,7 @@
     _nestedCollapse++;
 }
 
--(void) outlineViewItemDidCollapse: (NSNotification *) n {
+-(void) outlineViewItemDidCollapse: (NSNotification*) n {
     _nestedCollapse--;
 //  NSOutlineView* v = (NSOutlineView*)n.object;
 //  NSObject<ZGItemProtocol>* i = (NSObject<ZGItemProtocol>*)n.userInfo[@"NSObject"];
@@ -188,13 +188,13 @@
     return [self outlineView: v shouldSelectItem: it] || isEqual(it, [self selectedItem]);
 }
 
-- (BOOL) outlineView: (NSOutlineView *) v isGroupItem: (id) i {
+- (BOOL) outlineView: (NSOutlineView*) v isGroupItem: (id) i {
     NSObject<ZGItemProtocol>* it = (NSObject<ZGItemProtocol>*)i;
     // trace(@"isGroupItem %@=%@ %d", it.name, it.parent == null ? @"true" : @"false", it.isGroup);
     return it.isGroup;
 }
 
-- (BOOL) outlineView:(NSOutlineView *)v shouldEditTableColumn:(NSTableColumn *)tableColumn item:(id)item {
+- (BOOL) outlineView: (NSOutlineView*) v shouldEditTableColumn: (NSTableColumn*) tc item: (id) it {
     NSEvent *e = [NSApp currentEvent];
     if (e.type == NSKeyDown && e.keyCode == 48) { // TAB
         // this saves from extending NSOutlineView (for now)
@@ -202,9 +202,9 @@
         // far from perfect rapid Shitf-TABing will start expand items in a tree view... May be later
         return false;
     }
-    NSInteger row = [v rowForItem:item];
-    if (row >= 0 && [v isRowSelected: row] && ![v isItemExpanded:item]) {
-        [v expandItem:item expandChildren:false];
+    NSInteger row = [v rowForItem:it];
+    if (row >= 0 && [v isRowSelected: row] && ![v isItemExpanded: it]) {
+        [v expandItem: it expandChildren: false];
     }
     return false;
 }

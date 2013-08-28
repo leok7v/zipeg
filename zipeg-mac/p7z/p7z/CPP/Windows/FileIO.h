@@ -49,7 +49,7 @@ protected:
 public:
   CFileBase(): _fd(-1) {};
   virtual ~CFileBase();
-
+  virtual void Attach(int fd) { _fd = fd; }
   virtual bool Close();
 
   bool GetLength(UINT64 &length) const;

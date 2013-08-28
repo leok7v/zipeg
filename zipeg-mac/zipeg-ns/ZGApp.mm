@@ -119,19 +119,58 @@ static void loadIcons() {
     }
 }
 
++ (void) initialize {
+    [ZGApp cleanup: false];
+}
+
 - (void) exit  {
     traceObservers();
     trace_allocs();
 }
 
-- (void) terminate: (id) sender {
-    if (self.delegate) {
-        NSApplicationTerminateReply r = [self.delegate applicationShouldTerminate: self];
-        if (r == NSTerminateNow) {
-            [self exit];
-            [super terminate: sender];
++ (void) cleanup: (BOOL) sync {
+    NSDictionary* uf = ZGApp.allUnpackingFolders.copy;
+    if (uf.allKeys.count > 0) {
+        dispatch_semaphore_t sema = sync ? dispatch_semaphore_create(0) : null;
+        for (NSString* temp in uf.allKeys) {
+            if (![NSFileManager.defaultManager fileExistsAtPath: temp]) {
+                [ZGApp unregisterUnpackingFolder: temp];
+            } else {
+                [ZGUtils rmdirsOnBackgroundThread: temp done:^(BOOL b) {
+                    if (b) {
+                        if (sema != null) {
+                            dispatch_semaphore_signal(sema);
+                        }
+                        if (sync) {
+                            dispatch_sync(dispatch_get_main_queue(), ^{
+                                [ZGApp unregisterUnpackingFolder: temp];
+                            });
+                        } else {
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [ZGApp unregisterUnpackingFolder: temp];
+                            });
+                        }
+                    }
+                }];
+                if (sema != null) {
+                    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+                }
+            }
         }
-    } else {
+        if (sema != null) {
+            dispatch_release(sema);
+        }
+    }
+}
+
+
+- (void) terminate: (id) sender {
+    NSApplicationTerminateReply r = NSTerminateNow;
+    if (self.delegate) {
+        r = [self.delegate applicationShouldTerminate: self];
+    }
+    if (r == NSTerminateNow) {
+        [ZGApp cleanup: true];
         [self exit];
         [super terminate: sender];
     }

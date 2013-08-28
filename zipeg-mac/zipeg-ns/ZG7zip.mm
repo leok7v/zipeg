@@ -977,7 +977,8 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     return prefixComponents;
 }
 
-- (void) extract: (NSArray*) itms to: (NSURL*) url operation: (ZGOperation*) op done: (void(^)(NSError* e)) block {
+- (void) extract: (NSArray*) itms to: (NSURL*) url operation: (ZGOperation*) op fileDescriptor: (int) fd
+            done: (void(^)(NSError* e)) block {
     assert(![NSThread isMainThread]);
     if (![url isFileURL]) {
         NSMutableDictionary *details = [NSMutableDictionary dictionary];
@@ -1010,7 +1011,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
             n = [self collectChildren: itms to: indices position: 0 size: max];
         }
         _error = null;
-        bool b = a->extract(indices, n, path.UTF8String, prefixComponents, pc);
+        bool b = a->extract(indices, n, path.UTF8String, prefixComponents, pc, fd);
         delete[] indices;
         delete[] prefixComponents;
         if (_error == null && !b && self.isCancelled) {

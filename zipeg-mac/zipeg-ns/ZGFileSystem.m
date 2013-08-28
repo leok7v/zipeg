@@ -151,7 +151,11 @@ static ZGFileSystemItem *g_root;
     return 999999;
 }
 
-- (void) extract: (NSArray*) items to: (NSURL*) url operation: (ZGOperation*) op done: (void(^)(NSError* e)) block {
+- (void) extract: (NSArray*) items
+              to: (NSURL*) url
+       operation: (ZGOperation*) op
+  fileDescriptor: (int) fd
+            done: (void(^)(NSError* e)) block {
     block(null);
 }
 

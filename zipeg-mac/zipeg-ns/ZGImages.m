@@ -7,6 +7,7 @@
     NSImage* _docImage;
     NSImage* _appImage; // Zipeg.icns
     NSMutableDictionary* _icons16x16;
+    NSMutableDictionary* _icons;
 }
 @end
 
@@ -44,8 +45,21 @@ static ZGImages* _shared;
         _appImage = [NSApp applicationIconImage];
         _appImage.size = NSMakeSize(kIconImageSize, kIconImageSize);
         _icons16x16 = [NSMutableDictionary dictionaryWithCapacity: 1024];
+        _icons = [NSMutableDictionary dictionaryWithCapacity: 1024];
     }
     return self;
+}
+
+- (NSImage*) iconForFileType: (NSString*) ext {
+    if (ext == null || ext.length == 0) {
+        return null;
+    }
+    NSImage* img = _icons[ext];
+    if (img == null) {
+        img = [NSWorkspace.sharedWorkspace iconForFileType: ext];
+        _icons[ext] = img;
+    }
+    return img;
 }
 
 - (NSImage*) iconForFileType16x16: (NSString*) ext {
@@ -54,14 +68,18 @@ static ZGImages* _shared;
     }
     NSImage* img = _icons16x16[ext];
     if (img == null) {
-        img = [NSWorkspace.sharedWorkspace iconForFileType: ext];
-    }
-    if (img != null) {
-        img = img.copy;
-        img.size = NSMakeSize(16, 16);
-        _icons16x16[ext] = img;
+        img = [self iconForFileType: ext];
+        if (img != null) {
+            img = img.copy;
+            img.size = NSMakeSize(16, 16);
+            _icons16x16[ext] = img;
+        }
     }
     return img;
+}
+
++ (NSImage*) iconForFileType: (NSString*) pathExtension {
+    return [_shared iconForFileType16x16: pathExtension];
 }
 
 + (NSImage*) iconForFileType16x16: (NSString*) pathExtension {

@@ -1,6 +1,7 @@
 // ArchiveExtractCallback.cpp
 
 #include "StdAfx.h"
+#include <assert.h>
 
 #include "Common/ComTry.h"
 #include "Common/Wildcard.h"
@@ -175,8 +176,14 @@ static bool ignoreMacOSXResourceForksAndFinderBreadcrumbs(const wchar_t* name) {
     return b;
 }
 
-
 STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStream **outStream, Int32 askExtractMode)
+{
+    assert(false);
+    return E_FAIL;
+}
+
+STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStream **outStream,
+                                                Int32 askExtractMode, int fd)
 {
   COM_TRY_BEGIN
   _crcStream.Release();
@@ -221,7 +228,14 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
     if (!_wildcardCensor->CheckPath(fullPath, !_fi.IsDir))
       return S_OK;
   }
-
+  if (fd >= 0)
+  {
+      _outFileStreamSpec = new COutFileStream;
+      CMyComPtr<ISequentialOutStream> outStreamLoc(_outFileStreamSpec);
+      _outFileStreamSpec->Attach(fd);
+      *outStream = outStreamLoc.Detach();
+      return S_OK;
+  }
   if (askExtractMode == NArchive::NExtract::NAskMode::kExtract && !_testMode)
   {
     if (_stdOutMode)
@@ -366,7 +380,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
       }
       if (_overwriteMode == NExtract::NOverwriteMode::kAutoRename)
       {
-        if (!AutoRenamePath(fullProcessedPath))
+        if (!AutoRenamePath(fullProcessedPath)) // TODO:  _extractCallback2->AutoRenamePath(fullProcessedPath)
         {
           UString message = UString(kCantAutoRename) + fullProcessedPath;
           RINOK(_extractCallback2->MessageError(message));
@@ -404,6 +418,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
     {
       _outFileStreamSpec = new COutFileStream;
       CMyComPtr<ISequentialOutStream> outStreamLoc(_outFileStreamSpec);
+        printf("fullProcessedPath=%ls", (const wchar_t*)fullProcessedPath);
       if (!_outFileStreamSpec->Open(fullProcessedPath, _isSplit ? OPEN_ALWAYS: CREATE_ALWAYS))
       {
         // if (::GetLastError() != ERROR_FILE_EXISTS || !isSplit)

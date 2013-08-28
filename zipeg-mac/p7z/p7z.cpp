@@ -370,17 +370,18 @@ bool P7Z::open(const char* archiveName) {
     }
 }
 
-bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathComponents[], int pc) {
+bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathComponents[], int pc, int fd) {
     
-    struct ExtractCallback : public CArchiveExtractCallback,
-                             public IFolderArchiveExtractCallback {
-        ExtractCallback(P7Z *context) : asked(false), total(0), completed(0) { ctx = context; }
+    struct ExtractCallback : public IFolderArchiveExtractCallback, public CArchiveExtractCallback {
+        ExtractCallback(P7Z *context) : asked(false), total(0), completed(0), fd(-1) { ctx = context; }
         MY_QUERYINTERFACE_BEGIN
         MY_QUERYINTERFACE_ENTRY(ICryptoGetTextPassword)
         MY_QUERYINTERFACE_END
         STDMETHOD_(ULONG, AddRef)() { return 1; } // only used on the stack
         STDMETHOD_(ULONG, Release)() { return 1; } // only used on the stack
-                                 
+
+        int fd;
+
         virtual HRESULT CryptoGetTextPassword(UString &p) {
             if (!asked) {
                 password = ctx->delegate->password(ctx);
@@ -497,7 +498,19 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
         virtual HRESULT ThereAreNoFiles() { return S_OK; }
         virtual HRESULT ExtractResult(HRESULT result) { return S_OK; }
         virtual HRESULT SetPassword(const UString &password) { return S_OK; }
-        
+
+        virtual HRESULT GetStream(UInt32 index, ISequentialOutStream **outStream, Int32 askExtractMode) {
+            return CArchiveExtractCallback::GetStream(index, outStream, askExtractMode, fd);
+        }
+
+        virtual HRESULT PrepareOperation(Int32 askExtractMode) {
+            return CArchiveExtractCallback::PrepareOperation(askExtractMode);
+        }
+
+        virtual HRESULT SetOperationResult(Int32 resultEOperationResult) {
+            return CArchiveExtractCallback::SetOperationResult(resultEOperationResult);
+        }
+
         P7Z *ctx;
         bool asked;
         int64_t total;
@@ -532,8 +545,12 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
              false /*stdOutMode*/, false /*testMode*/, false /*crcMode*/,
              directoryPath,
              removePathParts,
-             999999 // packSize
+             999999 // packSize  // TODO: ??????
         );
+        ecs.fd = fd;
+        if (fd >= 0) {
+            assert(n == 1); // single file mode
+        }
         IInArchive* a = getArchive(archiveLink);
         // TODO: all for now
         HRESULT result = a->Extract((const unsigned int*)indices, n, false /*test*/, &ecs);

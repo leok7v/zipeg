@@ -47,6 +47,7 @@ enum {              // answers for askOverwrite
                 done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) block;
 // setFilter is called on background thread. block must be called back on the main thread
 - (void) setFilter: (NSString*) filterText operation: (ZGOperation*) op done: (void(^)(BOOL)) block;
-- (void) extract: (NSArray*) items to: (NSURL*) url operation: (ZGOperation*) op done: (void(^)(NSError* e)) block;
+- (void) extract: (NSArray*) items to: (NSURL*) url operation: (ZGOperation*) op
+            fileDescriptor: (int) fd done: (void(^)(NSError* e)) block;
 - (void) close;
 @end

@@ -806,7 +806,7 @@ STDMETHODIMP CHandler::Extract(const UInt32 *indices, UInt32 numItems,
 
     RINOK(extractCallback->PrepareOperation(askMode));
 
-    Int32 res;
+    Int32 res = 0;
     RINOK(myDecoder.Decode(
         EXTERNAL_CODECS_VARS
         m_Archive, item, realOutStream, extractCallback,

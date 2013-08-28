@@ -78,6 +78,8 @@ FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 + (ZGBlock*) invokeLater: (void(^)()) b delay: (double) seconds; // dispatch_after
 // done will be called on the same background thread
 + (void) rmdirsOnBackgroundThread: (NSString*) path done: (void(^)(BOOL)) done;
++ (NSString*) createTemporaryFolder: (NSString*) name;
++ (int) createTemporaryFile: (NSString*) filename result: (NSString**) path;
 
 @end
 

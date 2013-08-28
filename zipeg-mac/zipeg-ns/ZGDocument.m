@@ -13,6 +13,7 @@
 #import "ZGToolbar.h"
 #import "ZGToolbarDelegate.h"
 #import "ZGDestination.h"
+#import "ZGImage.h"
 #import "ZGImages.h"
 #import "ZGApp.h"
 #import "ZGAlerts.h"
@@ -21,22 +22,35 @@
 
 @interface ZGPreview : NSView {
     NSColor* _background;
-    NSImage* _thumb;
+    NSArray* _items;
+    ZGDocument* __weak _document;
 }
+
+- (void) setItems: (NSArray*) items;
+
 @end
 
 @implementation ZGPreview
 
-- (id) initWithFrame: (NSRect) r {
+- (id) initWithDocument: (ZGDocument*) doc andFrame: (NSRect) r {
     self = [super initWithFrame: r];
     if (self != null) {
-        // _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"textured_paper.png"]];
-        // _background = NSColor.whiteColor;
+        alloc_count(self);
+        _document = doc;
         _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"subtle_white_feathers"]];
-         _thumb = [ZGImages thumbnail: @"/Users/leo/Pictures/2013 April Florida/photo-2.JPG"];
-        //_thumb = [ZGImages thumbnail: @"/Users/leo/3ipeg-rnd/EXIF-orientation/EXIF Orientation Sample Images/3.jpg"];
     }
     return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
+    _items = null;
+}
+
+- (void) setItems: (NSArray*) items {
+    _items = items;
+    self.needsDisplay = true;
+
 }
 
 - (void) drawRect: (NSRect) r {
@@ -46,15 +60,22 @@
     [NSGraphicsContext.currentContext setPatternPhase: NSMakePoint(x, y)];
     [_background set];
     NSRectFill(self.bounds);
-    if (_thumb != null) {
-//        NSAffineTransform *t = [NSAffineTransform transform];
-//        [t scaleXBy: -1 yBy: 1];
-//        [t translateXBy: -(_thumb.size.width) yBy: 0];
-//        [t concat];
-        float ratio = self.bounds.size.width / _thumb.size.width;
-        CGFloat y = self.bounds.size.height - ratio * _thumb.size.height;
-
-        [_thumb drawInRect: NSMakeRect(0, y, ratio * _thumb.size.width, ratio * _thumb.size.height)
+    NSImage* t = null;
+    if (_items != null && _items.count == 1) {
+        NSObject<ZGItemProtocol>* it = _items[0];
+        if (it.children != null) {
+            t = ZGImages.shared.dirImage;
+        } else {
+            t = [_document icon: (NSObject<ZGItemProtocol>*)_items[0]];
+        }
+    } else if (_items != null && _items.count > 1) {
+        t = [NSImage imageNamed: NSImageNameMultipleDocuments];
+    }
+    if (t != null) {
+        const float margin = MIN(self.bounds.size.width / 8, 16);
+        float ratio = (self.bounds.size.width - margin * 2) / t.size.width;
+        CGFloat y = self.bounds.size.height - ratio * t.size.height - margin;
+        [t drawInRect: NSMakeRect(margin, y, ratio * t.size.width, ratio * t.size.height)
                   fromRect: NSZeroRect
                  operation: NSCompositeSourceOver
                   fraction: 1];
@@ -78,11 +99,15 @@
     ZGBlock* _scheduledAlerts;
     int _itemsToExtract;
     int _foldersToExtract;
+    NSString* _tempFolder;
 
     NSString* _preNextLastPathComponent;
     NSString* _temporaryUnpackingFolder;
     NSString* _finalDestination;
     NSDictionary* _trashedDestination;
+
+    ZGPreview* _preview;
+    NSMutableDictionary* _previewCache;
 }
 
 @property (weak) NSView* contentView;
@@ -98,6 +123,7 @@
 @property ZGSplitViewDelegate* splitViewDelegate;
 @property NSColor* searchTextColor;
 @property NSOperationQueue* operationQueue;
+@property NSOperationQueue* previewQueue;
 @property CFStringEncoding encoding;
 @property NSString* typeName;
 @property NSError* error;
@@ -105,6 +131,8 @@
 @property ZGAlerts* alerts;
 
 - (void) openArchiveForOperation: (ZGOperation*) op;
+- (void) previewItemForOperation: (ZGOperation*) op item: (NSObject<ZGItemProtocol>*) item
+                  fileDescriptor: (int) fd to: (NSURL*) url;
 - (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd;
 - (void) searchArchiveWithString: (NSString*) s forOperation: (ZGOperation*) op done: (void(^)(BOOL)) block;
 
@@ -117,6 +145,7 @@
 - (id) initWithDocument: (ZGDocument*) d andFrame: (NSRect) r {
     self = [super initWithFrame: r];
     if (self) { // it takes space to prevent titlebar with toolbar to over-draw
+        alloc_count(self);
         self.autoresizingMask = kSizableWH;
         self.autoresizesSubviews = true;
         _document = d;
@@ -124,8 +153,11 @@
     return self;
 }
 
-@end
+- (void) dealloc {
+    dealloc_count(self);
+}
 
+@end
 
 @interface OpenArchiveOperation : ZGOperation {
     ZGDocument* __weak _document;
@@ -137,8 +169,15 @@
 
 - (id) initWithDocument: (ZGDocument*) doc {
     self = [super init];
-    _document = doc;
+    if (self != null) {
+        alloc_count(self);
+        _document = doc;
+    }
     return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
 }
 
 - (void)main {
@@ -159,10 +198,17 @@
 
 - (id) initWithDocument: (ZGDocument*) doc searchString: (NSString*) s done: (void(^)(BOOL)) block {
     self = [super init];
-    _document = doc;
-    _search = s.copy;
-    _block = block;
+    if (self != null) {
+        alloc_count(self);
+        _document = doc;
+        _search = s.copy;
+        _block = block;
+    }
     return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
 }
 
 - (void) main {
@@ -186,6 +232,7 @@
 - (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
     self = [super init];
     if (self != null) {
+        alloc_count(self);
         _document = doc;
         _items = items;
         _url = url;
@@ -194,8 +241,46 @@
     return self;
 }
 
+- (void) dealloc {
+    dealloc_count(self);
+}
+
 - (void)main {
     [_document extractItemsForOperation: self items: _items to: _url DnD: _dnd];
+}
+
+@end
+
+
+@interface PreviewItemOperation : ZGOperation {
+    ZGDocument* __weak _document;
+    NSObject<ZGItemProtocol>* _item;
+    NSURL* _url;
+    int _fd;
+}
+- (id) initWithDocument: (ZGDocument*) doc item: (NSObject<ZGItemProtocol>*) item fileDescriptor: (int) fd to: (NSURL*) url;
+@end
+
+@implementation PreviewItemOperation
+
+- (id) initWithDocument: (ZGDocument*) doc item: (NSObject<ZGItemProtocol>*) item fileDescriptor: (int) fd to: (NSURL*) url {
+    self = [super init];
+    if (self != null) {
+        alloc_count(self);
+        _document = doc;
+        _item = item;
+        _url = url;
+        _fd = fd;
+    }
+    return self;
+}
+
+- (void) dealloc {
+    dealloc_count(self);
+}
+
+- (void)main {
+    [_document previewItemForOperation: self item: _item fileDescriptor: _fd  to: _url];
 }
 
 @end
@@ -224,8 +309,8 @@
 
 - (id) initForURL: (NSURL*) absoluteDocumentURL withContentsOfURL: (NSURL*) absoluteDocumentContentsURL
            ofType: (NSString*) typeName error: (NSError**) outError {
-    return [super initForURL:absoluteDocumentURL withContentsOfURL:absoluteDocumentContentsURL
-                      ofType:typeName error: outError];
+    return [super initForURL: absoluteDocumentURL withContentsOfURL: absoluteDocumentContentsURL
+                      ofType: typeName error: outError];
 }
 
 - (id) initWithContentsOfURL: (NSURL*) absoluteURL ofType: (NSString*) typeName error: (NSError**) outError {
@@ -241,9 +326,30 @@
         alloc_count(self);
         self.hasUndoManager = false;
         _operationQueue = NSOperationQueue.new;
-        _operationQueue.maxConcurrentOperationCount = 1;
+        int N = MAX((int)NSProcessInfo.processInfo.processorCount / 2, 1);
+        // N = 1; // TODO: for now - remove me and see how much stuff breaks
+        _operationQueue.maxConcurrentOperationCount = N;
+        _previewQueue = NSOperationQueue.new;
+        _previewQueue.maxConcurrentOperationCount = N;
+        _previewCache = [NSMutableDictionary dictionaryWithCapacity: 1024];
         _encoding = (CFStringEncoding)-1;
         _highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
+        // xxxxxxx
+        _tempFolder = [ZGUtils createTemporaryFolder: @"preview"];
+        // trace("_tempFolder=%@", _tempFolder);
+        [ZGApp registerUnpackingFolder: _tempFolder to: _tempFolder];
+/*
+        NSString* res = null;
+        NSFileHandle* fh = [ZGUtils createTemporaryFile: [_tempFolder stringByAppendingPathComponent: @"foo.bar"] result: &res];
+        trace("%@ %@", res, fh);
+        [fh closeFile];
+        unlink(res.fileSystemRepresentation);
+        [ZGUtils rmdirsOnBackgroundThread: _tempFolder done: ^(BOOL b) {
+            if (b) {
+                [ZGApp unregisterUnpackingFolder: _tempFolder];
+            }
+        }];
+*/
     }
     return self;
 }
@@ -257,6 +363,10 @@
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver: self];
     [ZGApp deferedTraceAllocs];
+}
+
+- (void) preview: (NSArray*) items {
+    _preview.items = items;
 }
 
 - (void) makeWindowControllers {
@@ -506,9 +616,10 @@ static NSTableView* createTableView(NSRect r) {
     bounds3.size.width = bounds.size.width * 0.1;
     bounds3.origin.x = 0;
     bounds3.origin.y = 0;
+    _preview = [ZGPreview.alloc initWithDocument: self andFrame: bounds3];
     _splitView.subviews = @[createScrollView(bounds1, _outlineView),
                             createScrollView(bounds2, _tableView),
-                            [ZGPreview.alloc initWithFrame: bounds3]];
+                            _preview];
     assert(_splitView != null);
     _splitViewDelegate = [ZGSplitViewDelegate.alloc initWithDocument: self];
     _splitView.delegate = _splitViewDelegate;
@@ -722,9 +833,28 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (void) cancelAll {
+    for (ZGOperation* op in _operationQueue.operations) {
+        op.cancelRequested = true;
+    }
+    for (ZGOperation* op in _previewQueue.operations) {
+        op.cancelRequested = true;
+    }
     [_operationQueue cancelAllOperations];
+    [_previewQueue cancelAllOperations];
     [self endAlerts];
     [_operationQueue waitUntilAllOperationsAreFinished];
+    [_previewQueue waitUntilAllOperationsAreFinished];
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    [ZGUtils rmdirsOnBackgroundThread: _tempFolder done: ^(BOOL b) {
+        dispatch_semaphore_signal(sema);
+        if (b) {
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                [ZGApp unregisterUnpackingFolder: _tempFolder];
+            });
+        }
+    }];
+    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+
 }
 
 - (void) requestCancel {
@@ -808,6 +938,8 @@ static NSTableView* createTableView(NSRect r) {
 - (void)close {
     // NSWindowController _windowDidClose will call us recursively from super :(
     if (_splitView != null) {
+        [_previewCache removeAllObjects];
+        _previewCache = null;
         NSTableColumn* tc = _tableView.tableColumns[0];
         assert(tc != null);
         [self cancelAll];
@@ -1189,6 +1321,64 @@ static NSString* nextPathname(NSString* path) {
                                         to: url
                                         DnD: dnd];
     [_operationQueue addOperation: operation];
+    _previewQueue.suspended = true;
+}
+
+#define PREVIEW_FILE_SIZE_LIMIT (1024*1024*16)
+
+- (NSImage*) icon: (NSObject<ZGItemProtocol>*) item {
+    NSString* path = item.fullPath;
+    NSImage* i = _previewCache[path];
+    if (i == null && item.children == null && item.size.longLongValue < PREVIEW_FILE_SIZE_LIMIT) {
+        NSString* res = null;
+        int fd = [ZGUtils createTemporaryFile: [_tempFolder stringByAppendingPathComponent: path.lastPathComponent] result: &res];
+        if (fd >= 0 && res != null) {
+            NSURL* url = [NSURL fileURLWithPath: res];
+            [self addPreviewOperation: item fileDescriptor: fd to: url];
+        }
+        i = [ZGImages iconForFileType: path.pathExtension];
+        if (i == null) {
+            i = ZGImages.shared.docImage;
+        }
+        if (i != null) {
+            _previewCache[path] = i;
+            assert(_previewCache[path] == i);
+        }
+    }
+    return i;
+}
+
+- (void) addPreviewOperation: (NSObject<ZGItemProtocol>*) item fileDescriptor: (int) fd to: (NSURL*) url {
+    PreviewItemOperation* operation = [PreviewItemOperation.alloc
+                                        initWithDocument: self
+                                        item: item
+                                        fileDescriptor: fd
+                                        to: url];
+    [_previewQueue addOperation: operation];
+}
+
+- (void) previewItemForOperation: (ZGOperation*) op
+                            item: (NSObject<ZGItemProtocol>*) item
+                  fileDescriptor: (int) fd
+                              to: (NSURL*) url {
+    // This method is called on the background thread
+    assert(![NSThread isMainThread]);
+    assert(_archive != null);
+    [_archive extract: @[item] to: url operation: op fileDescriptor: fd done: ^(NSError* error) {
+        // we are still on background thread here:
+        NSImage* i = null;
+        if (error == null && !op.isCancelled && !op.cancelRequested) {
+            i = [NSImage qlImage: url.path ofSize: NSMakeSize(1024, 1024) asIcon: true];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // trace("extracted for preview: %@ error=%@ image=%@", url, error, i.debugDescription);
+            if (i != null) {
+//              trace("i.imageBytes=%lld", i.imageBytes);
+                _previewCache[item.fullPath] = i;
+                _contentView.needsDisplay = true;
+            }
+        });
+    }];
 }
 
 - (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
@@ -1196,8 +1386,9 @@ static NSString* nextPathname(NSString* path) {
     assert(![NSThread isMainThread]);
     assert(_archive != null);
     [self scheduleAlerts];
-    [_archive extract: items to: url operation: op done: ^(NSError* error) {
+    [_archive extract: items to: url operation: op fileDescriptor: -1 done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
+            _previewQueue.suspended = _operationQueue.operationCount > 0;
             [_alerts progress: 0 of: 0];
             if (error != null) {
                 [self restoreTrashed];
@@ -1566,8 +1757,8 @@ static NSString* multipartBasename(NSString* s) {
                                     suppressed: null];
             keepGoing = rc == NSAlertFirstButtonReturn;
             [self scheduleAlerts];
-            dispatch_semaphore_signal(sema);
         }
+        dispatch_semaphore_signal(sema);
     });
     dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
     dispatch_release(sema);
@@ -1670,7 +1861,6 @@ static void addChildren(NSMutableArray* items, NSObject<ZGItemProtocol>* r) {
 
 - (void) pasteboard: (NSPasteboard*) pasteboard provideDataForType: (NSString*) type {
     // This method will be called to provide data for NSFilenamesPboardType
-    trace(@"");
 /*
     if ([type isEqualToString: NSFilenamesPboardType]) {
         int draggedRow = 1;

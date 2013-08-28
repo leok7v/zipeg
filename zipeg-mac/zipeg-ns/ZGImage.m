@@ -77,28 +77,55 @@ static NSDictionary* sHints;
     }
 }
 
+- (int64_t) imageBytes {
+    int64_t bytes = 0;
+    for (NSBitmapImageRep* r in self.representations) {
+/*
+        trace("%@ samplesPerPixel=%ld bitsPerPixel=%ld bytesPerRow=%ld bytesPerPlane=%ld numberOfPlanes=%ld",
+              NSStringFromSize(r.size),
+              r.samplesPerPixel, r.bitsPerPixel, r.bytesPerRow, r.bytesPerPlane, r.numberOfPlanes);
+*/
+        bytes += MAX(r.size.height * r.bytesPerRow, r.bytesPerPlane * r.numberOfPlanes);
+    }
+    return bytes;
+}
+
+
 + (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon {
-    NSURL *fileURL = [NSURL fileURLWithPath:path];
-    if (!path || !fileURL) {
-        return nil;
+    // timestamp("qlImage");
+    NSURL *fileURL = [NSURL fileURLWithPath: path];
+    if (path == null || fileURL == null) {
+        return null;
     }
-    // kQLThumbnailOptionScaleFactorKey absent defaults to @(1.0)
     NSDictionary *d = @{ (NSString*)kQLThumbnailOptionIconModeKey: @(icon)};
-    CGImageRef ref = QLThumbnailImageCreate(kCFAllocatorDefault,
-                                            (__bridge CFURLRef)fileURL,
-                                            CGSizeMake(size.width, size.height),
-                                            (__bridge CFDictionaryRef)d);
+    QLThumbnailRef tr = QLThumbnailCreate(kCFAllocatorDefault,
+                                           (__bridge CFURLRef)fileURL,
+                                           CGSizeMake(size.width, size.height),
+                                           (__bridge CFDictionaryRef)d);
     NSImage* i = null;
-    if (ref != NULL) {
-        i = [NSImage.alloc initWithCGImage: ref];
-        CFRelease(ref);
-    }
-    if (i == null) {
-        i = [NSWorkspace.sharedWorkspace iconForFile: path];
-        if (i != null && size.width > 0 && size.height > 0) {
-            [i setSize:size];
+    if (tr != null) {
+/*      NSRect cr = QLThumbnailGetContentRect(tr); */
+        NSSize maxSize = QLThumbnailGetMaximumSize(tr);
+        size.width = MIN(maxSize.width, size.width);
+        size.height = MIN(maxSize.height, size.height);
+        // kQLThumbnailOptionScaleFactorKey absent defaults to @(1.0)
+        CGImageRef ir = QLThumbnailImageCreate(kCFAllocatorDefault,
+                                               (__bridge CFURLRef)fileURL,
+                                               CGSizeMake(size.width, size.height),
+                                               (__bridge CFDictionaryRef)d);
+        if (ir != null) {
+            i = [NSImage.alloc initWithCGImage: ir];
+            CFRelease(ir);
         }
+        if (i == null) {
+            i = [NSWorkspace.sharedWorkspace iconForFile: path];
+            if (i != null && size.width > 0 && size.height > 0) {
+                [i setSize: size];
+            }
+        }
+        CFRelease(tr);
     }
+    // timestamp("qlImage");
     return i;
 }
 

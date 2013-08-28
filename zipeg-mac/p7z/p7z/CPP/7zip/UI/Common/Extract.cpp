@@ -99,6 +99,7 @@ static HRESULT DecompressArchive(
   return callback->ExtractResult(result);
 }
 
+#if 0 // NOT USED
 HRESULT DecompressArchives(
     CCodecs *codecs, const CIntVector &formatIndices,
     UStringVector &arcPaths, UStringVector &arcPathsFull,
@@ -261,3 +262,5 @@ HRESULT DecompressArchives(
   stat.PackSize = extractCallbackSpec->LocalProgressSpec->InSize;
   return S_OK;
 }
+
+#endif

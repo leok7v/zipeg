@@ -17,6 +17,8 @@ NSSortDescriptor* getSortDescriptor(int i);
 @property (nonatomic, readonly, weak) NSWindow* window;
 @property (nonatomic, readonly) NSObject<ZGItemProtocol>* root;
 
+- (NSImage*) icon: (NSObject<ZGItemProtocol>*) item;
+- (void) preview: (NSArray*) items;
 - (void) requestCancel;
 - (void) cancelAll; // cancel all operations (if any), otherwise nop
 - (void) extract;

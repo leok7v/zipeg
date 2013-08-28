@@ -5,6 +5,8 @@
 - (NSImage*) rotate: (CGFloat) degrees;
 - (NSImage*) mirror; // mirror around Y axis (swap left and right)
 
+- (int64_t) imageBytes;
+
 - (void) drawAtPoint: (NSPoint) p;
 - (void) drawAtPoint: (NSPoint) p fromRect: (NSRect) r;
 - (void) drawAtPoint: (NSPoint) p fromRect: (NSRect) r operation: (NSCompositingOperation) op;
