@@ -21,6 +21,7 @@
 		B32A0B8A17B2215500225F91 /* error.aiff in Resources */ = {isa = PBXBuildFile; fileRef = B32A0B8817B2215500225F91 /* error.aiff */; };
 		B32B60D117C7D55600FB2ECC /* subtle_white_feathers_@2X.png in Resources */ = {isa = PBXBuildFile; fileRef = B32B60CF17C7D55600FB2ECC /* subtle_white_feathers_@2X.png */; };
 		B32B60D217C7D55600FB2ECC /* subtle_white_feathers.png in Resources */ = {isa = PBXBuildFile; fileRef = B32B60D017C7D55600FB2ECC /* subtle_white_feathers.png */; };
+		B32B60D517C83ABF00FB2ECC /* ZGImage.m in Sources */ = {isa = PBXBuildFile; fileRef = B32B60D417C83ABF00FB2ECC /* ZGImage.m */; };
 		B32EB9C81798CEDA00D8A129 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9C41798CEDA00D8A129 /* MainMenu.xib */; };
 		B32EB9C91798CEDA00D8A129 /* ZGDocument.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32EB9C61798CEDA00D8A129 /* ZGDocument.xib */; };
 		B3485C6F179F2E6E001B91F5 /* ZGApp.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3485C6E179F2E6E001B91F5 /* ZGApp.mm */; };
@@ -111,7 +112,7 @@
 		B3FC1DA017A0B40B00BE0ED3 /* leaf-0-64x64.png in Resources */ = {isa = PBXBuildFile; fileRef = B3FC1D9C17A0B40B00BE0ED3 /* leaf-0-64x64.png */; };
 		B3FC1DA117A0B40B00BE0ED3 /* leaf-1-64x64.png in Resources */ = {isa = PBXBuildFile; fileRef = B3FC1D9D17A0B40B00BE0ED3 /* leaf-1-64x64.png */; };
 		B3FC1DA217A0B40B00BE0ED3 /* leaf-2-64x64.png in Resources */ = {isa = PBXBuildFile; fileRef = B3FC1D9E17A0B40B00BE0ED3 /* leaf-2-64x64.png */; };
-		B3FC1DA317A0B40B00BE0ED3 /* leaf-3-64X64.png in Resources */ = {isa = PBXBuildFile; fileRef = B3FC1D9F17A0B40B00BE0ED3 /* leaf-3-64X64.png */; };
+		B3FC1DA317A0B40B00BE0ED3 /* leaf-3-64x64.png in Resources */ = {isa = PBXBuildFile; fileRef = B3FC1D9F17A0B40B00BE0ED3 /* leaf-3-64x64.png */; };
 		B3FE5C5817A3F7390077CB28 /* libp7z.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B39F1D4817924CBE00472FEF /* libp7z.dylib */; };
 /* End PBXBuildFile section */
 
@@ -168,6 +169,8 @@
 		B32A0B8817B2215500225F91 /* error.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; name = error.aiff; path = Resources/error.aiff; sourceTree = "<group>"; };
 		B32B60CF17C7D55600FB2ECC /* subtle_white_feathers_@2X.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "subtle_white_feathers_@2X.png"; path = "Resources/subtle_white_feathers_@2X.png"; sourceTree = "<group>"; };
 		B32B60D017C7D55600FB2ECC /* subtle_white_feathers.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = subtle_white_feathers.png; path = Resources/subtle_white_feathers.png; sourceTree = "<group>"; };
+		B32B60D317C83ABF00FB2ECC /* ZGImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGImage.h; sourceTree = "<group>"; };
+		B32B60D417C83ABF00FB2ECC /* ZGImage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGImage.m; sourceTree = "<group>"; };
 		B32EB9C51798CEDA00D8A129 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		B32EB9C71798CEDA00D8A129 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ZGDocument.xib; sourceTree = "<group>"; };
 		B32FF53117933C6B0083146C /* ZGItemProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ZGItemProtocol.h; sourceTree = "<group>"; };
@@ -320,7 +323,7 @@
 		B3FC1D9C17A0B40B00BE0ED3 /* leaf-0-64x64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "leaf-0-64x64.png"; path = "Resources/leaf-0-64x64.png"; sourceTree = "<group>"; };
 		B3FC1D9D17A0B40B00BE0ED3 /* leaf-1-64x64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "leaf-1-64x64.png"; path = "Resources/leaf-1-64x64.png"; sourceTree = "<group>"; };
 		B3FC1D9E17A0B40B00BE0ED3 /* leaf-2-64x64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "leaf-2-64x64.png"; path = "Resources/leaf-2-64x64.png"; sourceTree = "<group>"; };
-		B3FC1D9F17A0B40B00BE0ED3 /* leaf-3-64X64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "leaf-3-64X64.png"; path = "Resources/leaf-3-64X64.png"; sourceTree = "<group>"; };
+		B3FC1D9F17A0B40B00BE0ED3 /* leaf-3-64x64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "leaf-3-64x64.png"; path = "Resources/leaf-3-64x64.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -351,6 +354,8 @@
 				B36196D517959F6800C515E4 /* ZGBitset.m */,
 				B35D1E481794DC8300A0210F /* ZGDate.h */,
 				B35D1E491794DC8300A0210F /* ZGDate.m */,
+				B32B60D317C83ABF00FB2ECC /* ZGImage.h */,
+				B32B60D417C83ABF00FB2ECC /* ZGImage.m */,
 				B3F7414D17A21B79009A8ECF /* ZGImages.h */,
 				B3F7414E17A21B79009A8ECF /* ZGImages.m */,
 				B35D1E3F1794CA3B00A0210F /* ZGErrors.h */,
@@ -493,7 +498,7 @@
 				B3FC1D9C17A0B40B00BE0ED3 /* leaf-0-64x64.png */,
 				B3FC1D9D17A0B40B00BE0ED3 /* leaf-1-64x64.png */,
 				B3FC1D9E17A0B40B00BE0ED3 /* leaf-2-64x64.png */,
-				B3FC1D9F17A0B40B00BE0ED3 /* leaf-3-64X64.png */,
+				B3FC1D9F17A0B40B00BE0ED3 /* leaf-3-64x64.png */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -661,7 +666,7 @@
 				B3FC1DA017A0B40B00BE0ED3 /* leaf-0-64x64.png in Resources */,
 				B3FC1DA117A0B40B00BE0ED3 /* leaf-1-64x64.png in Resources */,
 				B3FC1DA217A0B40B00BE0ED3 /* leaf-2-64x64.png in Resources */,
-				B3FC1DA317A0B40B00BE0ED3 /* leaf-3-64X64.png in Resources */,
+				B3FC1DA317A0B40B00BE0ED3 /* leaf-3-64x64.png in Resources */,
 				B322F08017A613E100715C6D /* license.txt in Resources */,
 				B3E87DAC17A95C6100B246B8 /* folders-blue.png in Resources */,
 				B3767B0017AF978F00971CE4 /* folders-white.png in Resources */,
@@ -763,6 +768,7 @@
 				B3767B0317AFAAC700971CE4 /* ZGSheet.m in Sources */,
 				B31A49C417B27AE800030DD5 /* ZGDestination.m in Sources */,
 				B3B444B417BA41F4008D88A3 /* ZGAlerts.m in Sources */,
+				B32B60D517C83ABF00FB2ECC /* ZGImage.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

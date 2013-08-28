@@ -351,6 +351,54 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     return self;
 }
 
+- (NSImage*) imageRotatedByDegrees: (CGFloat) degrees {
+    while (degrees < 0) {
+        degrees += 360;
+    }
+    while (degrees > 360) {
+        degrees -= 360;
+    }
+    [NSGraphicsContext.currentContext saveGraphicsState];
+    NSSize rs = NSMakeSize(self.size.height, self.size.width);
+    NSImage* ri = [[NSImage alloc] initWithSize: rs];
+    NSAffineTransform* t = [NSAffineTransform transform] ;
+    [t translateXBy:  self.size.width / 2 yBy: self.size.height / 2] ;
+    [t rotateByDegrees: degrees];
+    // Then translate the origin system back to the bottom left
+    [t translateXBy: -rs.width / 2 yBy: -rs.height / 2] ;
+    [ri lockFocus]; // NSGraphicsContext.currentContext = rotatedImage
+    NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh;
+    [t concat];
+    [self drawAtPoint: NSMakePoint(0, 0) fromRect: NSZeroRect operation: NSCompositeCopy fraction: 1];
+    [ri unlockFocus];
+    [NSGraphicsContext.currentContext restoreGraphicsState];
+    return ri;
+}
+
+- (NSImage*) mirror {
+    if (self == 0) {
+        return null;
+    } else {
+        NSImage* m = [NSImage.alloc initWithSize: self.size];
+        if (m != null) {
+            [NSGraphicsContext.currentContext saveGraphicsState];
+            NSAffineTransform *t = [NSAffineTransform transform];
+            // if original image was flipped we will render it upsidedown and the
+            // resulting image absorbs "flipped" state and is not flipped anymore
+            m.flipped = false;
+            [t scaleXBy: -1 yBy: 1];
+            [t translateXBy: -self.size.width yBy: 0];
+            [m lockFocus]; // NSGraphicsContext.currentContext = m
+            NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh;
+            [t concat];
+            [self drawAtPoint: NSMakePoint(0, 0) fromRect:NSZeroRect operation: NSCompositeCopy fraction: 1];
+            [m unlockFocus];
+            [NSGraphicsContext.currentContext restoreGraphicsState];
+        }
+        return m;
+    }
+}
+
 @end
 
 

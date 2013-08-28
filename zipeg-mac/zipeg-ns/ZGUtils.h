@@ -53,11 +53,6 @@ FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 - (NSString*) substringFrom: (int) fromInclusive to: (int) toExclusive;
 @end
 
-@interface NSImage(ZGExtensions)
-- (id) initWithCGImage: (CGImageRef) cgImage;
-@end
-
-
 @interface NSView(ZGExtensions)
 - (NSView*) findViewByClassName: (NSString*) cn;
 - (NSView*) findViewByClassName: (NSString*) className tag: (int) t;
