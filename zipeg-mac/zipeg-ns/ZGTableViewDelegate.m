@@ -144,15 +144,26 @@
 }
 
 - (void) _sizeToContent: (NSTableView*) v {
-    assert(v != null);
+    assert([v isKindOfClass: NSTableView.class]);
     int n = (int)v.tableColumns.count;
     for (int i = 0; i < n; i++) {
         NSSize size = [ZGTableViewDelegate minMaxVisibleColumnContentSize: v columnIndex: i];
         if (size.width > 0 && size.height > 0) {
-            NSTableColumn* tableColumn = v.tableColumns[i];
-            tableColumn.width = MAX(tableColumn.width, size.width + 16);
-            v.rowHeight = size.height;
-            [_document.window.contentView setNeedsDisplay: true];
+            NSTableColumn* tc = v.tableColumns[i];
+            BOOL refresh = false;
+            CGFloat w = MAX(tc.width, size.width + 16);
+            if (tc.width != w) {
+                refresh = true;
+                tc.width = w;
+            }
+            if (v.rowHeight != size.height) {
+                refresh = true;
+                v.rowHeight = size.height;
+            }
+            if (refresh) {
+                NSView* cv = _document.window.contentView;
+                cv.needsDisplay = true;
+            }
         }
     }
 }

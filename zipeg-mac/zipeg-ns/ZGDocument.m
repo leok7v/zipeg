@@ -344,6 +344,17 @@ static NSScrollView* createScrollView(NSRect r, NSView* v) {
     sv.hasHorizontalScroller = true;
     sv.autoresizingMask = kSizableWH;
     sv.autoresizesSubviews = true;
+    sv.autohidesScrollers = false;
+    sv.scrollsDynamically = true; // must be true
+/*  DOES NOT seem to effect on flicker
+    sv.translatesAutoresizingMaskIntoConstraints = false; // default: true
+
+    sv.horizontalScrollElasticity = NSScrollElasticityNone;
+    sv.verticalScrollElasticity = NSScrollElasticityNone;
+    DOES NOT seem to effect on flicker
+    sv.drawsBackground = false;
+    sv.contentView.copiesOnScroll = true;
+*/
     return sv;
 }
 

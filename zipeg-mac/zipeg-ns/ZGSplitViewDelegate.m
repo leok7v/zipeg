@@ -138,13 +138,13 @@
     }
     for (;;) {
         int k = 0;
-        CGFloat sum = 0;   // sum of all the view "priorities"
+        CGFloat sum = 0;   // sum of all the view "weights"
         while (sum == 0 && !force) {
-            for (NSNumber* priority in sorted) {
+            for (NSNumber* weight in sorted) {
                 if (k < sv.subviews.count) {
-                    CGFloat min = [self minSize: priority];
-                    CGFloat s = [self splitView: sv subsize: priority.integerValue];
-                    sum += delta > 0 || s > min || force ? [_w2ix[priority] floatValue] : 0;
+                    CGFloat min = [_minSize[weight] floatValue];
+                    CGFloat s = [self splitView: sv subsize: weight.integerValue];
+                    sum += delta > 0 || s > min || force ? [_w2ix[weight] floatValue] : 0;
                     k++;
                 }
             }
@@ -158,24 +158,24 @@
         NSAssert(sorted.count >= sv.subviews.count, @"sorted.count=%ld sv.subviews.count=%ld", sorted.count, sv.subviews.count);
         CGFloat deltas[sorted.count];
         k = 0;
-        for (NSNumber* priority in sorted) {
+        for (NSNumber* weight in sorted) {
             if (k < sv.subviews.count) {
-                CGFloat min = [self minSize: priority];
-                CGFloat s = [self splitView: sv subsize: priority.integerValue];
-                deltas[k++] = delta > 0 || s > min || force ? [_w2ix[priority] floatValue] / sum : 0;
+                CGFloat min = [_minSize[weight] floatValue];
+                CGFloat s = [self splitView: sv subsize: weight.integerValue];
+                deltas[k++] = delta > 0 || s > min || force ? [_w2ix[weight] floatValue] / sum : 0;
                 // trace(@"deltas[%d]=%f s=%f min=%f", k - 1, deltas[k - 1], s, min);
             }
         }
         k = 0;
-        for (NSNumber* priority in sorted) {
+        for (NSNumber* weight in sorted) {
             if (k < sv.subviews.count) {
-                NSInteger ix = priority.integerValue;
+                NSInteger ix = weight.integerValue;
                 NSView* view = sv.subviews[ix];
                 NSSize size = sv.bounds.size;
-                CGFloat min = [self minSize: priority];
+                CGFloat min = [self minSize: weight];
                 CGFloat d = delta * deltas[k];
-                // trace(@"[%@] %@ d=%f delta=%f", priority, _w2ix[priority], d, delta);
-                CGFloat s = [self splitView: sv subsize: priority.integerValue];
+                // trace(@"[%@] %@ d=%f delta=%f", weight, _w2ix[weight], d, delta);
+                CGFloat s = [self splitView: sv subsize: weight.integerValue];
                 if (d > 0 || s + d >= min || force) {
                     delta -= d;
                     s += d;
@@ -188,7 +188,7 @@
                 } else {
                     size.height = s;
                 }
-                // trace(@"[%@] %@=%@ d=%f delta=%f", priority, _w2ix[priority], NSStringFromSize(size), d, delta);
+                // trace(@"[%@] %@=%@ d=%f delta=%f", weight, _w2ix[weight], NSStringFromSize(size), d, delta);
                 view.frameSize = size;
             }
             k++;

@@ -33,8 +33,6 @@
                 [self cancelDelayed];
                 _document.outlineView.delegate = null;
                 _sectionCell = null;
-                [_document.tableView removeTableColumn: _document.tableView.tableColumns[0]];
-
             });
     }
     return self;
@@ -274,13 +272,29 @@ static BOOL hasFileChild(NSObject<ZGItemProtocol>* it) {
 }
 
 - (void) _sizeToContent: (NSOutlineView*) v {
-    assert(v != null);
+    assert([v isKindOfClass: NSOutlineView.class]);
     NSSize s = [ZGTableViewDelegate minMaxVisibleColumnContentSize: v columnIndex: 0];
+//  trace("minMaxVisibleColumnContentSize %@", NSStringFromSize(s));
     if (s.width > 0 && s.height > 0) {
+        BOOL refresh = false;
         NSTableColumn* tc = v.tableColumns[0];
-        tc.width = s.width;
-        v.rowHeight = s.height;
-        [_document.window.contentView setNeedsDisplay: true];
+        if (tc.width != s.width) {
+//          trace("tc[0].width := %f was %f", s.width, tc.width);
+            refresh = true;
+            tc.width = s.width;
+            // see: https://github.com/leok7v/zipeg/issues/26
+            tc.minWidth = s.width;
+            tc.maxWidth = s.width;
+        }
+        if (v.rowHeight != s.height) {
+            refresh = true;
+            v.rowHeight = s.height;
+        }
+        if (refresh) {
+            NSView* cv = _document.window.contentView;
+//          trace("cv.needsDisplay");
+            cv.needsDisplay = true;
+        }
     }
 }
 
