@@ -402,7 +402,6 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 
 @end
 
-
 @implementation ZGOperation
 @synthesize cancelRequested;
 @end
@@ -522,7 +521,7 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 
 + (NSString*) createTemporaryFolder: (NSString*) name {
     NSString* folder = null;
-    NSString* guid = NSProcessInfo.processInfo.globallyUniqueString;
+    NSString* guid = NSProcessInfo.processInfo.globallyUniqueString;  // ~10 microseconds
     NSString* t = [NSTemporaryDirectory() stringByAppendingPathComponent: [name stringByAppendingString: guid]];
     const char* cc = [t fileSystemRepresentation];
     if (cc != null) {
@@ -546,7 +545,7 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     NSString* name = (ext != null && ext.length > 0) ? path.stringByDeletingPathExtension : path;
     int retry = 16;
     while (retry > 0) {
-        NSString* guid = NSProcessInfo.processInfo.globallyUniqueString;
+        NSString* guid = NSProcessInfo.processInfo.globallyUniqueString; // ~10 microseconds
         NSString* t = [name stringByAppendingString: guid];
         if (ext != null && ext.length > 0) {
             t = [t stringByAppendingPathExtension: ext];

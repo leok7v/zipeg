@@ -1,6 +1,5 @@
 @interface NSImage(ZGExtensions)
 - (id) initWithCGImage: (CGImageRef) cgImage;
-+ (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon;
 
 - (NSImage*) rotate: (CGFloat) degrees;
 - (NSImage*) mirror; // mirror around Y axis (swap left and right)
@@ -16,6 +15,10 @@
 - (void) drawInRect: (NSRect) d fromRect: (NSRect) r;
 - (void) drawInRect: (NSRect) d fromRect: (NSRect) r operation: (NSCompositingOperation) op;
 - (void) drawInRect: (NSRect) d fromRect: (NSRect) r operation: (NSCompositingOperation) op opacity: (CGFloat) alpha;
+
++ (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon;
++ (NSImage*) exifThumbnail: (NSURL*) url;
+
 @end
 
 

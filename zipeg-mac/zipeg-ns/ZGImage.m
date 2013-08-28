@@ -79,55 +79,25 @@ static NSDictionary* sHints;
 
 - (int64_t) imageBytes {
     int64_t bytes = 0;
-    for (NSBitmapImageRep* r in self.representations) {
-/*
-        trace("%@ samplesPerPixel=%ld bitsPerPixel=%ld bytesPerRow=%ld bytesPerPlane=%ld numberOfPlanes=%ld",
-              NSStringFromSize(r.size),
-              r.samplesPerPixel, r.bitsPerPixel, r.bytesPerRow, r.bytesPerPlane, r.numberOfPlanes);
-*/
-        bytes += MAX(r.size.height * r.bytesPerRow, r.bytesPerPlane * r.numberOfPlanes);
+    for (NSImageRep* o in self.representations) {
+        if ([o isKindOfClass: NSBitmapImageRep.class]) {
+            /*
+             trace("%@ samplesPerPixel=%ld bitsPerPixel=%ld bytesPerRow=%ld bytesPerPlane=%ld numberOfPlanes=%ld",
+             NSStringFromSize(r.size),
+             r.samplesPerPixel, r.bitsPerPixel, r.bytesPerRow, r.bytesPerPlane, r.numberOfPlanes);
+             */
+            NSBitmapImageRep* r = (NSBitmapImageRep*)o;
+            bytes += MAX(r.size.height * r.bytesPerRow, r.bytesPerPlane * r.numberOfPlanes);
+        } else if (isEqual(NSStringFromClass(o.class), @"NSIconRefImageRep")) {
+            // most likely cached standard icon -> zero bytes expense
+        } else {
+            bytes += o.bitsPerSample * o.pixelsWide * o.pixelsHigh;
+            trace("representations=%@", o);
+        }
     }
     return bytes;
 }
 
-
-+ (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon {
-    // timestamp("qlImage");
-    NSURL *fileURL = [NSURL fileURLWithPath: path];
-    if (path == null || fileURL == null) {
-        return null;
-    }
-    NSDictionary *d = @{ (NSString*)kQLThumbnailOptionIconModeKey: @(icon)};
-    QLThumbnailRef tr = QLThumbnailCreate(kCFAllocatorDefault,
-                                           (__bridge CFURLRef)fileURL,
-                                           CGSizeMake(size.width, size.height),
-                                           (__bridge CFDictionaryRef)d);
-    NSImage* i = null;
-    if (tr != null) {
-/*      NSRect cr = QLThumbnailGetContentRect(tr); */
-        NSSize maxSize = QLThumbnailGetMaximumSize(tr);
-        size.width = MIN(maxSize.width, size.width);
-        size.height = MIN(maxSize.height, size.height);
-        // kQLThumbnailOptionScaleFactorKey absent defaults to @(1.0)
-        CGImageRef ir = QLThumbnailImageCreate(kCFAllocatorDefault,
-                                               (__bridge CFURLRef)fileURL,
-                                               CGSizeMake(size.width, size.height),
-                                               (__bridge CFDictionaryRef)d);
-        if (ir != null) {
-            i = [NSImage.alloc initWithCGImage: ir];
-            CFRelease(ir);
-        }
-        if (i == null) {
-            i = [NSWorkspace.sharedWorkspace iconForFile: path];
-            if (i != null && size.width > 0 && size.height > 0) {
-                [i setSize: size];
-            }
-        }
-        CFRelease(tr);
-    }
-    // timestamp("qlImage");
-    return i;
-}
 
 - (void) drawAtPoint: (NSPoint) p {
     [self drawAtPoint: p fromRect: NSZeroRect];
@@ -165,7 +135,224 @@ static NSDictionary* sHints;
     }
 }
 
+enum { // Baseline TIFF Orientation
+    ORIENTATION_UNKNOWN      = 0,
+    ORIENTATION_TOP_LEFT     = 1, // 0th row at top, 0th column at left  (below step to normalize to TOP LEFT)
+    ORIENTATION_TOP_RIGHT    = 2, // 0th row at top, 0th column at right (mirror)
+    ORIENTATION_BOTTOM_RIGHT = 3, // 0th row at bottom, 0th column at right (rotate 180 == flip + mirror)
+    ORIENTATION_BOTTOM_LEFT  = 4, // 0th row at bottom, 0th column at left (flip)
+    ORIENTATION_LEFT_TOP     = 5, // 0th row at left, 0th column at top 6 (transpose?)
+    ORIENTATION_RIGHT_TOP    = 6, // 0th row at right, 0th column at top (rotate 90 clockwise)
+    ORIENTATION_RIGHT_BOTTOM = 7, // 0th row at right, 0th column at bottom (transverse?)
+    ORIENTATION_LEFT_BOTTOM  = 8  // 0th row at left, 0th column at bottom (rotate 270 clockwise)
+};
+
+/* A transversion is a 180° rotation followed by a transposition */
+
++ (NSImage*) exifThumbnail: (NSURL*) url {
+    timestamp("exifThumbnail");
+    NSImage* t = null;
+    CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)url, null);
+    if (source != null) {
+        CFDictionaryRef meta = CGImageSourceCopyPropertiesAtIndex(source, 0, null);
+        if (meta != null) {
+            NSDictionary* opt = @{ (NSString*)kCGImageSourceCreateThumbnailFromImageAlways: @false,
+                                   (NSString*)kCGImageSourceCreateThumbnailFromImageIfAbsent: @false };
+            NSObject* o = (__bridge NSObject*)CFDictionaryGetValue(meta, kCGImagePropertyOrientation);
+            if ([o isKindOfClass: NSNumber.class] ||
+                (ORIENTATION_TOP_LEFT <= ((NSNumber*)o).intValue && ((NSNumber*)o).intValue <= ORIENTATION_LEFT_BOTTOM)) {
+                int orientation = ((NSNumber*)o).intValue;
+                // at the time of writing CGImageSourceCreateThumbnailAtIndex does NOT respect EXIF orientation tag
+                // gotta do it hard way:
+                CGImageRef thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef)opt);
+                if (thumbnail != null) {
+                    t = [NSImage.alloc initWithCGImage: thumbnail];
+                    if (t != null) {
+                        switch (orientation) {
+                            case ORIENTATION_TOP_LEFT: break;
+                            case ORIENTATION_TOP_RIGHT: t = t.mirror; break;
+                            case ORIENTATION_BOTTOM_RIGHT: t.flipped = true; t = t.mirror; break;
+                            case ORIENTATION_BOTTOM_LEFT: t.flipped = true; break;
+                            case ORIENTATION_LEFT_TOP: t = null; break; // transpose not supported for now
+                            case ORIENTATION_RIGHT_TOP: t = [t rotate: 90]; break;
+                            case ORIENTATION_RIGHT_BOTTOM: t = null; break; // transverse not supported for now
+                            case ORIENTATION_LEFT_BOTTOM: t = [t rotate: 270]; break;
+                            default: NSAssert(false, @"unknown orientation: %d -- ignored", orientation); break;
+                        }
+
+                    }
+                    CFRelease(thumbnail);
+                }
+            } else { // no orientation tag:
+                CGImageRef thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef)opt);
+                if (thumbnail != null) {
+                    t = [NSImage.alloc initWithCGImage: thumbnail];
+                    CFRelease(thumbnail);
+                }
+            }
+            CFRelease(meta);
+        }
+        CFRelease(source);
+    }
+    timestamp("exifThumbnail");
+    return t;
+}
+
+/*
+ TODO:
+
+ time: extract 30 milliseconds
+
+ time: extract 592 microseconds
+ time: exifThumbnail 611 microseconds
+ time: NSImage.initWithContentsOfFile 25 milliseconds
+ time: exifThumbnail 27 milliseconds
+ time: NSImage.initWithContentsOfFile 3061 microseconds
+ time: qlImage 5476 microseconds
+
+ time: extract 6084 microseconds
+ time: exifThumbnail 4326 microseconds
+ time: NSImage.initWithContentsOfFile 3327 microseconds
+ time: qlImage 15 milliseconds
+
+ time: extract 293 milliseconds
+ time: exifThumbnail 90 milliseconds
+ time: qlImage 385 milliseconds
+
+ time: extract 823 microseconds
+ time: exifThumbnail 2203 microseconds
+ time: NSImage.initWithContentsOfFile 1649 microseconds
+ time: qlImage 6088 microseconds
+
+ time: extract 5021 microseconds
+ time: exifThumbnail 4147 microseconds
+ time: NSImage.initWithContentsOfFile 2883 microseconds
+ time: qlImage 13 milliseconds
+ time: qlImage 512 milliseconds
+ 
+ time: extract 5308 microseconds
+ time: exifThumbnail 4804 microseconds
+ time: NSImage.initWithContentsOfFile 4422 microseconds
+ time: qlImage 1076 milliseconds
+
+ time: extract 4796 microseconds
+ time: exifThumbnail 4384 microseconds
+ time: NSImage.initWithContentsOfFile 2908 microseconds
+ time: qlImage 1064 milliseconds
+
+ time: extract 6765 microseconds
+ time: exifThumbnail 4537 microseconds
+ time: NSImage.initWithContentsOfFile 3062 microseconds
+ time: qlImage 1074 milliseconds
+
+ time: extract 12 milliseconds
+ time: exifThumbnail 4437 microseconds
+ time: NSImage.initWithContentsOfFile 3139 microseconds
+ time: qlImage 1066 milliseconds
+
+ time: extract 17 milliseconds
+ time: exifThumbnail 5907 microseconds
+ time: NSImage.initWithContentsOfFile 9162 microseconds
+ time: qlImage 1095 milliseconds
+
+ time: extract 5840 microseconds
+ time: exifThumbnail 4498 microseconds
+ time: NSImage.initWithContentsOfFile 2929 microseconds
+ time: qlImage 1086 milliseconds
+
+ time: extract 4619 microseconds
+ time: exifThumbnail 4569 microseconds
+ time: NSImage.initWithContentsOfFile 2912 microseconds
+ time: qlImage 1066 milliseconds
+
+ time: extract 4768 microseconds
+ time: exifThumbnail 4644 microseconds (!!!)
+ time: NSImage.initWithContentsOfFile 2990 microseconds (!!!)
+ time: qlImage 1066 milliseconds (!!!)
+
+ time: extract 4198 microseconds
+ time: exifThumbnail 4806 microseconds
+ time: NSImage.initWithContentsOfFile 2984 microseconds
+ time: qlImage 1074 milliseconds
+
+ time: extract 7970 microseconds
+ time: exifThumbnail 6929 microseconds
+ time: NSImage.initWithContentsOfFile 4491 microseconds
+ time: qlImage 1073 milliseconds
+
+ time: extract 5611 microseconds
+ time: exifThumbnail 4509 microseconds
+ time: NSImage.initWithContentsOfFile 2932 microseconds
+ time: qlImage 1068 milliseconds
+
+ time: extract 4280 microseconds
+ time: exifThumbnail 4787 microseconds
+ time: NSImage.initWithContentsOfFile 3045 microseconds
+ time: qlImage 1079 milliseconds
+
+ time: extract 4814 microseconds
+ time: exifThumbnail 4482 microseconds
+ time: NSImage.initWithContentsOfFile 2906 microseconds
+ time: qlImage 1074 milliseconds
+
+ */
+
++ (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon {
+    NSURL* url = [NSURL fileURLWithPath: path];
+    if (path == null || url == null) {
+        return null;
+    }
+    // TODO: we need to extract EXIF first and schedule better image
+    NSImage* i = null;
+    i = [NSImage exifThumbnail: url];
+    if (i != null) {
+//        return i;
+    }
+    NSString* ext = path.pathExtension;
+    if ([@"jpeg" equalsIgnoreCase: ext] || [@"jpg" equalsIgnoreCase: ext] || [@"png" equalsIgnoreCase: ext] ||
+        [@"tiff" equalsIgnoreCase: ext] || [@"tif" equalsIgnoreCase: ext] || [@"gif" equalsIgnoreCase: ext]) {
+        timestamp("NSImage.initWithContentsOfFile");
+        i = [NSImage.alloc initWithContentsOfFile: path]; // TODO: aspect ratio! (on the caller side)
+        timestamp("NSImage.initWithContentsOfFile");
+    }
+    if (i != null) {
+        return i;
+    }
+    timestamp("qlImage");
+    NSDictionary *d = @{ (NSString*)kQLThumbnailOptionIconModeKey: @(icon)};
+    QLThumbnailRef tr = QLThumbnailCreate(kCFAllocatorDefault,
+                                          (__bridge CFURLRef)url,
+                                          CGSizeMake(size.width, size.height),
+                                          (__bridge CFDictionaryRef)d);
+    if (tr != null) {
+        /*      NSRect cr = QLThumbnailGetContentRect(tr); */
+        NSSize maxSize = QLThumbnailGetMaximumSize(tr);
+        size.width = MIN(maxSize.width, size.width);
+        size.height = MIN(maxSize.height, size.height);
+        // kQLThumbnailOptionScaleFactorKey absent defaults to @(1.0)
+        CGImageRef ir = QLThumbnailImageCreate(kCFAllocatorDefault,
+                                               (__bridge CFURLRef)url,
+                                               CGSizeMake(size.width, size.height),
+                                               (__bridge CFDictionaryRef)d);
+        if (ir != null) {
+            i = [NSImage.alloc initWithCGImage: ir];
+            CFRelease(ir);
+        }
+        if (i == null) {
+            i = [NSWorkspace.sharedWorkspace iconForFile: path];
+            if (i != null && size.width > 0 && size.height > 0) {
+                [i setSize: size];
+            }
+        }
+        CFRelease(tr);
+    }
+    timestamp("qlImage");
+    return i;
+}
+
 @end
+
+
 
 @implementation ZGImage {
     NSMutableDictionary* _hints;
@@ -188,6 +375,7 @@ static NSDictionary* sHints;
 - (void) drawAtPoint: (NSPoint) p fromRect: (NSRect) r operation: (NSCompositingOperation) op opacity: (CGFloat) alpha {
     [self drawAtPoint: p fromRect: r operation: op fraction: alpha];
 }
+
 
 @end
 

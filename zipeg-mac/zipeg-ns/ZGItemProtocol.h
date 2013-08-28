@@ -25,13 +25,14 @@ enum {              // answers for askOverwrite
 @protocol ZGArchiveCallbacks // ALL these methods are called on background thread and expected to block
 
 - (BOOL) moveToTrash: (const char*) pathname;
-- (BOOL) askCancel;
-- (NSString*) askPassword;
-- (int) askOverwrite: (const char*) from time: (int64_t) fromTime size: (int64_t) fromSize
+- (BOOL) askCancel: (ZGOperation*) op;
+- (NSString*) askPassword: (ZGOperation*) op;
+- (int) askOverwrite: (ZGOperation*) op
+                from: (const char*) from time: (int64_t) fromTime size: (int64_t) fromSize
                   to: (const char*) to   time: (int64_t) toTime   size: (int64_t) toSize;
-- (BOOL) askToContinue: (NSString*) path error: (NSString*) message;
-- (BOOL) progress: (int64_t) pos ofTotal: (int64_t) total; // true means "carry on"
-- (BOOL) progressFiles: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles; // true means "carry on"
+- (BOOL) askToContinue: (ZGOperation*) op path: (NSString*) path error: (NSString*) message;
+- (BOOL) progress: (ZGOperation*) op pos: (int64_t) pos ofTotal: (int64_t) total; // true means "carry on"
+- (BOOL) progressFiles: (ZGOperation*) op fileno: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles;
 
 @end
 

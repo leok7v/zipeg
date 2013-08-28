@@ -123,7 +123,6 @@
 @property ZGSplitViewDelegate* splitViewDelegate;
 @property NSColor* searchTextColor;
 @property NSOperationQueue* operationQueue;
-@property NSOperationQueue* previewQueue;
 @property CFStringEncoding encoding;
 @property NSString* typeName;
 @property NSError* error;
@@ -326,11 +325,7 @@
         alloc_count(self);
         self.hasUndoManager = false;
         _operationQueue = NSOperationQueue.new;
-        int N = MAX((int)NSProcessInfo.processInfo.processorCount / 2, 1);
-        // N = 1; // TODO: for now - remove me and see how much stuff breaks
-        _operationQueue.maxConcurrentOperationCount = N;
-        _previewQueue = NSOperationQueue.new;
-        _previewQueue.maxConcurrentOperationCount = N;
+        _operationQueue.maxConcurrentOperationCount = 1; // ZipHandler is not multithreaded :(
         _previewCache = [NSMutableDictionary dictionaryWithCapacity: 1024];
         _encoding = (CFStringEncoding)-1;
         _highlightStyle = NSTableViewSelectionHighlightStyleSourceList;
@@ -338,18 +333,6 @@
         _tempFolder = [ZGUtils createTemporaryFolder: @"preview"];
         // trace("_tempFolder=%@", _tempFolder);
         [ZGApp registerUnpackingFolder: _tempFolder to: _tempFolder];
-/*
-        NSString* res = null;
-        NSFileHandle* fh = [ZGUtils createTemporaryFile: [_tempFolder stringByAppendingPathComponent: @"foo.bar"] result: &res];
-        trace("%@ %@", res, fh);
-        [fh closeFile];
-        unlink(res.fileSystemRepresentation);
-        [ZGUtils rmdirsOnBackgroundThread: _tempFolder done: ^(BOOL b) {
-            if (b) {
-                [ZGApp unregisterUnpackingFolder: _tempFolder];
-            }
-        }];
-*/
     }
     return self;
 }
@@ -570,8 +553,14 @@ static NSTableView* createTableView(NSRect r) {
 
 - (NSImage*) itemImage: (NSObject<ZGItemProtocol>*) it open: (BOOL) o {
     if (it.children == null) {
-        NSImage* img = [ZGImages iconForFileType16x16: it.name.pathExtension];
-        return img == null ? ZGImages.shared.docImage : img;
+        NSImage* i = [self icon: it];
+        if (i == null) {
+            i = [ZGImages iconForFileType16x16: it.name.pathExtension];
+        } else {
+            i.size = NSMakeSize(16, 16);
+            // trace("%@", i.debugDescription);
+        }
+        return i == null ? ZGImages.shared.docImage : i;
     } else {
         return o ? ZGImages.shared.dirOpen : ZGImages.shared.dirImage;
     }
@@ -836,14 +825,9 @@ static NSTableView* createTableView(NSRect r) {
     for (ZGOperation* op in _operationQueue.operations) {
         op.cancelRequested = true;
     }
-    for (ZGOperation* op in _previewQueue.operations) {
-        op.cancelRequested = true;
-    }
     [_operationQueue cancelAllOperations];
-    [_previewQueue cancelAllOperations];
     [self endAlerts];
     [_operationQueue waitUntilAllOperationsAreFinished];
-    [_previewQueue waitUntilAllOperationsAreFinished];
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
     [ZGUtils rmdirsOnBackgroundThread: _tempFolder done: ^(BOOL b) {
         dispatch_semaphore_signal(sema);
@@ -1321,7 +1305,6 @@ static NSString* nextPathname(NSString* path) {
                                         to: url
                                         DnD: dnd];
     [_operationQueue addOperation: operation];
-    _previewQueue.suspended = true;
 }
 
 #define PREVIEW_FILE_SIZE_LIMIT (1024*1024*16)
@@ -1329,6 +1312,7 @@ static NSString* nextPathname(NSString* path) {
 - (NSImage*) icon: (NSObject<ZGItemProtocol>*) item {
     NSString* path = item.fullPath;
     NSImage* i = _previewCache[path];
+    NSAssert(item.children == null, @"must be leaf item");
     if (i == null && item.children == null && item.size.longLongValue < PREVIEW_FILE_SIZE_LIMIT) {
         NSString* res = null;
         int fd = [ZGUtils createTemporaryFile: [_tempFolder stringByAppendingPathComponent: path.lastPathComponent] result: &res];
@@ -1354,7 +1338,8 @@ static NSString* nextPathname(NSString* path) {
                                         item: item
                                         fileDescriptor: fd
                                         to: url];
-    [_previewQueue addOperation: operation];
+    operation.queuePriority = NSOperationQueuePriorityLow;
+    [_operationQueue addOperation: operation];
 }
 
 - (void) previewItemForOperation: (ZGOperation*) op
@@ -1369,11 +1354,13 @@ static NSString* nextPathname(NSString* path) {
         NSImage* i = null;
         if (error == null && !op.isCancelled && !op.cancelRequested) {
             i = [NSImage qlImage: url.path ofSize: NSMakeSize(1024, 1024) asIcon: true];
+        } else {
+            trace("error=%@ isCancelled=%d cancelRequested=%d", error, op.isCancelled, op.cancelRequested);
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             // trace("extracted for preview: %@ error=%@ image=%@", url, error, i.debugDescription);
             if (i != null) {
-//              trace("i.imageBytes=%lld", i.imageBytes);
+//              trace("%@ i.imageBytes=%lld", item.fullPath, i.imageBytes);
                 _previewCache[item.fullPath] = i;
                 _contentView.needsDisplay = true;
             }
@@ -1388,7 +1375,6 @@ static NSString* nextPathname(NSString* path) {
     [self scheduleAlerts];
     [_archive extract: items to: url operation: op fileDescriptor: -1 done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            _previewQueue.suspended = _operationQueue.operationCount > 0;
             [_alerts progress: 0 of: 0];
             if (error != null) {
                 [self restoreTrashed];
@@ -1493,7 +1479,8 @@ static NSString* nextPathname(NSString* path) {
     }];
 }
 
-- (int) askOverwrite: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+- (int) askOverwrite: (ZGOperation*) op
+                from: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                   to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
     assert(![NSThread isMainThread]);
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
@@ -1508,7 +1495,6 @@ static NSString* nextPathname(NSString* path) {
     });
     dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
     dispatch_release(sema);
-    sema = null;
     return answer;
 }
 
@@ -1578,7 +1564,6 @@ static NSString* nextPathname(NSString* path) {
     });
     dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
     dispatch_release(sema);
-    sema = null;
     // timestamp("moveToTrash"); // 1.5 - 6 milliseconds
     return b;
 }
@@ -1666,103 +1651,106 @@ static NSString* multipartBasename(NSString* s) {
     });
 }
 
-- (NSString*) askPassword {
+- (NSString*) askPassword: (ZGOperation*) op {
     assert(![NSThread isMainThread]);
-    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    NSString* __block password;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        assert([NSThread isMainThread]);
-        // there are 2 points in time when we may be asked for password.
-        // during archive opening and during extraction. Do not show hero
-        // screen at the second scenario.
-        _heroView.hidden = _archive != null;
-        NSString* prompt = [NSString stringWithFormat: @"Please enter archive password for archive\n«%@»",
-                            _url.path.lastPathComponent];
-        NSString* info = @"Password has been set by the person who created this archive file.\n"
-        "If you don`t know the password please contact that person.";
-        NSAlert* a = [NSAlert alertWithMessageText: prompt
-                                     defaultButton: @"OK"
-                                   alternateButton: @"Cancel"
-                                       otherButton: null
-                         informativeTextWithFormat: @"%@", info];
-        a.alertStyle = NSInformationalAlertStyle;
-        NSTextField* password_input = [NSTextField.alloc initWithFrame: NSMakeRect(0, 0, 300, 24)];
-        password_input.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin | NSViewMinXMargin;
-        NSCell* cell = password_input.cell;
-        cell.usesSingleLineMode = true;
-        password_input.stringValue = @"";
-        a.accessoryView = password_input;
-        [self beginAlerts];
-        [_alerts alert: a done: ^(NSInteger rc){
-            if (rc == NSAlertDefaultReturn) {
-                [password_input validateEditing];
-                password = password_input.stringValue;
-            } else {
-                password = @"";
-            }
-            a.accessoryView = null;
-            dispatch_semaphore_signal(sema);
-        }];
-    });
-    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-    dispatch_release(sema);
-    sema = null;
-    return password;
-}
-
-- (BOOL) askCancel {
-    assert(![NSThread isMainThread]);
-    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    BOOL __block answer = false;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        assert([NSThread isMainThread]);
-        if (_operationQueue.operationCount > 0) {
-            NSString* info = _archive == null ? @"" : // opening archive - no data corruption expected
-            @"(Some folders and files may be left behind corrupted or incomplete.)";
-            NSAlert* a = [NSAlert alertWithMessageText: @"Do you want to cancel current operation?"
-                                         defaultButton: @"Stop"
-                                       alternateButton: @"Keep Going"
+    NSString* __block password = @"";
+    if (![op isKindOfClass:PreviewItemOperation.class]) {
+        dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            assert([NSThread isMainThread]);
+            // there are 2 points in time when we may be asked for password.
+            // during archive opening and during extraction. Do not show hero
+            // screen at the second scenario.
+            _heroView.hidden = _archive != null;
+            NSString* prompt = [NSString stringWithFormat: @"Please enter archive password for archive\n«%@»",
+                                _url.path.lastPathComponent];
+            NSString* info = @"Password has been set by the person who created this archive file.\n"
+            "If you don`t know the password please contact that person.";
+            NSAlert* a = [NSAlert alertWithMessageText: prompt
+                                         defaultButton: @"OK"
+                                       alternateButton: @"Cancel"
                                            otherButton: null
                              informativeTextWithFormat: @"%@", info];
             a.alertStyle = NSInformationalAlertStyle;
+            NSTextField* password_input = [NSTextField.alloc initWithFrame: NSMakeRect(0, 0, 300, 24)];
+            password_input.autoresizingMask = NSViewWidthSizable | NSViewMaxXMargin | NSViewMinXMargin;
+            NSCell* cell = password_input.cell;
+            cell.usesSingleLineMode = true;
+            password_input.stringValue = @"";
+            a.accessoryView = password_input;
             [self beginAlerts];
-            [_alerts alert: a done: ^(NSInteger rc) {
-                answer = rc == NSAlertDefaultReturn;
+            [_alerts alert: a done: ^(NSInteger rc){
+                if (rc == NSAlertDefaultReturn) {
+                    [password_input validateEditing];
+                    password = password_input.stringValue;
+                } else {
+                    password = @"";
+                }
+                a.accessoryView = null;
                 dispatch_semaphore_signal(sema);
             }];
-        }
-    });
-    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-    dispatch_release(sema);
-    sema = null;
+        });
+        dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+        dispatch_release(sema);
+    }
+    return password;
+}
+
+- (BOOL) askCancel: (ZGOperation*) op {
+    assert(![NSThread isMainThread]);
+    BOOL __block answer = false; // TODO: Should it be true for PreviewItemOperation?
+    if (![op isKindOfClass:PreviewItemOperation.class]) {
+        dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            assert([NSThread isMainThread]);
+            if (_operationQueue.operationCount > 0) {
+                NSString* info = _archive == null ? @"" : // opening archive - no data corruption expected
+                @"(Some folders and files may be left behind corrupted or incomplete.)";
+                NSAlert* a = [NSAlert alertWithMessageText: @"Do you want to cancel current operation?"
+                                             defaultButton: @"Stop"
+                                           alternateButton: @"Keep Going"
+                                               otherButton: null
+                                 informativeTextWithFormat: @"%@", info];
+                a.alertStyle = NSInformationalAlertStyle;
+                [self beginAlerts];
+                [_alerts alert: a done: ^(NSInteger rc) {
+                    answer = rc == NSAlertDefaultReturn;
+                    dispatch_semaphore_signal(sema);
+                }];
+            }
+        });
+        dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+        dispatch_release(sema);
+    }
     return answer;
 }
 
-- (BOOL) askToContinue: (NSString*) path error: (NSString*) e {
+- (BOOL) askToContinue: (ZGOperation*) op path: (NSString*) path error: (NSString*) e {
     assert(![NSThread isMainThread]);
-    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
     BOOL __block keepGoing = false;
-    if (path == null || path.length == 0) {
-        path = _archive.root.name;
-    }
-    dispatch_async(dispatch_get_main_queue(), ^{
-        assert([NSThread isMainThread]);
-        if (_operationQueue.operationCount > 0) {
-            NSString* message = [NSString stringWithFormat: @"Error: %@ while unpacking:\n%@\n"
-                                "Do you want to ignore this error and try to continue?", e, path];
-            NSInteger rc = [self runModalAlert: message
-                                       buttons: @[ @"Ignore", @"Stop" ]
-                                      tooltips: @[ @"Ignore error and keep going", @"Abort unpacking" ]
-                                          info: null
-                                    suppressed: null];
-            keepGoing = rc == NSAlertFirstButtonReturn;
-            [self scheduleAlerts];
+    if (![op isKindOfClass:PreviewItemOperation.class]) {
+        dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+        if (path == null || path.length == 0) {
+            path = _archive.root.name;
         }
-        dispatch_semaphore_signal(sema);
-    });
-    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-    dispatch_release(sema);
-    sema = null;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            assert([NSThread isMainThread]);
+            if (_operationQueue.operationCount > 0) {
+                NSString* message = [NSString stringWithFormat: @"Error: %@ while unpacking:\n%@\n"
+                                     "Do you want to ignore this error and try to continue?", e, path];
+                NSInteger rc = [self runModalAlert: message
+                                           buttons: @[ @"Ignore", @"Stop" ]
+                                          tooltips: @[ @"Ignore error and keep going", @"Abort unpacking" ]
+                                              info: null
+                                        suppressed: null];
+                keepGoing = rc == NSAlertFirstButtonReturn;
+                [self scheduleAlerts];
+            }
+            dispatch_semaphore_signal(sema);
+        });
+        dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+        dispatch_release(sema);
+    }
     return keepGoing;
 }
 
@@ -1776,25 +1764,29 @@ static NSString* multipartBasename(NSString* s) {
     }
 }
 
-- (BOOL) progress: (int64_t) pos ofTotal: (int64_t) total {
+- (BOOL) progress: (ZGOperation*) op pos: (int64_t) pos ofTotal: (int64_t) total {
     assert(![NSThread isMainThread]);
-    // trace(@"%llu of %llu", pos, total);
-    [self checkTimeToShowHeroView];
-    if (total > 0 && 0 <= pos && pos <= total) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [_alerts progress: pos of: total];
-        });
+    if (![op isKindOfClass:PreviewItemOperation.class]) {
+        // trace(@"%llu of %llu", pos, total);
+        [self checkTimeToShowHeroView];
+        if (total > 0 && 0 <= pos && pos <= total) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [_alerts progress: pos of: total];
+            });
+        }
     }
     return true;
 }
 
-- (BOOL) progressFiles: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles {
+- (BOOL) progressFiles: (ZGOperation*) op fileno: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles {
     assert(![NSThread isMainThread]);
-    [self checkTimeToShowHeroView];
-    if (totalNumberOfFiles > 0 && 0 <= fileno && fileno <= totalNumberOfFiles) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [_alerts progress: fileno of: totalNumberOfFiles];
-        });
+    if (![op isKindOfClass:PreviewItemOperation.class]) {
+        [self checkTimeToShowHeroView];
+        if (totalNumberOfFiles > 0 && 0 <= fileno && fileno <= totalNumberOfFiles) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [_alerts progress: fileno of: totalNumberOfFiles];
+            });
+        }
     }
     return true;
 }
