@@ -18,13 +18,13 @@ static NSSearchPathDirectory dirs[] = {
 - (void) writeUserDefaults;
 @end
 
-@interface ZGAskButtonCell : NSPopUpButtonCell {
+@interface ZGInplaceButtonCell : NSPopUpButtonCell {
     ZGDestination* __weak _notify;
 }
 
 @end
 
-@implementation ZGAskButtonCell
+@implementation ZGInplaceButtonCell
 
 + (BOOL) prefersTrackingUntilMouseUp {
     return true;
@@ -104,15 +104,15 @@ static NSSearchPathDirectory dirs[] = {
         self.autoresizesSubviews = true;
         _font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
         _label = createLabel(4, @" ", _font, r); // tailing space is important
-        _ask = createAskButton(@[@"ask to ", @"always "], _font, r, _label.frame, self);
-        _selected = createAskButton(@[@"unpack selected ", @"unpack all "], _font, r, _ask.frame, self);
+        _ask = createInplaceButton(@[@"ask to ", @"always "], _font, r, _label.frame, self);
+        _selected = createInplaceButton(@[@"unpack selected ", @"unpack all "], _font, r, _ask.frame, self);
         _to = createButton(_selected.frame.origin.x + _selected.frame.size.width,
                            @" files to the folder:", _font, r, NSMomentaryPushInButton);
         _to.action = @selector(openDisclosure:);
         _to.target = self;
         _disclosure = createDirsButton(@"M", _font, r, _to.frame);
         _pathControl = createPathControl(_font, r, _disclosure.frame);
-        _reveal = createAskButton(@[ @" and show in Finder ", @"  but don't show " ],
+        _reveal = createInplaceButton(@[ @" and show in Finder ", @"  but don't show " ],
                                   _font, r, _pathControl.frame, self);
         _pathControl.action = @selector(pathControlSingleClick:);
         _pathControl.target = self;
@@ -365,7 +365,7 @@ static void insertMenuItem(NSMenu* m, NSString* title, NSImage* image, int tag) 
     [m insertItem: it atIndex: m.itemArray.count];
 }
 
-static NSPopUpButton* createAskButton(NSArray* texts, NSFont* font, NSRect r, NSRect lr, ZGDestination* that) {
+static NSPopUpButton* createInplaceButton(NSArray* texts, NSFont* font, NSRect r, NSRect lr, ZGDestination* that) {
     NSRect br = r;
     br.origin.x = lr.origin.x + lr.size.width - 8;
     br.origin.y = lr.origin.y;
@@ -383,7 +383,7 @@ static NSPopUpButton* createAskButton(NSArray* texts, NSFont* font, NSRect r, NS
     NSPopUpButton* btn = [NSPopUpButton.alloc initWithFrame: br pullsDown: true];
     btn.focusRingType = NSFocusRingTypeNone;
     btn.menu = m;
-    ZGAskButtonCell* bc = [ZGAskButtonCell.alloc initWithMenu: m notify: that];
+    ZGInplaceButtonCell* bc = [ZGInplaceButtonCell.alloc initWithMenu: m notify: that];
     btn.cell = bc;
     bc.arrowPosition = NSPopUpArrowAtBottom;
     bc.preferredEdge = NSMaxYEdge;
