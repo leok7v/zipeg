@@ -32,7 +32,7 @@ struct D;
     NSMutableArray* _pnames;
     NSMutableArray* _props;
     ZGOperation* _op;
-    ZGDocument* __weak document;
+    NSObject<ZGArchiveCallbacks>* __weak document;
     int _pathIndex; // in pnames
     int _numberOfItems;
     int _numberOfFolders;
@@ -540,7 +540,7 @@ static const char* kCharsNeedEscaping = "?+[(){}^$|\\./";
 
 - (BOOL) isCancelled {
     if (_op != null && _op.cancelRequested && !_op.isCancelled) {
-        if ([document askOnBackgroundThreadForCancel]) {
+        if ([document askCancel]) {
             [_op cancel];
         }
         _op.cancelRequested = false;
@@ -665,7 +665,7 @@ static NSString* starifyMultipartFilename(NSString* s) {
 }
 
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
-            document: (ZGDocument*) doc
+            document: (NSObject<ZGArchiveCallbacks>*) doc
            operation: (ZGOperation*) op error: (NSError**) err
                 done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) done {
     // This method must be called on the background thread
@@ -854,7 +854,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 }
 
 - (BOOL) file: (const char*) file error: (const char*) message {
-    bool b = [document askOnBackgroundThreadToContinue:
+    bool b = [document askToContinue:
               [NSString stringWithUTF8String: file == null ? "" : file]
               error: [NSString stringWithUTF8String: message]];
     if (!b && _op != null) {
@@ -869,10 +869,10 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 
 - (int) askOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                       to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
-    int r = [document askOnBackgroundThreadOverwriteFrom: (const char*) fromName
-                                                    time: (int64_t) fromTime size: (int64_t) fromSize
-                                                      to: (const char*) toName time: (int64_t) toTime
-                                                    size: (int64_t) toSize];
+    int r = [document askOverwrite: (const char*) fromName
+                              time: (int64_t) fromTime size: (int64_t) fromSize
+                                to: (const char*) toName time: (int64_t) toTime
+                              size: (int64_t) toSize];
     if (r == kCancel && _op != null) {
         [_op cancel];
     }
@@ -882,7 +882,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 - (const wchar_t*) password {
     if (!_password || _password.length == 0) {
         // [NSThread sleepForTimeInterval: 5]; // seconds
-        _password = [document askOnBackgroundThreadForPassword];
+        _password = [document askPassword];
     }
     if (_password) {
         NSInteger n = _password.length;
@@ -907,12 +907,12 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 
 - (BOOL) progress: (long long) pos ofTotal: (long long) total {
     assert(![NSThread isMainThread]);
-    return [document progressOnBackgroundThread: pos ofTotal: total] && !self.isCancelled;
+    return [document progress: pos ofTotal: total] && !self.isCancelled;
 }
 
 - (BOOL) progressFile:(long long) fileno ofTotal: (long long)totalNumberOfFiles {
     assert(![NSThread isMainThread]);
-    return [document progressFileOnBackgroundThread: fileno ofTotal: totalNumberOfFiles] && !self.isCancelled;
+    return [document progressFiles: fileno ofTotal: totalNumberOfFiles] && !self.isCancelled;
 }
 
 - (int) countChildren: (NSArray*) itms {

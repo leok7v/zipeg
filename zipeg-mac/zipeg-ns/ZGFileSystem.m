@@ -127,7 +127,7 @@ static ZGFileSystemItem *g_root;
 }
 
 - (BOOL) readFromURL: (NSURL*) url ofType: (NSString*) type encoding:(NSStringEncoding) enc
-            document: (ZGDocument*) doc
+            document: (NSObject<ZGArchiveCallbacks>*) doc
            operation: (ZGOperation*) op error:(NSError**) err
                 done: (void(^)(NSObject<ZGItemFactory>* factory, NSError* error)) done {
     trace(@"ZGFileSystem is using shared instance of root object");

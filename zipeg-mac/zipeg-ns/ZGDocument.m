@@ -1302,8 +1302,8 @@ static NSString* nextPathname(NSString* path) {
     }];
 }
 
-- (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
-                                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
+- (int) askOverwrite: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
+                  to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
     assert(![NSThread isMainThread]);
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
     int __block answer = NSAlertErrorReturn;
@@ -1475,7 +1475,7 @@ static NSString* multipartBasename(NSString* s) {
     });
 }
 
-- (NSString*) askOnBackgroundThreadForPassword {
+- (NSString*) askPassword {
     assert(![NSThread isMainThread]);
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
     NSString* __block password;
@@ -1519,7 +1519,7 @@ static NSString* multipartBasename(NSString* s) {
     return password;
 }
 
-- (BOOL) askOnBackgroundThreadForCancel {
+- (BOOL) askCancel {
     assert(![NSThread isMainThread]);
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
     BOOL __block answer = false;
@@ -1547,7 +1547,7 @@ static NSString* multipartBasename(NSString* s) {
     return answer;
 }
 
-- (BOOL) askOnBackgroundThreadToContinue: (NSString*) path error: (NSString*) e {
+- (BOOL) askToContinue: (NSString*) path error: (NSString*) e {
     assert(![NSThread isMainThread]);
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
     BOOL __block keepGoing = false;
@@ -1585,7 +1585,7 @@ static NSString* multipartBasename(NSString* s) {
     }
 }
 
-- (BOOL) progressOnBackgroundThread: (int64_t) pos ofTotal: (int64_t) total {
+- (BOOL) progress: (int64_t) pos ofTotal: (int64_t) total {
     assert(![NSThread isMainThread]);
     // trace(@"%llu of %llu", pos, total);
     [self checkTimeToShowHeroView];
@@ -1597,7 +1597,7 @@ static NSString* multipartBasename(NSString* s) {
     return true;
 }
 
-- (BOOL) progressFileOnBackgroundThread: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles {
+- (BOOL) progressFiles: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles {
     assert(![NSThread isMainThread]);
     [self checkTimeToShowHeroView];
     if (totalNumberOfFiles > 0 && 0 <= fileno && fileno <= totalNumberOfFiles) {

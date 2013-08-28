@@ -1,19 +1,9 @@
 #import "ZGItemProtocol.h"
 #import "ZGToolbar.h"
 
-enum {              // answers for askOnBackgroundThreadOverwriteFrom
-    kYes = 0,       // ORDER IS VERY IMPORTANT. DO NOT CHANGE!  see:
-    kYesToAll = 1,  // IFileExtractCallback.h NOverwriteAnswer::EEnum consts
-    kNo = 2,        // and p7z.hpp
-    kNoToAll = 3,
-    kKeepBoth = 4, // just one file
-    kCancel = 5,
-    kKeepBothToAll = 6,
-};
-
 NSSortDescriptor* getSortDescriptor(int i);
 
-@interface ZGDocument : NSDocument<NSToolbarDelegate> {
+@interface ZGDocument : NSDocument<NSToolbarDelegate, ZGArchiveCallbacks> {
 
 }
 @property NSURL* url;
@@ -44,14 +34,6 @@ NSSortDescriptor* getSortDescriptor(int i);
                     info: (NSString*) info
               suppressed: (BOOL*) s
                     done: (void(^)(NSInteger rc)) d;
-- (BOOL) moveToTrash: (const char*) pathname; // must be called from background thread
-- (BOOL) askOnBackgroundThreadForCancel;
-- (NSString*) askOnBackgroundThreadForPassword;
-- (int) askOnBackgroundThreadOverwriteFrom: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
-                                        to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize;
-- (BOOL) askOnBackgroundThreadToContinue: (NSString*) path error: (NSString*) message;
-- (BOOL) progressOnBackgroundThread: (int64_t) pos ofTotal: (int64_t) total;
-- (BOOL) progressFileOnBackgroundThread: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles;
 - (void) windowDidBecomeKey;
 - (void) windowDidResignKey;
 
