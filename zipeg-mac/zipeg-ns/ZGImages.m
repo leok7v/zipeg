@@ -141,6 +141,12 @@ enum { // Baseline TIFF Orientation
     if (t != null) {
         trace(@"thumbnail.size=%@", NSStringFromSize(t.size));
     }
+    timestamp("quicklook");
+    t = [NSImage qlImage: path ofSize: NSMakeSize(512, 512) asIcon: true];
+    timestamp("quicklook");
+    if (t != null) {
+        trace(@"quicklook.size=%@", NSStringFromSize(t.size));
+    }
     return t;
 }
 

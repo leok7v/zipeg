@@ -1,5 +1,7 @@
 @interface NSImage(ZGExtensions)
 - (id) initWithCGImage: (CGImageRef) cgImage;
++ (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon;
+
 - (NSImage*) rotate: (CGFloat) degrees;
 - (NSImage*) mirror; // mirror around Y axis (swap left and right)
 

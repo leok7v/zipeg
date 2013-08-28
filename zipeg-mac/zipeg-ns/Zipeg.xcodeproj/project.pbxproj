@@ -99,6 +99,7 @@
 		B3BECDBE179A149300B07871 /* universalchardet.c in Sources */ = {isa = PBXBuildFile; fileRef = B3BECD9C179A149300B07871 /* universalchardet.c */; };
 		B3BF7D2D1792462500A3E5EF /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = B3BF7D2C1792462500A3E5EF /* main.mm */; };
 		B3D1BE5F1797366E007BE5E7 /* MacMem.m in Sources */ = {isa = PBXBuildFile; fileRef = B3D1BE5E1797366E007BE5E7 /* MacMem.m */; };
+		B3D37A7217CE065400DFC4AA /* QuickLook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B3D37A7117CE065300DFC4AA /* QuickLook.framework */; };
 		B3D86FA617C14953009FEEA5 /* box8.png in Resources */ = {isa = PBXBuildFile; fileRef = B3D86FA417C14953009FEEA5 /* box8.png */; };
 		B3D86FA717C14953009FEEA5 /* box9.png in Resources */ = {isa = PBXBuildFile; fileRef = B3D86FA517C14953009FEEA5 /* box9.png */; };
 		B3D8999D17C60351006823AD /* textured_paper.png in Resources */ = {isa = PBXBuildFile; fileRef = B3D8999C17C60351006823AD /* textured_paper.png */; };
@@ -305,6 +306,7 @@
 		B3BF7D2C1792462500A3E5EF /* main.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = SOURCE_ROOT; };
 		B3D1BE5D17973662007BE5E7 /* MacMem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MacMem.h; sourceTree = SOURCE_ROOT; };
 		B3D1BE5E1797366E007BE5E7 /* MacMem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MacMem.m; sourceTree = SOURCE_ROOT; };
+		B3D37A7117CE065300DFC4AA /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
 		B3D86FA417C14953009FEEA5 /* box8.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = box8.png; path = Resources/box8.png; sourceTree = "<group>"; };
 		B3D86FA517C14953009FEEA5 /* box9.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = box9.png; path = Resources/box9.png; sourceTree = "<group>"; };
 		B3D8999C17C60351006823AD /* textured_paper.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = textured_paper.png; path = Resources/textured_paper.png; sourceTree = "<group>"; };
@@ -334,6 +336,7 @@
 				B3FE5C5817A3F7390077CB28 /* libp7z.dylib in Frameworks */,
 				B34FEB5B1792443D005D798B /* Cocoa.framework in Frameworks */,
 				B3FC1D9B17A095B600BE0ED3 /* QuartzCore.framework in Frameworks */,
+				B3D37A7217CE065400DFC4AA /* QuickLook.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -422,6 +425,7 @@
 		B34FEB591792443D005D798B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B3D37A7117CE065300DFC4AA /* QuickLook.framework */,
 				B3FC1D9A17A095B600BE0ED3 /* QuartzCore.framework */,
 				B34FEB5A1792443D005D798B /* Cocoa.framework */,
 				B34FEB7B1792443D005D798B /* SenTestingKit.framework */,

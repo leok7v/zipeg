@@ -1,4 +1,5 @@
 #import "ZGImage.h"
+#import <QuickLook/QuickLook.h>
 
 static NSDictionary* sHints;
 
@@ -23,33 +24,10 @@ static NSDictionary* sHints;
     return self;
 }
 
-static void test() {
-    NSSize s = NSMakeSize(1, 2);
-    for (float d = -720; d < 720; d += 45) {
-        CGFloat degrees = d - 360 * floor(d / 360);
-        CGFloat radians = degrees * 3.14159265358979323846 / 180;
-        CGAffineTransform rot = CGAffineTransformMakeRotation(radians);
-        NSRect r = NSMakeRect(-s.width / 2, -s.height / 2, s.width, s.height);
-        r = CGRectApplyAffineTransform(r, rot);
-        NSSize rs = r.size;
-        trace("%@ %f %@", NSStringFromSize(s), degrees, NSStringFromSize(rs));
-    }
-}
-
 - (NSImage*) rotate: (CGFloat) degrees {
     // test();
     degrees = degrees - 360 * floor(degrees / 360);
     NSAssert(0 <= degrees && degrees <= 360, @"something wrong with my math");
-/*  The formula above yelds the same results as:
-    float degrees = degrees >= 0 ? degrees - 360 * floor(degrees / 360) :
-                           - (fabs(degrees) - 360 * floor(fabs(degrees) / 360));
-    while (degrees < 0) {
-        degrees += 360;
-    }
-    while (degrees < 0) {
-        degrees += 360;
-    }
- */
     NSSize save = self.size;
     [NSGraphicsContext.currentContext saveGraphicsState];
     CGFloat radians = degrees * 3.14159265358979323846 / 180;
@@ -97,6 +75,31 @@ static void test() {
         }
         return m;
     }
+}
+
++ (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon {
+    NSURL *fileURL = [NSURL fileURLWithPath:path];
+    if (!path || !fileURL) {
+        return nil;
+    }
+    // kQLThumbnailOptionScaleFactorKey absent defaults to @(1.0)
+    NSDictionary *d = @{ (NSString*)kQLThumbnailOptionIconModeKey: @(icon)};
+    CGImageRef ref = QLThumbnailImageCreate(kCFAllocatorDefault,
+                                            (__bridge CFURLRef)fileURL,
+                                            CGSizeMake(size.width, size.height),
+                                            (__bridge CFDictionaryRef)d);
+    NSImage* i = null;
+    if (ref != NULL) {
+        i = [NSImage.alloc initWithCGImage: ref];
+        CFRelease(ref);
+    }
+    if (i == null) {
+        i = [NSWorkspace.sharedWorkspace iconForFile: path];
+        if (i != null && size.width > 0 && size.height > 0) {
+            [i setSize:size];
+        }
+    }
+    return i;
 }
 
 - (void) drawAtPoint: (NSPoint) p {
