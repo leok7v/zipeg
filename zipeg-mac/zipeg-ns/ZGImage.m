@@ -317,6 +317,7 @@ enum { // Baseline TIFF Orientation
     }
     if (i != null) {
         return i;
+        NSLog(@"---");
     }
     timestamp("qlImage");
     NSDictionary *d = @{ (NSString*)kQLThumbnailOptionIconModeKey: @(icon)};
@@ -347,6 +348,7 @@ enum { // Baseline TIFF Orientation
         CFRelease(tr);
     }
     timestamp("qlImage");
+    NSLog(@"---");
     return i;
 }
 

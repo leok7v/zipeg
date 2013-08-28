@@ -919,7 +919,7 @@ static NSTableView* createTableView(NSRect r) {
     }];
 }
 
-- (void)close {
+- (void) close {
     // NSWindowController _windowDidClose will call us recursively from super :(
     if (_splitView != null) {
         [_previewCache removeAllObjects];
@@ -928,12 +928,22 @@ static NSTableView* createTableView(NSRect r) {
         assert(tc != null);
         [self cancelAll];
         _splitView.subviews = @[];
+        _alerts = null;
+        _preview = null;
+        _window.toolbar = null;
+        _toolbar.delegate = null;
+        _toolbar = null;
+        _toolbarDelegate = null;
         [_splitView removeFromSuperview];
         _splitView = null;
         [_heroView removeFromSuperview];
         _heroView = null;
         _outlineView = null;
+        _outlineViewDataSource = null;
+        _outlineViewDelegate = null;
         _tableView = null;
+        _tableViewDatatSource = null;
+        _tableViewDelegate = null;
         _destination = null;
         _contentView.subviews = @[];
         if (_archive != null) {
