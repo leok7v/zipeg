@@ -1,6 +1,23 @@
 #import "ZGToolbarDelegate.h"
 #import "ZGDocument.h"
 
+
+// TODO: view type control:
+/*
+ View Type Template Images
+ Images used in segmented controls to switch the current view type. To access this image, pass the specified constant to the imageNamed: method.
+
+ NSString *const NSImageNameIconViewTemplate;
+ NSString *const NSImageNameListViewTemplate;
+ NSString *const NSImageNameColumnViewTemplate;
+ NSString *const NSImageNameFlowViewTemplate;
+ 
+ APPKIT_EXTERN NSString *const NSImageNameRightFacingTriangleTemplate NS_AVAILABLE_MAC(10_5);
+ APPKIT_EXTERN NSString *const NSImageNameLeftFacingTriangleTemplate NS_AVAILABLE_MAC(10_5);
+
+
+ */
+
 @interface ZGToolbarDelegate() {
     ZGDocument* __weak _document;
     NSSearchField* _searchFieldOutlet;
