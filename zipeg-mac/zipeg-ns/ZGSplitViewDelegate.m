@@ -94,7 +94,6 @@
 
 - (void) layout: (NSSplitView*) sv  {
     NSArray* sss = [NSUserDefaults.standardUserDefaults objectForKey: [self key: sv]];
-    sss = null;
     // it direction of a splitter has been changed from initial .nib layout we need to relayout all views.
     CGFloat total = 0;
     int i = 0;
@@ -123,7 +122,7 @@
 }
 
 // TODO: the code below does not work well
-- (void) splitViewXXX: (NSSplitView*) sv resizeSubviewsWithOldSize: (NSSize) oldSize {
+- (void) splitView: (NSSplitView*) sv resizeSubviewsWithOldSize: (NSSize) oldSize {
     CGFloat delta = sv.isVertical ? sv.bounds.size.width - oldSize.width : sv.bounds.size.height - oldSize.height;
     // trace(@"delta=%f %@ old=%@", delta, NSStringFromSize(sv.bounds.size), NSStringFromSize(oldSize));
     NSArray* sorted = [_w2ix.allKeys sortedArrayUsingComparator: ^ NSComparisonResult(id o0, id o1) {
@@ -155,8 +154,8 @@
         if (force && sum == 0) {
             @throw @"setWeight was not called for SplitViewDelegate subviews";
         }
-        NSAssert1(sum > 0, @"sum=%f", sum);
-        NSAssert2(sorted.count >= sv.subviews.count, @"sorted.count=%ld sv.subviews.count=%ld", sorted.count, sv.subviews.count);
+        NSAssert(sum > 0, @"sum=%f", sum);
+        NSAssert(sorted.count >= sv.subviews.count, @"sorted.count=%ld sv.subviews.count=%ld", sorted.count, sv.subviews.count);
         CGFloat deltas[sorted.count];
         k = 0;
         for (NSNumber* priority in sorted) {
@@ -198,8 +197,8 @@
             break; // even if fabs(delta) > 0.5
         }
     }
-    NSAssert3(fabs(delta) < 0.5, @"Split view %p resized smaller than minimum %@ of %f",
-              sv, sv.isVertical ? @"width" : @"height", sv.frame.size.width - delta);
+    NSAssert(fabs(delta) < 0.5, @"Split view %p resized smaller than minimum %@ of %f",
+             sv, sv.isVertical ? @"width" : @"height", sv.frame.size.width - delta);
     CGFloat offset = 0;
     CGFloat divider = [sv dividerThickness];
     for (NSView* v in sv.subviews) {

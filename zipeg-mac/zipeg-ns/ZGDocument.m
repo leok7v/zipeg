@@ -33,7 +33,8 @@
         // _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"textured_paper.png"]];
         // _background = NSColor.whiteColor;
         _background = [NSColor colorWithPatternImage: [NSImage imageNamed:@"subtle_white_feathers"]];
-        _thumb = [ZGImages thumbnail: @"/Users/leo/Pictures/2013 April Florida/photo-2.JPG"];
+         _thumb = [ZGImages thumbnail: @"/Users/leo/Pictures/2013 April Florida/photo-2.JPG"];
+        //_thumb = [ZGImages thumbnail: @"/Users/leo/3ipeg-rnd/EXIF-orientation/EXIF Orientation Sample Images/3.jpg"];
     }
     return self;
 }
@@ -45,6 +46,19 @@
     [NSGraphicsContext.currentContext setPatternPhase: NSMakePoint(x, y)];
     [_background set];
     NSRectFill(self.bounds);
+    if (_thumb != null) {
+//        NSAffineTransform *t = [NSAffineTransform transform];
+//        [t scaleXBy: -1 yBy: 1];
+//        [t translateXBy: -(_thumb.size.width) yBy: 0];
+//        [t concat];
+        float ratio = self.bounds.size.width / _thumb.size.width;
+        CGFloat y = self.bounds.size.height - ratio * _thumb.size.height;
+
+        [_thumb drawInRect: NSMakeRect(0, y, ratio * _thumb.size.width, ratio * _thumb.size.height)
+                  fromRect: NSZeroRect
+                 operation: NSCompositeSourceOver
+                  fraction: 1];
+    }
     [NSGraphicsContext.currentContext restoreGraphicsState];
     [super drawRect: r];
 }
@@ -510,7 +524,8 @@ static NSTableView* createTableView(NSRect r) {
     dbounds.origin.y = dbounds.size.height - 30;
     dbounds.size.height = 30;
     _destination = [ZGDestination.alloc initWithFrame: dbounds for: self];
-    
+    _destination.hidden = _isNew; // completely covered by heroView (for now)
+
     NSClipView * clipView = _outlineView.enclosingScrollView.contentView;
     clipView.postsFrameChangedNotifications = true;
     void (^sizeToContent)(NSNotification*) = ^(NSNotification* n) {
