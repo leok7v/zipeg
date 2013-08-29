@@ -24,6 +24,22 @@ static NSDictionary* sHints;
     return self;
 }
 
+- (void) makePixelSized {
+    NSSize max = NSZeroSize;
+    for (NSObject* o in self.representations) {
+        if ([o isKindOfClass: NSImageRep.class]) {
+            NSImageRep* r = (NSImageRep*)o;
+            if (r.pixelsWide != NSImageRepMatchesDevice && r.pixelsHigh != NSImageRepMatchesDevice) {
+                max.width = MAX(max.width, r.pixelsWide);
+                max.height = MAX(max.height, r.pixelsHigh);
+            }
+        }
+    }
+    if (max.width > 0 && max.height > 0) {
+        self.size = max;
+    }
+}
+
 - (NSImage*) rotate: (CGFloat) degrees {
     // test();
     degrees = degrees - 360 * floor(degrees / 360);
@@ -54,7 +70,7 @@ static NSDictionary* sHints;
 }
 
 - (NSImage*) mirror {
-    if (self == 0) {
+    if (self == null) {
         return null;
     } else {
         NSImage* m = [NSImage.alloc initWithSize: self.size];
@@ -70,6 +86,35 @@ static NSDictionary* sHints;
             NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh;
             [t concat];
             [self drawAtPoint: NSMakePoint(0, 0) fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
+            [m unlockFocus];
+            [NSGraphicsContext.currentContext restoreGraphicsState];
+        }
+        return m;
+    }
+}
+
+- (NSImage*) square: (CGFloat) size {
+    if (self == null) {
+        return null;
+    } else {
+        if (size == 0) {
+            size = MAX(self.size.width, self.size.height);
+        }
+        if (self.size.width == size && self.size.height == size) {
+            return self;
+        }
+        NSImage* m = [NSImage.alloc initWithSize: NSMakeSize(size, size)];
+        if (m != null) {
+            [NSGraphicsContext.currentContext saveGraphicsState];
+            [m lockFocus]; // NSGraphicsContext.currentContext = m
+            NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh;
+            CGFloat max = MAX(self.size.width, self.size.height);
+            CGFloat x = (max - self.size.width) / 2;
+            CGFloat y = (max - self.size.height) / 2;
+            x = x * size / max;
+            y = y * size / max;
+            NSRect r = NSMakeRect(x, y, self.size.width * size / max, self.size.height * size / max);
+            [self drawInRect: r];
             [m unlockFocus];
             [NSGraphicsContext.currentContext restoreGraphicsState];
         }
@@ -195,7 +240,10 @@ enum { // Baseline TIFF Orientation
         CFRelease(source);
     }
     timestamp("exifThumbnail");
-    return t;
+    if (t != null) {
+        NSLog(@"exifThumbnail=%@", NSStringFromSize(t.size));
+    }
+    return [t square: 0];
 }
 
 /*
@@ -316,8 +364,14 @@ enum { // Baseline TIFF Orientation
         timestamp("NSImage.initWithContentsOfFile");
     }
     if (i != null) {
-        return i;
-        NSLog(@"---");
+        NSLog(@"--- %@", path);
+        if ([path indexOf: @"Carmel"] > 0) {
+            NSLog(@"--- %@", NSStringFromSize(i.size));
+            NSImageRep* r = i.representations[0];
+            NSLog(@"--- %@ %ld %ld", NSStringFromSize(i.size), r.pixelsWide, r.pixelsHigh);
+        }
+        [i makePixelSized];
+        return [i square: MIN(512, MAX(i.size.width, i.size.height))];
     }
     timestamp("qlImage");
     NSDictionary *d = @{ (NSString*)kQLThumbnailOptionIconModeKey: @(icon)};
@@ -362,7 +416,7 @@ enum { // Baseline TIFF Orientation
 
 @synthesize transform;
 
-
+// TODO: this code has not been tested yet!
 - (void) drawInRect: (NSRect)d fromRect: (NSRect) r operation: (NSCompositingOperation) op opacity: (CGFloat) alpha {
     if (_hints == null) {
         NSAssert(sHints != null, @"NSImage(ZGExtensions) is not initialized?");
