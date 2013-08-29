@@ -74,8 +74,11 @@
         t = [NSImage imageNamed: NSImageNameMultipleDocuments];
     }
     if (t != null) {
-        const float margin = MIN(self.bounds.size.width / 8, 16);
+        float margin = MIN(self.bounds.size.width / 8, 16);
         float ratio = (self.bounds.size.width - margin * 2) / t.size.width;
+        CGFloat w = MIN(512, ratio * t.size.width); // do not make image wider than 512
+        margin = (self.bounds.size.width - w) / 2;
+        ratio = (self.bounds.size.width - margin * 2) / t.size.width;
         CGFloat y = self.bounds.size.height - ratio * t.size.height - margin;
         [t drawInRect: NSMakeRect(margin, y, ratio * t.size.width, ratio * t.size.height)
                   fromRect: NSZeroRect
@@ -140,8 +143,11 @@
 @property ZGAlerts* alerts;
 
 - (void) openArchiveForOperation: (ZGOperation*) op;
-- (void) previewItemForOperation: (ZGOperation*) op item: (NSObject<ZGItemProtocol>*) item
-                  fileDescriptor: (int) fd to: (NSURL*) url;
+- (void) previewItemForOperation: (ZGOperation*) op
+                            item: (NSObject<ZGItemProtocol>*) item
+                           stage: (int) stage
+                  fileDescriptor: (int) fd
+                              to: (NSURL*) url;
 - (void) extractItemsForOperation: (ZGOperation*) op items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd;
 - (void) searchArchiveWithString: (NSString*) s forOperation: (ZGOperation*) op done: (void(^)(BOOL)) block;
 
@@ -260,23 +266,30 @@
 
 @end
 
+enum { // PreviewItemOperation Stages:
+    kPreviewEXIF = 1,  // extract file and get EXIF thumbnail if present
+    kPreviewImage = 2, // try to load [NSImage.alloc initWithContentsOfFile: path] and scale to 512x512
+    kPreviewQL = 3     // use QuickLook to load image icon
+};
 
 @interface PreviewItemOperation : ZGOperation {
     ZGDocument* __weak _document;
     NSObject<ZGItemProtocol>* _item;
     NSURL* _url;
     int _fd;
+    int _stage;
 }
-- (id) initWithDocument: (ZGDocument*) doc item: (NSObject<ZGItemProtocol>*) item fileDescriptor: (int) fd to: (NSURL*) url;
+- (id) initWithDocument: (ZGDocument*) doc item: (NSObject<ZGItemProtocol>*) item stage: (int) stage fileDescriptor: (int) fd to: (NSURL*) url;
 @end
 
 @implementation PreviewItemOperation
 
-- (id) initWithDocument: (ZGDocument*) doc item: (NSObject<ZGItemProtocol>*) item fileDescriptor: (int) fd to: (NSURL*) url {
+- (id) initWithDocument: (ZGDocument*) doc item: (NSObject<ZGItemProtocol>*) item stage: (int) stage fileDescriptor: (int) fd to: (NSURL*) url {
     self = [super init];
     if (self != null) {
         alloc_count(self);
         _document = doc;
+        _stage = stage;
         _item = item;
         _url = url;
         _fd = fd;
@@ -286,10 +299,13 @@
 
 - (void) dealloc {
     dealloc_count(self);
+    _document = null;
+    _item = null;
+    _fd = -1;
 }
 
 - (void)main {
-    [_document previewItemForOperation: self item: _item fileDescriptor: _fd  to: _url];
+    [_document previewItemForOperation: self item: _item stage: _stage fileDescriptor: _fd  to: _url];
 }
 
 @end
@@ -403,7 +419,7 @@
                 _splitView.subviews = @[_splitView.subviews[1], _splitView.subviews[2]];
                 [_splitViewDelegate setWeight: 0.8 atIndex: 0];
                 [_splitViewDelegate setWeight: 0.2 atIndex: 1];
-                [_splitViewDelegate setMinimumSize: 360 atIndex: 0];
+                [_splitViewDelegate setMinimumSize: (kWindowMinWidth - 100) atIndex: 0];
                 [_splitViewDelegate setMinimumSize:  93 atIndex: 1];
                 [_splitViewDelegate layout: _splitView];
             }
@@ -626,7 +642,7 @@ static NSTableView* createTableView(NSRect r) {
     [_splitViewDelegate setWeight: 0.6 atIndex: 1];
     [_splitViewDelegate setWeight: 0.1 atIndex: 2];
     [_splitViewDelegate setMinimumSize:  93 atIndex: 0];
-    [_splitViewDelegate setMinimumSize: 360 atIndex: 1];
+    [_splitViewDelegate setMinimumSize: (kWindowMinWidth - 200) atIndex: 1];
     [_splitViewDelegate setMinimumSize:  93 atIndex: 2];
 
     _splitView.hidden = true;
@@ -1329,63 +1345,99 @@ static NSString* nextPathname(NSString* path) {
 }
 
 - (NSImage*) icon: (NSObject<ZGItemProtocol>*) item {
+    NSAssert(item.children == null, @"must be leaf item %@", item);
     NSString* path = item.fullPath;
-    NSImage* i = _previewCache[path];
-    NSAssert(item.children == null, @"must be leaf item");
-    if (i == null && item.children == null && item.size.longLongValue < PREVIEW_FILE_SIZE_LIMIT) {
+    NSDictionary* d = _previewCache[path];
+    NSImage* i = d[@"image"];
+    if (i == null && item.children == null && item.size.longLongValue < PREVIEW_FILE_SIZE_LIMIT && d[@"error"] == null) {
         NSString* res = null;
         int fd = [ZGUtils createTemporaryFile: [_tempFolder stringByAppendingPathComponent: path.lastPathComponent] result: &res];
         if (fd >= 0 && res != null) {
             NSURL* url = [NSURL fileURLWithPath: res];
-            [self addPreviewOperation: item fileDescriptor: fd to: url];
+            [self addPreviewOperation: item stage: kPreviewEXIF fileDescriptor: fd to: url priority: NSOperationQueuePriorityLow];
         }
         i = [ZGImages iconForFileType: path.pathExtension];
         if (i == null) {
             i = ZGImages.shared.docImage;
         }
-        if (i != null) {
-            _previewCache[path] = i;
-            assert(_previewCache[path] == i);
-        }
+        NSAssert(i != null, @"ZGImages.shared.docImage == null?!");
+        _previewCache[path] = @{ @"image": i };
     }
     return i;
 }
 
-- (void) addPreviewOperation: (NSObject<ZGItemProtocol>*) item fileDescriptor: (int) fd to: (NSURL*) url {
+- (void) addPreviewOperation: (NSObject<ZGItemProtocol>*) item
+                       stage: (int) stage
+              fileDescriptor: (int) fd
+                          to: (NSURL*) url
+                    priority: (NSOperationQueuePriority) priority {
     PreviewItemOperation* operation = [PreviewItemOperation.alloc
                                         initWithDocument: self
                                         item: item
+                                       stage: stage
                                         fileDescriptor: fd
                                         to: url];
-    operation.queuePriority = NSOperationQueuePriorityLow;
+    operation.queuePriority = priority;
     [_operationQueue addOperation: operation];
+}
+
+- (void) setCacheImage: (NSImage*) i to: (NSObject<ZGItemProtocol>*) it {
+    if (i != null) {
+        // trace("%@ i.imageBytes=%lld", item.fullPath, i.imageBytes);
+        _previewCache[it.fullPath] = @{ @"image": i };
+        [_delayedInvalidate cancel];
+        _delayedInvalidate = [ZGUtils invokeLater: ^{
+            _contentView.needsDisplay = true;
+        } delay: 0.25];
+        [_preview invalidate: it];
+    }
 }
 
 - (void) previewItemForOperation: (ZGOperation*) op
                             item: (NSObject<ZGItemProtocol>*) item
+                           stage: (int) stage
                   fileDescriptor: (int) fd
                               to: (NSURL*) url {
     // This method is called on the background thread
     assert(![NSThread isMainThread]);
     assert(_archive != null);
+    if (stage == kPreviewImage) {
+        // timestamp("NSImage.alloc initWithContentsOfFile");
+        NSImage* t = [NSImage.alloc initWithContentsOfFile: url.path];
+        if (t != null) {
+            [t makePixelSized];
+            [self setCacheImage: [t square: 512] to: item];
+        }
+        // timestamp("NSImage.alloc initWithContentsOfFile");
+        [self addPreviewOperation: item stage: kPreviewQL fileDescriptor: -1 to: url
+                         priority: NSOperationQueuePriorityVeryLow];
+        if (t != null) {
+            // trace("NSImage.alloc initWithContentsOfFile %@", NSStringFromSize(t.size));
+        }
+        return;
+    } if (stage == kPreviewQL) {
+        [self setCacheImage: [NSImage qlImage: url.path ofSize: NSMakeSize(512, 512) asIcon: true] to: item];
+        return;
+    }
     [_archive extract: @[item] to: url operation: op fileDescriptor: fd done: ^(NSError* error) {
+        NSAssert(stage == kPreviewEXIF, @"unexcpected stage %d instead of kPreviewEXIF", stage);
         // we are still on background thread here:
         NSImage* i = null;
         if (error == null && !op.isCancelled && !op.cancelRequested) {
-            i = [NSImage qlImage: url.path ofSize: NSMakeSize(1024, 1024) asIcon: true];
+            i = [NSImage exifThumbnail: url];
         } else {
             trace("error=%@ isCancelled=%d cancelRequested=%d", error, op.isCancelled, op.cancelRequested);
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             // trace("extracted for preview: %@ error=%@ image=%@", url, error, i.debugDescription);
             if (i != null) {
-//              trace("%@ i.imageBytes=%lld", item.fullPath, i.imageBytes);
-                _previewCache[item.fullPath] = i;
-                [_delayedInvalidate cancel];
-                _delayedInvalidate = [ZGUtils invokeLater: ^{
-                    _contentView.needsDisplay = true;
-                } delay: 0.25];
-                [_preview invalidate: item];
+                [self setCacheImage: i to: item];
+            }
+            if (error == null && !op.isCancelled && !op.cancelRequested) {
+                [self addPreviewOperation: item stage: kPreviewImage fileDescriptor: -1 to: url
+                                 priority: NSOperationQueuePriorityVeryLow];
+            } else {
+                _previewCache[item.fullPath] = @{ @"error": @true };
             }
         });
     }];

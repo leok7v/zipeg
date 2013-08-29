@@ -522,7 +522,7 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
 + (NSString*) createTemporaryFolder: (NSString*) name {
     NSString* folder = null;
     NSString* guid = NSProcessInfo.processInfo.globallyUniqueString;  // ~10 microseconds
-    NSString* t = [NSTemporaryDirectory() stringByAppendingPathComponent: [name stringByAppendingString: guid]];
+    NSString* t = [NSTemporaryDirectory() stringByAppendingPathComponent: [name stringByAppendingFormat: @"-%@", guid]];
     const char* cc = [t fileSystemRepresentation];
     if (cc != null) {
         char* cs = strdup(cc);
@@ -546,7 +546,7 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     int retry = 16;
     while (retry > 0) {
         NSString* guid = NSProcessInfo.processInfo.globallyUniqueString; // ~10 microseconds
-        NSString* t = [name stringByAppendingString: guid];
+        NSString* t = [name stringByAppendingFormat: @"-%@", guid];
         if (ext != null && ext.length > 0) {
             t = [t stringByAppendingPathExtension: ext];
         }

@@ -337,8 +337,6 @@ static void reportProgress(ZG7zip* z, int ix) {
             // NSObject* attr = _props[i][@"Attrib"];
             // trace("%@ attr=%@ isDir=%@ isFolder=%d", item.name, attr, isDir, isFolder);
             if (isFolder) {
-                NSObject* attr = _props[i][@"Attrib"];
-                trace("%@ attr=%@ isDir=%@ isFolder=%d", item.name, attr, isDir, isFolder);
                 [_isFolders setBit: i to: true];
                 [_isLeafFolders setBit: i to: true];
                 _numberOfFolders++;
@@ -1018,9 +1016,9 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
             n = [self collectChildren: itms to: indices position: 0 size: max];
         }
         _error = null;
-        timestamp("extract");
+        // timestamp("extract");
         bool b = a->extract(indices, n, path.UTF8String, prefixComponents, pc, fd);
-        timestamp("extract");
+        // timestamp("extract");
         delete[] indices;
         delete[] prefixComponents;
         if (_error == null && !b && self.isCancelled) {

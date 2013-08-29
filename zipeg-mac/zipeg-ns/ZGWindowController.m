@@ -27,7 +27,7 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
                            NSMiniaturizableWindowMask | NSResizableWindowMask |
                            NSUnifiedTitleAndToolbarWindowMask |
                            NSTexturedBackgroundWindowMask;
-        window.minSize = NSMakeSize(720, 480);
+        window.minSize = NSMakeSize(kWindowMinWidth, kWindowMinHeight);
         window.hasShadow = true;
         window.showsToolbarButton = true;
 

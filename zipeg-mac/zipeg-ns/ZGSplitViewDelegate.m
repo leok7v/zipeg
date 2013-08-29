@@ -54,17 +54,21 @@
 - (CGFloat) splitView: (NSSplitView*) sv constrainMinCoordinate: (CGFloat) min ofSubviewAt: (NSInteger) ix {
     NSView* v = sv.subviews[ix];
     NSRect f = v.frame;
-    return (sv.isVertical ? f.origin.x : f.origin.y) + [_minSize[@(ix)] floatValue];
+    CGFloat r = (sv.isVertical ? f.origin.x : f.origin.y) + [_minSize[@(ix)] floatValue];
+//  trace("%ld %f %f", ix, min, r);
+    return r;
 }
 
-- (CGFloat) splitView: (NSSplitView*) sv constrainMaxCoordinate: (CGFloat) proposedMax ofSubviewAt: (NSInteger) ix {
+- (CGFloat) splitView: (NSSplitView*) sv constrainMaxCoordinate: (CGFloat) max ofSubviewAt: (NSInteger) ix {
     NSView* growing = sv.subviews[ix];
     NSView *shrinking = sv.subviews[ix + 1];
     NSRect gf = growing.frame;
     NSRect sf = shrinking.frame;
     CGFloat coordinate = sv.isVertical ? gf.origin.x + gf.size.width : gf.origin.y + gf.size.height;
     CGFloat size = sv.isVertical ? sf.size.width : sf.size.height;
-    return coordinate + (size - [_minSize[@(ix + 1)] floatValue]);
+    CGFloat r = coordinate + (size - [_minSize[@(ix + 1)] floatValue]);
+//  trace("%ld %f %f", ix, max, r);
+    return r;
 }
 
 - (CGFloat) minSize: (NSNumber*) ix {

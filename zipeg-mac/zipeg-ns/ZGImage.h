@@ -4,7 +4,9 @@
 - (NSImage*) rotate: (CGFloat) degrees;
 - (NSImage*) mirror; // mirror around Y axis (swap left and right)
 
-- (int64_t) imageBytes;
+- (int64_t) imageBytes;  // counts approximate number of bytes or RAM the image consumes
+- (void) makePixelSized; // set size to maximum represnation pixelWide pixelHigh
+- (NSImage*) square: (CGFloat) size; // makes image into [size x size] square. If size == 0 uses max(width, hwight) as size
 
 - (void) drawAtPoint: (NSPoint) p;
 - (void) drawAtPoint: (NSPoint) p fromRect: (NSRect) r;

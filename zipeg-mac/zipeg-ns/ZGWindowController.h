@@ -1,5 +1,10 @@
 #import <Cocoa/Cocoa.h>
 
+enum {
+    kWindowMinWidth = 720,
+    kWindowMinHeight = 480
+};
+
 @interface ZGWindowController : NSWindowController<NSWindowDelegate>
 
 @end

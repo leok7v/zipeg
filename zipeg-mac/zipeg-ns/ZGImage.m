@@ -40,32 +40,31 @@ static NSDictionary* sHints;
     }
 }
 
-- (NSImage*) rotate: (CGFloat) degrees {
+- (NSImage*) rotate: (CGFloat) degrees { // counter-clockwise
     // test();
+    const NSSize size = self.size;
     degrees = degrees - 360 * floor(degrees / 360);
     NSAssert(0 <= degrees && degrees <= 360, @"something wrong with my math");
-    NSSize save = self.size;
     [NSGraphicsContext.currentContext saveGraphicsState];
     CGFloat radians = degrees * 3.14159265358979323846 / 180;
     CGAffineTransform rot = CGAffineTransformMakeRotation(radians);
-    NSRect r = NSMakeRect(-self.size.width / 2, -self.size.height / 2, self.size.width, self.size.height);
+    NSRect r = NSMakeRect(-size.width / 2, -size.height / 2, size.width, size.height);
     r = CGRectApplyAffineTransform(r, rot);
     NSSize rs = r.size;
-//  trace("%@ %f %@", NSStringFromSize(self.size), degrees, NSStringFromSize(rs));
+//  trace("%@ %f %@", NSStringFromSize(size), degrees, NSStringFromSize(rs));
     NSImage* ri = [NSImage.alloc initWithSize: rs];
-    NSAffineTransform* t = NSAffineTransform.transform;
-    [t translateXBy:  self.size.width / 2 yBy: self.size.height / 2] ;
-    [t rotateByDegrees: degrees];
-    // Then translate the origin system back to the bottom left
-    [t translateXBy: -rs.width / 2 yBy: -rs.height / 2] ;
+    NSAffineTransform* rccw = NSAffineTransform.transform;
+    [rccw rotateByDegrees: degrees];
+    NSAffineTransform* tran = NSAffineTransform.transform;
+    [tran translateXBy:  rs.width / 2 yBy: rs.height / 2];
+    [rccw appendTransform: tran];
     [ri lockFocus]; // NSGraphicsContext.currentContext = rotatedImage
-    // NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh;
-    [t concat];
-    [self drawAtPoint: NSMakePoint(0, 0) fromRect: NSZeroRect operation: NSCompositeSourceOver fraction: 1];
-    // [self drawInRect: NSMakeRect(0, 0, rs.width, rs.height)];
+    NSGraphicsContext.currentContext.imageInterpolation = NSImageInterpolationHigh;
+    [rccw concat];
+    [self drawAtPoint: NSMakePoint(-size.width / 2, -size.height / 2)];
     [ri unlockFocus];
     [NSGraphicsContext.currentContext restoreGraphicsState];
-    NSAssert(save.width == self.size.width && save.height == self.size.height, @"corrupted image");
+    NSAssert(size.width == self.size.width && size.height == self.size.height, @"corrupted image");
     return ri;
 }
 
@@ -137,7 +136,7 @@ static NSDictionary* sHints;
             // most likely cached standard icon -> zero bytes expense
         } else {
             bytes += o.bitsPerSample * o.pixelsWide * o.pixelsHigh;
-            trace("representations=%@", o);
+            // trace("representations=%@", o);
         }
     }
     return bytes;
@@ -195,7 +194,7 @@ enum { // Baseline TIFF Orientation
 /* A transversion is a 180° rotation followed by a transposition */
 
 + (NSImage*) exifThumbnail: (NSURL*) url {
-    timestamp("exifThumbnail");
+    // timestamp("exifThumbnail");
     NSImage* t = null;
     CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)url, null);
     if (source != null) {
@@ -213,18 +212,18 @@ enum { // Baseline TIFF Orientation
                 if (thumbnail != null) {
                     t = [NSImage.alloc initWithCGImage: thumbnail];
                     if (t != null) {
+                        // trace("%@ orientation=%d", url.path.lastPathComponent, orientation);
                         switch (orientation) {
                             case ORIENTATION_TOP_LEFT: break;
                             case ORIENTATION_TOP_RIGHT: t = t.mirror; break;
                             case ORIENTATION_BOTTOM_RIGHT: t.flipped = true; t = t.mirror; break;
                             case ORIENTATION_BOTTOM_LEFT: t.flipped = true; break;
                             case ORIENTATION_LEFT_TOP: t = null; break; // transpose not supported for now
-                            case ORIENTATION_RIGHT_TOP: t = [t rotate: 90]; break;
+                            case ORIENTATION_RIGHT_TOP: t = [t rotate: 270]; break; // 90 cw == 270 ccw
                             case ORIENTATION_RIGHT_BOTTOM: t = null; break; // transverse not supported for now
-                            case ORIENTATION_LEFT_BOTTOM: t = [t rotate: 270]; break;
+                            case ORIENTATION_LEFT_BOTTOM: t = [t rotate: 90]; break;  // 270 cw == 90 ccw
                             default: NSAssert(false, @"unknown orientation: %d -- ignored", orientation); break;
                         }
-
                     }
                     CFRelease(thumbnail);
                 }
@@ -239,9 +238,9 @@ enum { // Baseline TIFF Orientation
         }
         CFRelease(source);
     }
-    timestamp("exifThumbnail");
+    // timestamp("exifThumbnail");
     if (t != null) {
-        NSLog(@"exifThumbnail=%@", NSStringFromSize(t.size));
+        // trace(@"exifThumbnail=%@", NSStringFromSize(t.size));
     }
     return [t square: 0];
 }
@@ -347,33 +346,8 @@ enum { // Baseline TIFF Orientation
 
 + (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon {
     NSURL* url = [NSURL fileURLWithPath: path];
-    if (path == null || url == null) {
-        return null;
-    }
-    // TODO: we need to extract EXIF first and schedule better image
     NSImage* i = null;
-    i = [NSImage exifThumbnail: url];
-    if (i != null) {
-//        return i;
-    }
-    NSString* ext = path.pathExtension;
-    if ([@"jpeg" equalsIgnoreCase: ext] || [@"jpg" equalsIgnoreCase: ext] || [@"png" equalsIgnoreCase: ext] ||
-        [@"tiff" equalsIgnoreCase: ext] || [@"tif" equalsIgnoreCase: ext] || [@"gif" equalsIgnoreCase: ext]) {
-        timestamp("NSImage.initWithContentsOfFile");
-        i = [NSImage.alloc initWithContentsOfFile: path]; // TODO: aspect ratio! (on the caller side)
-        timestamp("NSImage.initWithContentsOfFile");
-    }
-    if (i != null) {
-        NSLog(@"--- %@", path);
-        if ([path indexOf: @"Carmel"] > 0) {
-            NSLog(@"--- %@", NSStringFromSize(i.size));
-            NSImageRep* r = i.representations[0];
-            NSLog(@"--- %@ %ld %ld", NSStringFromSize(i.size), r.pixelsWide, r.pixelsHigh);
-        }
-        [i makePixelSized];
-        return [i square: MIN(512, MAX(i.size.width, i.size.height))];
-    }
-    timestamp("qlImage");
+    // timestamp("qlImage");
     NSDictionary *d = @{ (NSString*)kQLThumbnailOptionIconModeKey: @(icon)};
     QLThumbnailRef tr = QLThumbnailCreate(kCFAllocatorDefault,
                                           (__bridge CFURLRef)url,
@@ -401,14 +375,14 @@ enum { // Baseline TIFF Orientation
         }
         CFRelease(tr);
     }
-    timestamp("qlImage");
-    NSLog(@"---");
+    // timestamp("qlImage");
+    if (i != null) {
+        // trace("qlImage %@", NSStringFromSize(i.size));
+    }
     return i;
 }
 
 @end
-
-
 
 @implementation ZGImage {
     NSMutableDictionary* _hints;
