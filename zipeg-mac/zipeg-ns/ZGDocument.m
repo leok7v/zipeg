@@ -28,6 +28,7 @@
 }
 
 - (void) setItems: (NSArray*) items;
+- (void) invalidate: (NSObject<ZGItemProtocol>*) it;
 
 @end
 
@@ -84,6 +85,13 @@
     [NSGraphicsContext.currentContext restoreGraphicsState];
     [super drawRect: r];
 }
+
+- (void) invalidate: (NSObject<ZGItemProtocol>*) it {
+    if (_items.count == 1 && isEqual(it, _items[0])) {
+        self.needsDisplay = true;
+    }
+}
+
 @end
 
 @interface ZGDocument() {
@@ -109,6 +117,7 @@
 
     ZGPreview* _preview;
     NSMutableDictionary* _previewCache;
+    ZGBlock* _delayedInvalidate;
 }
 
 @property (weak) NSView* contentView;
@@ -923,6 +932,7 @@ static NSTableView* createTableView(NSRect r) {
 - (void) close {
     // NSWindowController _windowDidClose will call us recursively from super :(
     if (_splitView != null) {
+        [_delayedInvalidate cancel];
         [_previewCache removeAllObjects];
         _previewCache = null;
         NSTableColumn* tc = _tableView.tableColumns[0];
@@ -1371,7 +1381,11 @@ static NSString* nextPathname(NSString* path) {
             if (i != null) {
 //              trace("%@ i.imageBytes=%lld", item.fullPath, i.imageBytes);
                 _previewCache[item.fullPath] = i;
-                _contentView.needsDisplay = true;
+                [_delayedInvalidate cancel];
+                _delayedInvalidate = [ZGUtils invokeLater: ^{
+                    _contentView.needsDisplay = true;
+                } delay: 0.25];
+                [_preview invalidate: item];
             }
         });
     }];
