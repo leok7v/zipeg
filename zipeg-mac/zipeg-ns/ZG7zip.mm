@@ -13,6 +13,8 @@
 #include "../chardet/universalchardet.h"
 #include <sys/stat.h>
 
+static ZGNumber* _TRUE = [ZGNumber.alloc initWithBool: true];
+
 struct D;
 
 @interface ZG7zip() {
@@ -104,7 +106,7 @@ static NSMutableArray *leafNode;
 - (void) addChild: (NSObject<ZGItemProtocol>*) child {
     assert(_children != leafNode);
     assert(child != self);
-    [_children addObject:child];
+    [_children addObject: child];
 }
 
 - (NSString*) fullPath {
@@ -305,9 +307,7 @@ static void reportProgress(ZG7zip* z, int ix) {
     }
 }
 
-
 - (BOOL) buildTree {
-    ZGNumber* _TRUE = [ZGNumber.alloc initWithBool: true];
     _numberOfFolders = 0;
     for (int i = 0; i < _numberOfItems; i++) {
         if (i % 100 == 0 && self.isCancelled) {
@@ -323,8 +323,6 @@ static void reportProgress(ZG7zip* z, int ix) {
             NSObject* isDir = _props[i][@"IsDir"];
             if ([isDir isKindOfClass: ZGNumber.class] && ((ZGNumber*)isDir).kind == kB) {
                 isFolder = ((NSNumber*)isDir).boolValue;
-            } else {
-                isFolder = [pathname hasSuffix:@"/"];
             }
             if (isDir == null && !isFolder) {
                 isFolder = a->isDir(i);
@@ -339,6 +337,8 @@ static void reportProgress(ZG7zip* z, int ix) {
             // NSObject* attr = _props[i][@"Attrib"];
             // trace("%@ attr=%@ isDir=%@ isFolder=%d", item.name, attr, isDir, isFolder);
             if (isFolder) {
+                NSObject* attr = _props[i][@"Attrib"];
+                trace("%@ attr=%@ isDir=%@ isFolder=%d", item.name, attr, isDir, isFolder);
                 [_isFolders setBit: i to: true];
                 [_isLeafFolders setBit: i to: true];
                 _numberOfFolders++;
@@ -361,7 +361,7 @@ static void reportProgress(ZG7zip* z, int ix) {
         assert(item != null);
         // NSArray* components = [pathname pathComponents]; might be faster
         for (;;) {
-            NSString* parentComponents =  pathname.stringByDeletingLastPathComponent;
+            NSString* parentComponents = pathname.stringByDeletingLastPathComponent;
             if (item.parent != null) {
                 break;
             }
@@ -374,7 +374,7 @@ static void reportProgress(ZG7zip* z, int ix) {
             // archives without entries for the folders do exist
             // create "synthetic" parent for such folder with -1 as an index
             if (p == null) {
-                // trace(@"creating synthetic parent for %@", parentComponents);
+                trace(@"creating synthetic parent for %@", parentComponents);
                 NSString* last = parentComponents.lastPathComponent;
                 p = [ZG7zipItem.alloc initWith: self name: last index: -1 isLeaf: false];
                 if (p == null) {
@@ -829,8 +829,12 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     if (path == null) {
         return false;
     }
-    if ([path hasPrefix:@"/"]) {
+    if ([path hasPrefix: @"/"]) {
         path = [path substringFromIndex: 1]; // fix the absolute path if present
+    }
+    if ([path hasSuffix: @"/"]) {
+        dic[@"IsDir"] = _TRUE;
+        path = [path substringFrom: 0 to: (int)path.length - 1];
     }
     _paths[itemIndex] = path;
     _props[itemIndex] = dic;
