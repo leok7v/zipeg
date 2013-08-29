@@ -19,6 +19,7 @@
 #import "ZGAlerts.h"
 #include <sys/stat.h> // mkdir
 
+#define PREVIEW_FILE_SIZE_LIMIT (1024*1024*64)
 
 @interface ZGPreview : NSView {
     NSColor* _background;
@@ -1316,8 +1317,6 @@ static NSString* nextPathname(NSString* path) {
                                         DnD: dnd];
     [_operationQueue addOperation: operation];
 }
-
-#define PREVIEW_FILE_SIZE_LIMIT (1024*1024*16)
 
 - (NSImage*) icon: (NSObject<ZGItemProtocol>*) item {
     NSString* path = item.fullPath;
