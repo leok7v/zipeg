@@ -289,7 +289,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
         if (pathParts.Size() <= numRemovePathParts)
           return E_FAIL;
         for (int i = 0; i < numRemovePathParts; i++) {
-            // printf("_removePathParts[%d]=%ls != pathParts[%d]=%ls\n", i, (LPCTSTR)_removePathParts[i], i, (LPCTSTR)pathParts[i]);
+//        printf("_removePathParts[%d]=%ls != pathParts[%d]=%ls\n", i, (LPCTSTR)_removePathParts[i], i, (LPCTSTR)pathParts[i]);
           if (_removePathParts[i].CompareNoCase(pathParts[i]) != 0)
             return E_FAIL;
         }
@@ -418,7 +418,7 @@ STDMETHODIMP CArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStre
     {
       _outFileStreamSpec = new COutFileStream;
       CMyComPtr<ISequentialOutStream> outStreamLoc(_outFileStreamSpec);
-        printf("fullProcessedPath=%ls", (const wchar_t*)fullProcessedPath);
+//    printf("fullProcessedPath=%ls", (const wchar_t*)fullProcessedPath);
       if (!_outFileStreamSpec->Open(fullProcessedPath, _isSplit ? OPEN_ALWAYS: CREATE_ALWAYS))
       {
         // if (::GetLastError() != ERROR_FILE_EXISTS || !isSplit)

@@ -136,7 +136,7 @@
         // tableView:didClickTableColumn: in ZGTableViewDelegate
         // which sets sortDescriptorPrototype back after it's been null-ified
         NSArray* sortDescriptors = _document.tableView.sortDescriptors;
-        // trace(@"old=%@ new=%@", oldDescriptors, sortDescriptors);
+//      trace(@"old=%@ new=%@", oldDescriptors, sortDescriptors);
         if (oldDescriptors != null && oldDescriptors.count > 0 && sortDescriptors != null && sortDescriptors.count > 0) {
             NSSortDescriptor* o = oldDescriptors[0];
             NSSortDescriptor* n = sortDescriptors[0];
@@ -183,7 +183,7 @@
     NSMutableArray *urls  = [[NSMutableArray alloc] initWithCapacity: rowIndexes.count];
     for (NSObject<ZGItemProtocol>* it in items) {
         NSURL* u =[NSURL fileURLWithPath:[d.path stringByAppendingPathComponent: it.name] isDirectory: false];
-        trace(@"it=%@ fileURL=%@", it.description, u);
+//      trace(@"it=%@ fileURL=%@", it.description, u);
         [urls addObject: u.path.lastPathComponent];
     }
     [_document extract: items to: d DnD: true];
@@ -208,7 +208,7 @@
         }
         if ([pb setString: it.name forType: NSStringPboardType]) {
             b = true;
-            // trace(@"%@", it.name);
+//          trace(@"%@", it.name);
         }
         i = [indices indexGreaterThanIndex: i];
     }
