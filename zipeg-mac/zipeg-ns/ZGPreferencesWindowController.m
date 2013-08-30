@@ -61,7 +61,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     if (self.viewControllers.count > 0) {
         NSString* id = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesSelectedViewKey];
         NSViewController<ZGPreferencesViewController>* vc = [self viewControllerForIdentifier: id];
-        self.selectedViewController = vc != null ? vc : self .firstViewController;
+        self.selectedViewController = vc != null ? vc : self.firstViewController;
     }
     NSString* origin = [NSUserDefaults.standardUserDefaults stringForKey:kZGPreferencesFrameTopLeftKey];
     if (origin != null) {
@@ -78,10 +78,11 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 }
 
 - (NSViewController <ZGPreferencesViewController>*) firstViewController {
-    for (id viewController in self.viewControllers)
-        if ([viewController isKindOfClass:[NSViewController class]])
-            return viewController;
-
+    for (id vc in self.viewControllers) {
+        if ([vc isKindOfClass: NSViewController.class]) {
+            return vc;
+        }
+    }
     return null;
 }
 
@@ -105,30 +106,27 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 }
 
 - (NSArray*) toolbarItemIdentifiers {
-    NSMutableArray* identifiers = [NSMutableArray arrayWithCapacity: _viewControllers.count];
+    NSMutableArray* ids = [NSMutableArray arrayWithCapacity: _viewControllers.count];
     for (NSViewController<ZGPreferencesViewController>* viewController in _viewControllers) {
         if (viewController == null) {
-            [identifiers addObject:NSToolbarFlexibleSpaceItemIdentifier];
+            [ids addObject: NSToolbarFlexibleSpaceItemIdentifier];
         } else {
-            [identifiers addObject: viewController.identifier];
+            [ids addObject: viewController.identifier];
         }
     }
-    return identifiers;
+    return ids;
 }
 
-- (NSUInteger)indexOfSelectedController {
-    NSUInteger index = [self.toolbarItemIdentifiers indexOfObject:self.selectedViewController.identifier];
-    return index;
+- (NSUInteger) indexOfSelectedController {
+    return [self.toolbarItemIdentifiers indexOfObject:self.selectedViewController.identifier];
 }
 
 - (NSArray*) toolbarAllowedItemIdentifiers: (NSToolbar*) toolbar {
-    NSArray* identifiers = self.toolbarItemIdentifiers;
-    return identifiers;
-}                   
+    return self.toolbarItemIdentifiers;
+}
                    
 - (NSArray*) toolbarDefaultItemIdentifiers: (NSToolbar*) toolbar {
-    NSArray* identifiers = self.toolbarItemIdentifiers;
-    return identifiers;
+    return self.toolbarItemIdentifiers;
 }
 
 - (NSArray*) toolbarSelectableItemIdentifiers: (NSToolbar*) toolbar {
@@ -136,18 +134,20 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     return identifiers;
 }
 
-- (NSToolbarItem*) toolbar: (NSToolbar*) toolbar itemForItemIdentifier: (NSString*) itemIdentifier willBeInsertedIntoToolbar: (BOOL) flag {
-    NSToolbarItem* toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
+- (NSToolbarItem*) toolbar: (NSToolbar*) toolbar
+     itemForItemIdentifier: (NSString*) ident
+ willBeInsertedIntoToolbar: (BOOL) flag {
+    NSToolbarItem* tbi = [NSToolbarItem.alloc initWithItemIdentifier: ident];
     NSArray* identifiers = self.toolbarItemIdentifiers;
-    NSUInteger controllerIndex = [identifiers indexOfObject:itemIdentifier];
-    if (controllerIndex != NSNotFound) {
-        id <ZGPreferencesViewController> controller = _viewControllers[controllerIndex];
-        toolbarItem.image = controller.toolbarItemImage;
-        toolbarItem.label = controller.toolbarItemLabel;
-        toolbarItem.target = self;
-        toolbarItem.action = @selector(toolbarItemDidClick:);
+    NSUInteger ix = [identifiers indexOfObject: ident];
+    if (ix != NSNotFound) {
+        id <ZGPreferencesViewController> controller = _viewControllers[ix];
+        tbi.image = controller.toolbarItemImage;
+        tbi.label = controller.toolbarItemLabel;
+        tbi.target = self;
+        tbi.action = @selector(toolbarItemDidClick:);
     }
-    return toolbarItem;
+    return tbi;
 }
 
 - (void) clearResponderChain {
@@ -173,9 +173,9 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 }
 
 - (NSViewController<ZGPreferencesViewController>*) viewControllerForIdentifier: (NSString*) identifier {
-    for (NSViewController<ZGPreferencesViewController>* viewController in self.viewControllers) {
-        if (isEqual(viewController.identifier, identifier)) {
-            return viewController;
+    for (NSViewController<ZGPreferencesViewController>* vc in self.viewControllers) {
+        if (isEqual(vc.identifier, identifier)) {
+            return vc;
         }
     }
     return null;
@@ -218,8 +218,8 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         [_minimumViewRects setObject: NSStringFromRect(controllerView.bounds)
                               forKey: controller.identifier];
     }
-    BOOL sizableWidth  = [controllerView autoresizingMask] & NSViewWidthSizable;
-    BOOL sizableHeight = [controllerView autoresizingMask] & NSViewHeightSizable;
+    BOOL sizableWidth  = controllerView.autoresizingMask & NSViewWidthSizable;
+    BOOL sizableHeight = controllerView.autoresizingMask & NSViewHeightSizable;
     NSRect oldViewRect = oldViewRectString ? NSRectFromString(oldViewRectString) : controllerView.bounds;
     NSRect minViewRect = minViewRectString ? NSRectFromString(minViewRectString) : controllerView.bounds;
     oldViewRect.size.width  = oldViewRect.size.width  < minViewRect.size.width  || !sizableWidth  ?
@@ -259,14 +259,14 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 }
 
 - (void) toolbarItemDidClick: (id) sender {
-    if ([sender respondsToSelector:@selector(itemIdentifier)]) {
+    if ([sender respondsToSelector: @selector(itemIdentifier)]) {
         self.selectedViewController = [self viewControllerForIdentifier: [sender itemIdentifier]];
     }
 }
 
-- (void) selectControllerAtIndex: (NSUInteger)controllerIndex {
-    if (NSLocationInRange(controllerIndex, NSMakeRange(0, _viewControllers.count)))
-        self.selectedViewController = self.viewControllers[controllerIndex];
+- (void) selectControllerAtIndex: (NSUInteger) ix {
+    if (NSLocationInRange(ix, NSMakeRange(0, _viewControllers.count)))
+        self.selectedViewController = self.viewControllers[ix];
 }
 
 - (IBAction) goNextTab: (id) sender {
