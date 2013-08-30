@@ -219,7 +219,7 @@ P7Z::P7Z(Delegate* d) : archiveLink(null), delegate(d), codePage(CP_UTF8) {
 
 bool P7Z::reportException(int e) {
     char buff[1024] = {0};
-    char* s = "";
+    const char* s = "";
     switch(e) {
         case S_OK: s = "unexpected OK"; break;
         case E_OUTOFMEMORY: s = "out of memory"; break;
@@ -523,7 +523,7 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
         throw "archive is not open";
     }
     try {
-        bool stdInMode = false;
+//      bool stdInMode = false;
         UString directoryPath;
         if (!ConvertUTF8ToUnicode(dest, directoryPath)) {
             return false;

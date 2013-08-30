@@ -136,7 +136,7 @@
 	<key>CFBundleIconFile</key>
 	<string>zipeg</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.zipeg.${PRODUCT_NAME:rfc1034identifier}</string>
+	<string>com.zipeg.zipeg</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -149,8 +149,12 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>2</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2006-2013 Zipeg Labs. All rights reserved.</string>
 	<key>NSMainNibFile</key>
@@ -181,8 +185,6 @@
 			</dict>
 		</dict>
 	</array>
-	<key>NSHighResolutionCapable</key>
-	<true/>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>
