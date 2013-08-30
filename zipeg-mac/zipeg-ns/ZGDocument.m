@@ -240,6 +240,7 @@
     BOOL _dnd;
 }
 - (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd;
+- (BOOL) isDnD;
 @end
 
 @implementation ExtractItemsOperation
@@ -262,6 +263,10 @@
 
 - (void)main {
     [_document extractItemsForOperation: self items: _items to: _url DnD: _dnd];
+}
+
+- (BOOL) isDnD {
+    return _dnd;
 }
 
 @end
@@ -1558,6 +1563,9 @@ static NSString* nextPathname(NSString* path) {
                 from: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                   to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
     assert(![NSThread isMainThread]);
+    if ([op isKindOfClass: ExtractItemsOperation.class] && ((ExtractItemsOperation*)op).isDnD) {
+        return kKeepBothToAll;
+    }
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
     int __block answer = NSAlertErrorReturn;
     dispatch_async(dispatch_get_main_queue(), ^{
