@@ -1911,7 +1911,7 @@ static NSString* multipartBasename(NSString* s) {
     return false; // TODO: depending on FirstResponder being table or outline view
 }
 
-+ (void)registerServices {
++ (void) registerServices {
     static BOOL registeredServices = false;
     if (!registeredServices) {
         [NSApp setServicesProvider: self];

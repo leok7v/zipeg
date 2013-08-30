@@ -107,7 +107,7 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
     trace(@"keyPath=%@ action=%@ %@ newKey=%@ oldKey=%@ indexes=%@  prio=%d",
           kp, action, o, newKey, oldKey, indexes, prio);
 */
-    if ([kp isEqualToString:@"firstResponder"]) {
+    if ([kp isEqualToString: @"firstResponder"]) {
         // NSResponder* fr = [self.window firstResponder];
         // trace(@"first responder changed to %@", fr);
         assert([self.document isKindOfClass: ZGDocument.class]);

@@ -17,7 +17,6 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     NSViewController <ZGPreferencesViewController>* _selectedViewController;
 }
 
-
 - (NSViewController <ZGPreferencesViewController>*) viewControllerForIdentifier: (NSString*) identifier;
 
 @property (readonly) NSArray* toolbarItemIdentifiers;
@@ -68,8 +67,14 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     if (origin != null) {
         self.window.frameTopLeftPoint = NSPointFromString(origin);
     }
-    [NSNotificationCenter.defaultCenter addObserver:self selector: @selector(windowDidMove:)   name: NSWindowDidMoveNotification object: self.window];
-    [NSNotificationCenter.defaultCenter addObserver:self selector: @selector(windowDidResize:) name: NSWindowDidResizeNotification object: self.window];
+    // TODO: this will actually hold the ARC references forever unless we do observe Window close
+    // not a big issue since the Preferences are never really closed...
+    [NSNotificationCenter.defaultCenter addObserver: self
+                                           selector: @selector(windowDidMove:)
+                                               name: NSWindowDidMoveNotification object: self.window];
+    [NSNotificationCenter.defaultCenter addObserver: self
+                                           selector: @selector(windowDidResize:)
+                                               name: NSWindowDidResizeNotification object: self.window];
 }
 
 - (NSViewController <ZGPreferencesViewController>*) firstViewController {

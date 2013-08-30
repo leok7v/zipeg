@@ -15,7 +15,7 @@ extern NSString* const kZGPreferencesWindowControllerDidChangeViewNotification;
 - (id) initWithViewControllers: (NSArray*) viewControllers;
 - (id) initWithViewControllers: (NSArray*) viewControllers title:(NSString*) title;
 
-- (void) selectControllerAtIndex:(NSUInteger)controllerIndex;
+- (void) selectControllerAtIndex: (NSUInteger) controllerIndex;
 
 - (IBAction) goNextTab: (id) sender;
 - (IBAction) goPreviousTab: (id) sender;
