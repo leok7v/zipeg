@@ -2,15 +2,63 @@
 #import "ZGAppDelegate.h"
 #import "ZGDocument.h"
 #import "ZGErrors.h"
+#import "ZGPreferencesWindowController.h"
+#import "ZGGeneralPreferencesViewController.h"
+#import "ZGAdvancedPreferencesViewController.h"
 #import "ZGApp.h"
 
-@interface ZGAppDelegate()
-@property BOOL applicationHasStarted;
+@interface ZGAppDelegate() {
+    ZGPreferencesWindowController* _preferencesWindowController;
+    BOOL _applicationHasStarted;
+}
+// TODO: remove me
+@property (nonatomic) NSInteger focusedAdvancedControlIndex;
 @end
 
 @implementation ZGAppDelegate
 
-- (void)applicationDidFinishLaunching:(NSNotification *) notification {
+- (id) init {
+    self = [super init];
+    if (self != null) {
+        alloc_count(self);
+    }
+    return self;
+}
+
+- (void) dealloc {
+    _preferencesWindowController = null;
+    dealloc_count(self);
+}
+
+// TODO: remove me
+NSString *const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
+
+- (NSInteger)focusedAdvancedControlIndex
+{
+    return [[NSUserDefaults standardUserDefaults] integerForKey:kFocusedAdvancedControlIndex];
+}
+
+- (void)setFocusedAdvancedControlIndex:(NSInteger)focusedAdvancedControlIndex
+{
+    [[NSUserDefaults standardUserDefaults] setInteger:focusedAdvancedControlIndex forKey:kFocusedAdvancedControlIndex];
+}
+
+- (IBAction) preferences: (id) sender {
+    trace(@"preferences");
+    if (_preferencesWindowController == null) {
+        NSArray* controllers = @[ZGGeneralPreferencesViewController.new, ZGAdvancedPreferencesViewController.new];
+        _preferencesWindowController = [ZGPreferencesWindowController.alloc initWithViewControllers: controllers title: @""];
+    }
+    if (_preferencesWindowController != null) {
+        [_preferencesWindowController showWindow: self];
+    }
+}
+
+- (IBAction) welcome: (id) sender {
+    trace(@"welcome");
+}
+
+- (void) applicationDidFinishLaunching:(NSNotification *) notification {
     NSApplication.sharedApplication.presentationOptions = NSFullScreenWindowMask;
 #ifdef DEBUG
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
@@ -25,8 +73,8 @@
     _applicationHasStarted = true;
 }
 
-- (BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication *) theApplication {
-    return YES;
+- (BOOL) applicationShouldTerminateAfterLastWindowClosed: (NSApplication*) app {
+    return true;
 }
 
 - (BOOL) openLastDocument {

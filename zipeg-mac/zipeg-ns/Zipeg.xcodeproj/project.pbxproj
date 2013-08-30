@@ -333,6 +333,12 @@
 		B37E555E1793019400E54693 /* ZGOutlineViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = B37E555D1793019400E54693 /* ZGOutlineViewDataSource.m */; };
 		B39F1D271792485F00472FEF /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D291792485F00472FEF /* Credits.rtf */; };
 		B39F1D2A1792486C00472FEF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D2C1792486C00472FEF /* InfoPlist.strings */; };
+		B39F3E4617D0BA3B00254ACB /* ZGPreferencesWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */; };
+		B39F3E4817D0BA6400254ACB /* ZGPreferencesWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39F3E4717D0BA6400254ACB /* ZGPreferencesWindow.xib */; };
+		B39F3E4D17D0C4F000254ACB /* ZGAdvancedPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */; };
+		B39F3E4E17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */; };
+		B39F3E5117D0C5B300254ACB /* ZGAdvancedPreferencesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */; };
+		B39F3E5217D0C5B300254ACB /* ZGGeneralPreferencesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39F3E5017D0C5B300254ACB /* ZGGeneralPreferencesView.xib */; };
 		B3B444B417BA41F4008D88A3 /* ZGAlerts.m in Sources */ = {isa = PBXBuildFile; fileRef = B3B444B317BA41F4008D88A3 /* ZGAlerts.m */; };
 		B3B444B717BA6088008D88A3 /* stop-n-32x32@2.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */; };
 		B3B444B817BA6088008D88A3 /* stop-p-32x32@2.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B444B617BA6088008D88A3 /* stop-p-32x32@2.png */; };
@@ -1124,6 +1130,16 @@
 		B39F1D4F17924E9900472FEF /* HashMapS2L.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HashMapS2L.hpp; path = ../p7z/HashMapS2L.hpp; sourceTree = "<group>"; };
 		B39F1D5017924E9900472FEF /* NanoTime.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = NanoTime.hpp; path = ../p7z/NanoTime.hpp; sourceTree = "<group>"; };
 		B39F1D5617924F0700472FEF /* p7z.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = p7z.hpp; path = ../p7z/p7z.hpp; sourceTree = "<group>"; };
+		B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGPreferencesViewController.h; sourceTree = "<group>"; };
+		B39F3E4417D0BA3B00254ACB /* ZGPreferencesWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGPreferencesWindowController.h; sourceTree = "<group>"; };
+		B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGPreferencesWindowController.m; sourceTree = "<group>"; };
+		B39F3E4717D0BA6400254ACB /* ZGPreferencesWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ZGPreferencesWindow.xib; path = Resources/ZGPreferencesWindow.xib; sourceTree = "<group>"; };
+		B39F3E4917D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGAdvancedPreferencesViewController.h; sourceTree = "<group>"; };
+		B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGAdvancedPreferencesViewController.m; sourceTree = "<group>"; };
+		B39F3E4B17D0C4EF00254ACB /* ZGGeneralPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGGeneralPreferencesViewController.h; sourceTree = "<group>"; };
+		B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGGeneralPreferencesViewController.m; sourceTree = "<group>"; };
+		B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ZGAdvancedPreferencesView.xib; path = Resources/ZGAdvancedPreferencesView.xib; sourceTree = "<group>"; };
+		B39F3E5017D0C5B300254ACB /* ZGGeneralPreferencesView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ZGGeneralPreferencesView.xib; path = Resources/ZGGeneralPreferencesView.xib; sourceTree = "<group>"; };
 		B3B444B217BA41F4008D88A3 /* ZGAlerts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGAlerts.h; sourceTree = "<group>"; };
 		B3B444B317BA41F4008D88A3 /* ZGAlerts.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGAlerts.m; sourceTree = "<group>"; };
 		B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "stop-n-32x32@2.png"; path = "Resources/stop-n-32x32@2.png"; sourceTree = "<group>"; };
@@ -2181,6 +2197,13 @@
 				B34FEB6C1792443D005D798B /* ZGDocument.h */,
 				B34FEB6D1792443D005D798B /* ZGDocument.m */,
 				B30A704F17A4B3D200059168 /* ZGWindowController.h */,
+				B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewController.h */,
+				B39F3E4917D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.h */,
+				B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */,
+				B39F3E4B17D0C4EF00254ACB /* ZGGeneralPreferencesViewController.h */,
+				B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */,
+				B39F3E4417D0BA3B00254ACB /* ZGPreferencesWindowController.h */,
+				B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */,
 				B30A705017A4B3D200059168 /* ZGWindowController.m */,
 				B35EDC7A1799E36F00E6CCF9 /* Zipeg-Info.plist */,
 				B37E554A179278DF00E54693 /* zipeg.icns */,
@@ -2234,6 +2257,9 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */,
+				B39F3E5017D0C5B300254ACB /* ZGGeneralPreferencesView.xib */,
+				B39F3E4717D0BA6400254ACB /* ZGPreferencesWindow.xib */,
 				B32B60CF17C7D55600FB2ECC /* subtle_white_feathers_@2X.png */,
 				B32B60D017C7D55600FB2ECC /* subtle_white_feathers.png */,
 				B3D8999C17C60351006823AD /* textured_paper.png */,
@@ -2459,6 +2485,9 @@
 				B3D8999D17C60351006823AD /* textured_paper.png in Resources */,
 				B32B60D117C7D55600FB2ECC /* subtle_white_feathers_@2X.png in Resources */,
 				B32B60D217C7D55600FB2ECC /* subtle_white_feathers.png in Resources */,
+				B39F3E4817D0BA6400254ACB /* ZGPreferencesWindow.xib in Resources */,
+				B39F3E5117D0C5B300254ACB /* ZGAdvancedPreferencesView.xib in Resources */,
+				B39F3E5217D0C5B300254ACB /* ZGGeneralPreferencesView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2805,6 +2834,9 @@
 				B308541717D0384A0099F6DA /* HashMapS2L.cpp in Sources */,
 				B308541817D0384A0099F6DA /* NanoTime.cpp in Sources */,
 				B308541917D0384A0099F6DA /* p7z.cpp in Sources */,
+				B39F3E4617D0BA3B00254ACB /* ZGPreferencesWindowController.m in Sources */,
+				B39F3E4D17D0C4F000254ACB /* ZGAdvancedPreferencesViewController.m in Sources */,
+				B39F3E4E17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
