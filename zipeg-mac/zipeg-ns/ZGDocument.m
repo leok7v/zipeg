@@ -953,13 +953,20 @@ static NSTableView* createTableView(NSRect r) {
 - (void) close {
     // NSWindowController _windowDidClose will call us recursively from super :(
     if (_splitView != null) {
+        // .subviews = @[] should preceed = null to actual references
+        // because if they don't
+        // isKindOfClass: is sent to dangling object in
+        // -[NSView _endEditingIfFirstResponderIsASubview]
+        // -[NSView removeFromSuperview]
+        // -[NSView setSubviews:]
+        _splitView.subviews = @[];
+        _contentView.subviews = @[];
         [_delayedInvalidate cancel];
         [_previewCache removeAllObjects];
         _previewCache = null;
         NSTableColumn* tc = _tableView.tableColumns[0];
         assert(tc != null);
         [self cancelAll];
-        _splitView.subviews = @[];
         _alerts = null;
         _preview = null;
         _window.toolbar = null;
@@ -977,7 +984,6 @@ static NSTableView* createTableView(NSRect r) {
         _tableViewDatatSource = null;
         _tableViewDelegate = null;
         _destination = null;
-        _contentView.subviews = @[];
         if (_archive != null) {
             [_archive close];
             _archive = null;
