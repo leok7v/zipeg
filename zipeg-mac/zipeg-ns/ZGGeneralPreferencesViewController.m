@@ -14,16 +14,16 @@
     dealloc_count(self);
 }
 
-- (NSString*) identifier {
+- (NSString*) ident {
     return @"GeneralPreferences";
 }
 
-- (NSImage*) toolbarItemImage {
-    return [NSImage imageNamed:NSImageNamePreferencesGeneral];
+- (NSImage*) image {
+    return [NSImage imageNamed: NSImageNamePreferencesGeneral];
 }
 
-- (NSString*) toolbarItemLabel {
-    return NSLocalizedString(@"General", @"Toolbar item name for the General preference pane");
+- (NSString*) label {
+    return NSLocalizedString(@"General", @"Zipeg General Preferences");
 }
 
 @end

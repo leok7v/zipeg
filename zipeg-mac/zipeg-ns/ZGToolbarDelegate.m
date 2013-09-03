@@ -53,11 +53,11 @@
     }
 }
 
-- (IBAction)ok:(id)sender {
+- (IBAction) ok: (id) sender {
     trace(@"OK");
 }
 
-- (IBAction)cancel:(id)sender {
+- (IBAction) cancel: (id) sender {
     trace(@"Cancel");
 }
 
@@ -96,12 +96,12 @@ static NSString* NavsId  = @"NavId";
     [_document search: s];
 }
 
-- (void) searchMenuFormRepresentationClicked:(id) sender {
+- (void) searchMenuFormRepresentationClicked: (id) sender {
     _document.window.toolbar.displayMode = NSToolbarDisplayModeIconOnly;
     [_document.window makeFirstResponder: _activeSearchItem.view];
 }
 
-- (void) searchUsingSearchPanel:(id) sender {
+- (void) searchUsingSearchPanel: (id) sender {
     NSAlert* a = [NSAlert alertWithMessageText: @""
                                      defaultButton: @"OK"
                                    alternateButton: @"Cancel"

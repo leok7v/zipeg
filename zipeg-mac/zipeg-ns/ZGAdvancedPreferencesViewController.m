@@ -23,16 +23,16 @@
     dealloc_count(self);
 }
 
-- (NSString*) identifier {
+- (NSString*) ident {
     return @"AdvancedPreferences";
 }
 
-- (NSImage *) toolbarItemImage {
+- (NSImage *) image {
     return [NSImage imageNamed: NSImageNameAdvanced];
 }
 
-- (NSString *) toolbarItemLabel {
-    return NSLocalizedString(@"Advanced", @"Toolbar item name for the Advanced preference pane");
+- (NSString *) label {
+    return NSLocalizedString(@"Advanced", @"Zipeg Advanced Preferences");
 }
 
 - (NSView *) initialKeyView {

@@ -31,16 +31,14 @@
 }
 
 // TODO: remove me
-NSString *const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
+NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
 
-- (NSInteger)focusedAdvancedControlIndex
-{
-    return [[NSUserDefaults standardUserDefaults] integerForKey:kFocusedAdvancedControlIndex];
+- (NSInteger)focusedAdvancedControlIndex {
+    return [[NSUserDefaults standardUserDefaults] integerForKey: kFocusedAdvancedControlIndex];
 }
 
-- (void)setFocusedAdvancedControlIndex:(NSInteger)focusedAdvancedControlIndex
-{
-    [[NSUserDefaults standardUserDefaults] setInteger:focusedAdvancedControlIndex forKey:kFocusedAdvancedControlIndex];
+- (void)setFocusedAdvancedControlIndex: (NSInteger) focusedAdvancedControlIndex {
+    [[NSUserDefaults standardUserDefaults] setInteger:focusedAdvancedControlIndex forKey: kFocusedAdvancedControlIndex];
 }
 
 - (IBAction) preferences: (id) sender {

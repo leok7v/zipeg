@@ -334,7 +334,6 @@
 		B39F1D271792485F00472FEF /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D291792485F00472FEF /* Credits.rtf */; };
 		B39F1D2A1792486C00472FEF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B39F1D2C1792486C00472FEF /* InfoPlist.strings */; };
 		B39F3E4617D0BA3B00254ACB /* ZGPreferencesWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */; };
-		B39F3E4817D0BA6400254ACB /* ZGPreferencesWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39F3E4717D0BA6400254ACB /* ZGPreferencesWindow.xib */; };
 		B39F3E4D17D0C4F000254ACB /* ZGAdvancedPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */; };
 		B39F3E4E17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */; };
 		B39F3E5117D0C5B300254ACB /* ZGAdvancedPreferencesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */; };
@@ -1133,7 +1132,6 @@
 		B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGPreferencesViewController.h; sourceTree = "<group>"; };
 		B39F3E4417D0BA3B00254ACB /* ZGPreferencesWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGPreferencesWindowController.h; sourceTree = "<group>"; };
 		B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGPreferencesWindowController.m; sourceTree = "<group>"; };
-		B39F3E4717D0BA6400254ACB /* ZGPreferencesWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ZGPreferencesWindow.xib; path = Resources/ZGPreferencesWindow.xib; sourceTree = "<group>"; };
 		B39F3E4917D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGAdvancedPreferencesViewController.h; sourceTree = "<group>"; };
 		B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGAdvancedPreferencesViewController.m; sourceTree = "<group>"; };
 		B39F3E4B17D0C4EF00254ACB /* ZGGeneralPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGGeneralPreferencesViewController.h; sourceTree = "<group>"; };
@@ -2259,7 +2257,6 @@
 			children = (
 				B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */,
 				B39F3E5017D0C5B300254ACB /* ZGGeneralPreferencesView.xib */,
-				B39F3E4717D0BA6400254ACB /* ZGPreferencesWindow.xib */,
 				B32B60CF17C7D55600FB2ECC /* subtle_white_feathers_@2X.png */,
 				B32B60D017C7D55600FB2ECC /* subtle_white_feathers.png */,
 				B3D8999C17C60351006823AD /* textured_paper.png */,
@@ -2485,7 +2482,6 @@
 				B3D8999D17C60351006823AD /* textured_paper.png in Resources */,
 				B32B60D117C7D55600FB2ECC /* subtle_white_feathers_@2X.png in Resources */,
 				B32B60D217C7D55600FB2ECC /* subtle_white_feathers.png in Resources */,
-				B39F3E4817D0BA6400254ACB /* ZGPreferencesWindow.xib in Resources */,
 				B39F3E5117D0C5B300254ACB /* ZGAdvancedPreferencesView.xib in Resources */,
 				B39F3E5217D0C5B300254ACB /* ZGGeneralPreferencesView.xib in Resources */,
 			);

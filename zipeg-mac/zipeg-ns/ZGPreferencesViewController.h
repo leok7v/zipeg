@@ -6,8 +6,8 @@
 - (NSView*) initialKeyView;
 
 @required
-@property (nonatomic, readonly) NSString* identifier;
-@property (nonatomic, readonly) NSImage*  toolbarItemImage;
-@property (nonatomic, readonly) NSString* toolbarItemLabel;
+@property (nonatomic, readonly) NSString* ident;
+@property (nonatomic, readonly) NSImage*  image;
+@property (nonatomic, readonly) NSString* label;
 
 @end

@@ -3,7 +3,6 @@
 // MASPreferences is licensed under the BSD license
 #import "ZGPreferencesViewController.h"
 
-extern NSString* const kZGPreferencesWindowControllerDidChangeViewNotification;
 
 @interface ZGPreferencesWindowController : NSWindowController <NSToolbarDelegate, NSWindowDelegate>
 

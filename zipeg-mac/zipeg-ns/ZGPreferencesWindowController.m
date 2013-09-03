@@ -3,8 +3,8 @@
 NSString* const kZGPreferencesWindowControllerDidChangeViewNotification =
                @"ZGPreferencesWindowControllerDidChangeViewNotification";
 
-static NSString* const kZGPreferencesFrameTopLeftKey = @"ZGPreferences.frame.top.left";
-static NSString* const kZGPreferencesSelectedViewKey = @"ZGPreferences.selected.view.identifier";
+static NSString* const kZGPreferencesFrameTopLeftKey = @"com.zipeg.preferences.frame.top.left";
+static NSString* const kZGPreferencesSelectedViewKey = @"com.zipeg.preferences.selected.view.ident";
 
 static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     return [NSString stringWithFormat: @"ZGPreferences %@ Frame", identifier];
@@ -19,7 +19,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 
 - (NSViewController <ZGPreferencesViewController>*) viewControllerForIdentifier: (NSString*) identifier;
 
-@property (readonly) NSArray* toolbarItemIdentifiers;
+@property (readonly) NSArray* toolbarItemIds;
 @property (nonatomic, retain) NSViewController <ZGPreferencesViewController>* selectedViewController;
 
 @end
@@ -31,16 +31,35 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 @synthesize title = _title;
 
 - (id) initWithViewControllers: (NSArray*) viewControllers {
-    return [self initWithViewControllers:viewControllers title: null];
+    return [self initWithViewControllers: viewControllers title: null];
 }
 
 - (id) initWithViewControllers: (NSArray*) viewControllers title: (NSString*) title {
-    self = [super initWithWindowNibName: @"ZGPreferencesWindow"];
+    self = [super init];
     if (self != null) {
         alloc_count(self);
         _viewControllers = viewControllers;
         _minimumViewRects = [NSMutableDictionary dictionaryWithCapacity: 16];
         _title = title;
+        self.window = NSWindow.new;
+        self.window.delegate = self;
+        self.window.showsResizeIndicator = true;
+        self.window.styleMask = NSResizableWindowMask | NSTitledWindowMask | NSClosableWindowMask | NSUnifiedTitleAndToolbarWindowMask;
+        self.window.hasShadow = true;
+        self.window.showsToolbarButton = true;
+        NSView* cv = NSView.new;
+        cv.frameSize = NSMakeSize(360, 270);
+        cv.autoresizesSubviews = true;
+        self.window.contentView = cv;
+        self.window.contentSize = cv.frame.size;
+        NSToolbar* tb = [NSToolbar.alloc initWithIdentifier: @"Preferences"];
+        tb.allowsUserCustomization = false;
+        tb.autosavesConfiguration = false;
+        tb.displayMode = NSToolbarDisplayModeIconAndLabel;
+        tb.sizeMode = NSToolbarSizeModeRegular;
+        tb.delegate = self;
+        self.window.toolbar = tb;
+        [self windowDidLoad];
     }
     return self;
 }
@@ -63,7 +82,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         NSViewController<ZGPreferencesViewController>* vc = [self viewControllerForIdentifier: id];
         self.selectedViewController = vc != null ? vc : self.firstViewController;
     }
-    NSString* origin = [NSUserDefaults.standardUserDefaults stringForKey:kZGPreferencesFrameTopLeftKey];
+    NSString* origin = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesFrameTopLeftKey];
     if (origin != null) {
         self.window.frameTopLeftPoint = NSPointFromString(origin);
     }
@@ -96,54 +115,53 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
          setObject: s forKey: kZGPreferencesFrameTopLeftKey];
 }
 
-- (void)windowDidResize: (NSNotification*) n {
+- (void) windowDidResize: (NSNotification*) n {
     NSViewController <ZGPreferencesViewController>* viewController = self.selectedViewController;
     if (viewController != null) {
         [NSUserDefaults.standardUserDefaults
             setObject: NSStringFromRect(viewController.view.bounds)
-               forKey: PreferencesKeyForViewBounds(viewController.identifier)];
+               forKey: PreferencesKeyForViewBounds(viewController.ident)];
     }
 }
 
-- (NSArray*) toolbarItemIdentifiers {
+- (NSArray*) toolbarItemIds {
     NSMutableArray* ids = [NSMutableArray arrayWithCapacity: _viewControllers.count];
     for (NSViewController<ZGPreferencesViewController>* viewController in _viewControllers) {
         if (viewController == null) {
             [ids addObject: NSToolbarFlexibleSpaceItemIdentifier];
         } else {
-            [ids addObject: viewController.identifier];
+            [ids addObject: viewController.ident];
         }
     }
     return ids;
 }
 
 - (NSUInteger) indexOfSelectedController {
-    return [self.toolbarItemIdentifiers indexOfObject:self.selectedViewController.identifier];
+    return [self.toolbarItemIds indexOfObject: self.selectedViewController.ident];
 }
 
 - (NSArray*) toolbarAllowedItemIdentifiers: (NSToolbar*) toolbar {
-    return self.toolbarItemIdentifiers;
+    return self.toolbarItemIds;
 }
                    
 - (NSArray*) toolbarDefaultItemIdentifiers: (NSToolbar*) toolbar {
-    return self.toolbarItemIdentifiers;
+    return self.toolbarItemIds;
 }
 
 - (NSArray*) toolbarSelectableItemIdentifiers: (NSToolbar*) toolbar {
-    NSArray* identifiers = self.toolbarItemIdentifiers;
-    return identifiers;
+    return self.toolbarItemIds;
 }
 
 - (NSToolbarItem*) toolbar: (NSToolbar*) toolbar
      itemForItemIdentifier: (NSString*) ident
  willBeInsertedIntoToolbar: (BOOL) flag {
     NSToolbarItem* tbi = [NSToolbarItem.alloc initWithItemIdentifier: ident];
-    NSArray* identifiers = self.toolbarItemIdentifiers;
-    NSUInteger ix = [identifiers indexOfObject: ident];
+    NSArray* ids = self.toolbarItemIds;
+    NSUInteger ix = [ids indexOfObject: ident];
     if (ix != NSNotFound) {
         id <ZGPreferencesViewController> controller = _viewControllers[ix];
-        tbi.image = controller.toolbarItemImage;
-        tbi.label = controller.toolbarItemLabel;
+        tbi.image = controller.image;
+        tbi.label = controller.label;
         tbi.target = self;
         tbi.action = @selector(toolbarItemDidClick:);
     }
@@ -174,7 +192,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 
 - (NSViewController<ZGPreferencesViewController>*) viewControllerForIdentifier: (NSString*) identifier {
     for (NSViewController<ZGPreferencesViewController>* vc in self.viewControllers) {
-        if (isEqual(vc.identifier, identifier)) {
+        if (isEqual(vc.ident, identifier)) {
             return vc;
         }
     }
@@ -188,7 +206,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     if (_selectedViewController != null) {
         // Check if we can commit changes for old controller
         if (!_selectedViewController.commitEditing) {
-            self.window.toolbar.selectedItemIdentifier = _selectedViewController.identifier;
+            self.window.toolbar.selectedItemIdentifier = _selectedViewController.ident;
             return;
         }
         self.window.contentView = NSView.new;
@@ -202,21 +220,21 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     }
     // Retrieve the new window tile from the controller view
     if (self.title.length == 0) {
-        NSString* label = controller.toolbarItemLabel;
+        NSString* label = controller.label;
         self.window.title = label;
     }
-    self.window.toolbar.selectedItemIdentifier = controller.identifier;
+    self.window.toolbar.selectedItemIdentifier = controller.ident;
     // Record new selected controller in user defaults
-    [NSUserDefaults.standardUserDefaults setObject: controller.identifier
+    [NSUserDefaults.standardUserDefaults setObject: controller.ident
                                             forKey: kZGPreferencesSelectedViewKey];
     NSView* controllerView = controller.view;
     // Retrieve current and minimum frame size for the view
-    NSString* key = PreferencesKeyForViewBounds(controller.identifier);
+    NSString* key = PreferencesKeyForViewBounds(controller.ident);
     NSString* oldViewRectString = [NSUserDefaults.standardUserDefaults stringForKey: key];
-    NSString* minViewRectString = [_minimumViewRects objectForKey: controller.identifier];
+    NSString* minViewRectString = [_minimumViewRects objectForKey: controller.ident];
     if (minViewRectString == null) {
         [_minimumViewRects setObject: NSStringFromRect(controllerView.bounds)
-                              forKey: controller.identifier];
+                              forKey: controller.ident];
     }
     BOOL sizableWidth  = controllerView.autoresizingMask & NSViewWidthSizable;
     BOOL sizableHeight = controllerView.autoresizingMask & NSViewHeightSizable;
