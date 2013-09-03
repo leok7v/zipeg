@@ -12,7 +12,7 @@
 @synthesize tableView;
 
 - (id)init {
-    self = [super initWithNibName: @"ZGAdvancedPreferencesView" bundle:nil];
+    self = [super initWithNibName: @"ZGAdvancedPreferencesView" bundle: null];
     if (self != null) {
         alloc_count(self);
     }

@@ -54,7 +54,7 @@ static ZGFileSystemItem *g_root;
 - (NSMutableArray*) children { // Creates, caches, and returns the array of children. Loads children incrementally
     if (_children == leafNode) {
         return null;
-    } else if (_children == nil) {
+    } else if (_children == null) {
         NSFileManager* fm = NSFileManager.defaultManager;
         NSString* fp = self.fullPath;
         BOOL isDir, valid;
@@ -79,7 +79,7 @@ static ZGFileSystemItem *g_root;
 - (NSMutableArray*) folderChildren {
     if (_children == leafNode) {
         return null;
-    } else if (_folderChildren != nil) {
+    } else if (_folderChildren != null) {
         return _folderChildren;
     } else {
         NSFileManager* fm = NSFileManager.defaultManager;

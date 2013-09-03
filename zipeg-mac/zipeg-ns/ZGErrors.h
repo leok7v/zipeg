@@ -19,7 +19,7 @@ FOUNDATION_EXPORT NSError* ZGOutOfMemoryError();
 FOUNDATION_EXPORT NSError* ZGInternalError();
 
 #define ZG_ERROR_KEY(code)                    [NSString stringWithFormat:@"%d", code]
-#define ZG_ERROR_LOCALIZED_DESCRIPTION(code)  NSLocalizedStringFromTable(ZG_ERROR_KEY(code), @"ZGErrors", nil)
+#define ZG_ERROR_LOCALIZED_DESCRIPTION(code)  NSLocalizedStringFromTable(ZG_ERROR_KEY(code), @"ZGErrors", null)
 
 #ifdef __cplusplus
 }

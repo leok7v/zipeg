@@ -54,7 +54,7 @@
 
 - (NSString *)stringValue {
     if (self == null) {
-        return @"nil";
+        return @"null";
     } else if (kI1 <= _kind && _kind <= kI8) {
         return [NSString stringWithFormat:@"%lld", (long long)_storage];
     } else if (kUI1 <= _kind && _kind <= kUI8) {

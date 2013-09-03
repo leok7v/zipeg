@@ -113,21 +113,21 @@ BOOL responds(id o, SEL sel) {
 }
 
 id call(id o, SEL sel) {
-    return [o respondsToSelector: sel] ? [o performSelector: sel] : nil;
+    return [o respondsToSelector: sel] ? [o performSelector: sel] : null;
 }
 
 id call1(id o, SEL sel, id p) {
-    return [o respondsToSelector: sel] ? [o performSelector: sel withObject: p] : nil;
+    return [o respondsToSelector: sel] ? [o performSelector: sel withObject: p] : null;
 }
 
 id call2(id o, SEL sel, id p1, id p2) {
-    return [o respondsToSelector: sel] ? [o performSelector: sel withObject: p1 withObject: p2] : nil;
+    return [o respondsToSelector: sel] ? [o performSelector: sel withObject: p1 withObject: p2] : null;
 }
 
 #pragma clang diagnostic pop
 
 static id getBySelector(id o, SEL sel) {
-    return responds(o, sel) ? call(o, sel) : nil;
+    return responds(o, sel) ? call(o, sel) : null;
 }
 
 static NSString* debugDescription(id o, SEL sel) {
@@ -412,7 +412,7 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     // NOTE: [self parentForItem: item] always returns null
     // (I guess for the absence of the method in DataSource)
     NSObject<ZGItemProtocol>* i = item;
-    while (i != nil) {
+    while (i != null) {
         NSObject<ZGItemProtocol>* parent = i.parent;
         if (parent != null) {
             [self expandItem: parent expandChildren: false];

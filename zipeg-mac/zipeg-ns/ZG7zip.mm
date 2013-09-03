@@ -192,7 +192,7 @@ static NSMutableArray* filterOut(ZG7zip* a, NSMutableArray* childs) {
         return null;
     } else if (_folderChildren == leafNode) {
         return null;
-    } else if (_folderChildren == nil) {
+    } else if (_folderChildren == null) {
         int n = 0;
         for (ZG7zipItem* it in _children) {
             n += [_archive isFolder: it->_index];

@@ -69,7 +69,7 @@
     bool ov = [v isKindOfClass:NSOutlineView.class];
     int imageOriginYOffset = kImageOriginYOffset + 1 * ov;
     int textOriginYOffset = kTextOriginYOffset + 0 * ov;
-    assert(self.image != nil);
+    assert(self.image != null);
     if (self.image) {
         NSSize isz = [self.image size];
         NSRect ifr;

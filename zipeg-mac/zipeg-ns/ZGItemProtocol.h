@@ -6,8 +6,8 @@
 @property (nonatomic, readonly) NSDate*   time;
 @property (nonatomic, readonly) NSDictionary* properties;
 @property (nonatomic, readonly) NSString* fullPath;
-@property (nonatomic, readonly) NSMutableArray *children; // nil for leaf
-@property (nonatomic, readonly) NSMutableArray *folderChildren; // nil for leaf
+@property (nonatomic, readonly) NSMutableArray *children; // null for leaf
+@property (nonatomic, readonly) NSMutableArray *folderChildren; // null for leaf
 @property (weak) NSObject<ZGItemProtocol> *parent;
 @property (nonatomic, readonly) BOOL isGroup;
 @end

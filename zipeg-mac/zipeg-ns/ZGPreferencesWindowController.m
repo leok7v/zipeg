@@ -3,11 +3,11 @@
 NSString* const kZGPreferencesWindowControllerDidChangeViewNotification =
                @"ZGPreferencesWindowControllerDidChangeViewNotification";
 
-static NSString* const kZGPreferencesFrameTopLeftKey = @"com.zipeg.preferences.frame.top.left";
-static NSString* const kZGPreferencesSelectedViewKey = @"com.zipeg.preferences.selected.view.ident";
+static NSString* const kZGPreferencesPosition = @"com.zipeg.preferences.frame.top.left";
+static NSString* const kZGPreferencesSelected = @"com.zipeg.preferences.selected.view.ident";
 
 static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
-    return [NSString stringWithFormat: @"ZGPreferences %@ Frame", identifier];
+    return [NSString stringWithFormat: @"com.zipeg.preferences.%@.frame", identifier];
 }
 
 @interface ZGPreferencesWindowController ()  {
@@ -59,7 +59,26 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         tb.sizeMode = NSToolbarSizeModeRegular;
         tb.delegate = self;
         self.window.toolbar = tb;
-        [self windowDidLoad];
+        if (self.title.length > 0) {
+            self.window.title = self.title;
+        }
+        if (self.viewControllers.count > 0) {
+            NSString* id = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesSelected];
+            NSViewController<ZGPreferencesViewController>* vc = [self viewControllerForIdentifier: id];
+            self.selectedViewController = vc != null ? vc : self.firstViewController;
+        }
+        NSString* origin = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesPosition];
+        if (origin != null) {
+            self.window.frameTopLeftPoint = NSPointFromString(origin);
+        }
+        // TODO: this will actually hold the ARC references forever unless we do observe Window close
+        // not a big issue since the Preferences are never really closed...
+        [NSNotificationCenter.defaultCenter addObserver: self
+                                               selector: @selector(windowDidMove:)
+                                                   name: NSWindowDidMoveNotification object: self.window];
+        [NSNotificationCenter.defaultCenter addObserver: self
+                                               selector: @selector(windowDidResize:)
+                                                   name: NSWindowDidResizeNotification object: self.window];
     }
     return self;
 }
@@ -71,29 +90,6 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     _viewControllers = null;
     _selectedViewController = null;
     _minimumViewRects = null;
-}
-
-- (void) windowDidLoad {
-    if (self.title.length > 0) {
-        self.window.title = self.title;
-    }
-    if (self.viewControllers.count > 0) {
-        NSString* id = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesSelectedViewKey];
-        NSViewController<ZGPreferencesViewController>* vc = [self viewControllerForIdentifier: id];
-        self.selectedViewController = vc != null ? vc : self.firstViewController;
-    }
-    NSString* origin = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesFrameTopLeftKey];
-    if (origin != null) {
-        self.window.frameTopLeftPoint = NSPointFromString(origin);
-    }
-    // TODO: this will actually hold the ARC references forever unless we do observe Window close
-    // not a big issue since the Preferences are never really closed...
-    [NSNotificationCenter.defaultCenter addObserver: self
-                                           selector: @selector(windowDidMove:)
-                                               name: NSWindowDidMoveNotification object: self.window];
-    [NSNotificationCenter.defaultCenter addObserver: self
-                                           selector: @selector(windowDidResize:)
-                                               name: NSWindowDidResizeNotification object: self.window];
 }
 
 - (NSViewController <ZGPreferencesViewController>*) firstViewController {
@@ -111,16 +107,15 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 
 - (void) windowDidMove: (NSNotification*) n {
     NSString* s = NSStringFromPoint(NSMakePoint(self.window.frame.origin.x, NSMaxY(self.window.frame)));
-    [NSUserDefaults.standardUserDefaults
-         setObject: s forKey: kZGPreferencesFrameTopLeftKey];
+    [NSUserDefaults.standardUserDefaults setObject: s forKey: kZGPreferencesPosition];
 }
 
 - (void) windowDidResize: (NSNotification*) n {
     NSViewController <ZGPreferencesViewController>* viewController = self.selectedViewController;
     if (viewController != null) {
-        [NSUserDefaults.standardUserDefaults
-            setObject: NSStringFromRect(viewController.view.bounds)
-               forKey: PreferencesKeyForViewBounds(viewController.ident)];
+        NSString* s = NSStringFromRect(viewController.view.bounds);
+        NSString* key = PreferencesKeyForViewBounds(viewController.ident);
+        [NSUserDefaults.standardUserDefaults setObject: s forKey: key];
     }
 }
 
@@ -159,9 +154,9 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     NSArray* ids = self.toolbarItemIds;
     NSUInteger ix = [ids indexOfObject: ident];
     if (ix != NSNotFound) {
-        id <ZGPreferencesViewController> controller = _viewControllers[ix];
-        tbi.image = controller.image;
-        tbi.label = controller.label;
+        id <ZGPreferencesViewController> c = _viewControllers[ix];
+        tbi.image = c.image;
+        tbi.label = c.label;
         tbi.target = self;
         tbi.action = @selector(toolbarItemDidClick:);
     }
@@ -170,37 +165,35 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 
 - (void) clearResponderChain {
     // Remove view controller from the responder chain
-    NSResponder* chainedController = self.window.nextResponder;
-    if ([self.viewControllers indexOfObject: chainedController] == NSNotFound) {
+    NSResponder* next = self.window.nextResponder;
+    if ([self.viewControllers indexOfObject: next] == NSNotFound) {
         return;
     }
-    self.window.nextResponder = chainedController.nextResponder;
-    chainedController.nextResponder = null;
+    self.window.nextResponder = next.nextResponder;
+    next.nextResponder = null;
 }
 
 - (void) patchResponderChain {
     [self clearResponderChain];
-    NSViewController* selectedController = self.selectedViewController;
-    if (selectedController == null) {
-        return;
+    NSViewController* c = self.selectedViewController;
+    if (c != null) { // Add current controller to the responder chain
+        NSResponder* nextResponder = self.window.nextResponder;
+        self.window.nextResponder = c;
+        c.nextResponder = nextResponder;
     }
-    // Add current controller to the responder chain
-    NSResponder* nextResponder = self.window.nextResponder;
-    self.window.nextResponder = selectedController;
-    selectedController.nextResponder = nextResponder;
 }
 
-- (NSViewController<ZGPreferencesViewController>*) viewControllerForIdentifier: (NSString*) identifier {
+- (NSViewController<ZGPreferencesViewController>*) viewControllerForIdentifier: (NSString*) ident {
     for (NSViewController<ZGPreferencesViewController>* vc in self.viewControllers) {
-        if (isEqual(vc.ident, identifier)) {
+        if (isEqual(vc.ident, ident)) {
             return vc;
         }
     }
     return null;
 }
 
-- (void) setSelectedViewController: (NSViewController <ZGPreferencesViewController>*) controller {
-    if (_selectedViewController == controller) {
+- (void) setSelectedViewController: (NSViewController <ZGPreferencesViewController>*) c {
+    if (_selectedViewController == c) {
         return;
     }
     if (_selectedViewController != null) {
@@ -215,26 +208,26 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         }
         _selectedViewController = null;
     }
-    if (controller == null) {
+    if (c == null) {
         return;
     }
     // Retrieve the new window tile from the controller view
     if (self.title.length == 0) {
-        NSString* label = controller.label;
+        NSString* label = c.label;
         self.window.title = label;
     }
-    self.window.toolbar.selectedItemIdentifier = controller.ident;
+    self.window.toolbar.selectedItemIdentifier = c.ident;
     // Record new selected controller in user defaults
-    [NSUserDefaults.standardUserDefaults setObject: controller.ident
-                                            forKey: kZGPreferencesSelectedViewKey];
-    NSView* controllerView = controller.view;
+    [NSUserDefaults.standardUserDefaults setObject: c.ident
+                                            forKey: kZGPreferencesSelected];
+    NSView* controllerView = c.view;
     // Retrieve current and minimum frame size for the view
-    NSString* key = PreferencesKeyForViewBounds(controller.ident);
+    NSString* key = PreferencesKeyForViewBounds(c.ident);
     NSString* oldViewRectString = [NSUserDefaults.standardUserDefaults stringForKey: key];
-    NSString* minViewRectString = [_minimumViewRects objectForKey: controller.ident];
+    NSString* minViewRectString = [_minimumViewRects objectForKey: c.ident];
     if (minViewRectString == null) {
         [_minimumViewRects setObject: NSStringFromRect(controllerView.bounds)
-                              forKey: controller.ident];
+                              forKey: c.ident];
     }
     BOOL sizableWidth  = controllerView.autoresizingMask & NSViewWidthSizable;
     BOOL sizableHeight = controllerView.autoresizingMask & NSViewHeightSizable;
@@ -256,15 +249,15 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     self.window.showsResizeIndicator = sizableWidth || sizableHeight;
     [self.window standardWindowButton: NSWindowZoomButton].enabled = sizableWidth || sizableHeight;
     [self.window setFrame: newFrame display: true animate: self.window.isVisible];
-    _selectedViewController = controller;
-    if ([controller respondsToSelector:@selector(viewWillAppear)]) {
-        [controller viewWillAppear];
+    _selectedViewController = c;
+    if ([c respondsToSelector:@selector(viewWillAppear)]) {
+        [c viewWillAppear];
     }
     self.window.contentView = controllerView;
     [self.window recalculateKeyViewLoop];
     if (self.window.firstResponder == self.window) {
-        if ([controller respondsToSelector:@selector(initialKeyView)]) {
-            [self.window makeFirstResponder: controller.initialKeyView];
+        if ([c respondsToSelector:@selector(initialKeyView)]) {
+            [self.window makeFirstResponder: c.initialKeyView];
         } else {
             [self.window selectKeyViewFollowingView: controllerView];
         }

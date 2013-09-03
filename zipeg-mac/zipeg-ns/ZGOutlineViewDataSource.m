@@ -61,11 +61,11 @@
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView itemForPersistentObject:(id)object {
-    return nil;
+    return null;
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView persistentObjectForItem:(id)item {
-    return nil;
+    return null;
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView sortDescriptorsDidChange:(NSArray *)oldDescriptors {
