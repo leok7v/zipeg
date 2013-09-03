@@ -412,8 +412,8 @@ static void setTarget(NSView* v, id old, id target) {
     _block = d;
     NSWindow* w = a.window;
     NSView* acv = w.contentView;
-    [NSUserDefaults.standardUserDefaults setObject: @(acv.frame.size.width) forKey: @"zipeg.alerts.width"];
     CGFloat width = MAX(acv.frame.size.width, old.width);
+    [NSUserDefaults.standardUserDefaults setObject: @(width) forKey: @"zipeg.alerts.width"];
     NSSize size = NSMakeSize(width, acv.frame.size.height + old.height);
     _contentView.frameSize = size;
     _contentView.superview.frameSize = size;
