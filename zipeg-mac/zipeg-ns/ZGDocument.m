@@ -121,6 +121,11 @@
     ZGPreview* _preview;
     NSMutableDictionary* _previewCache;
     ZGBlock* _delayedInvalidate;
+
+    int _openOpCount;
+    int _extractOpCount;
+    int _exifOpCount;
+    int _previewOpCount;
 }
 
 @property (weak) NSView* contentView;
@@ -698,6 +703,7 @@ static NSTableView* createTableView(NSRect r) {
             _alerts.topText = [NSString stringWithFormat: @"Opening: %@", _url.path.lastPathComponent];
             _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
             OpenArchiveOperation *operation = [OpenArchiveOperation.alloc initWithDocument: self];
+            _openOpCount++;
             [_operationQueue addOperation: operation];
         }
     }
@@ -881,7 +887,8 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (BOOL) documentCanClose {
-    return _operationQueue.operations.count == 0;
+    trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
+    return _openOpCount == 0 && _extractOpCount == 0;
 }
 
 - (NSInteger) runModalAlert: (NSString*) message
@@ -946,6 +953,7 @@ static NSTableView* createTableView(NSRect r) {
     a.showsSuppressionButton = s != null;
     [self beginAlerts];
     [_alerts alert: a done: ^(NSInteger rc) {
+        [_alerts end];
         d(rc);
     }];
 }
@@ -1389,6 +1397,11 @@ static NSString* nextPathname(NSString* path) {
                                         fileDescriptor: fd
                                         to: url];
     operation.queuePriority = priority;
+    if (stage == kPreviewEXIF) {
+        _exifOpCount++;
+    } else if (stage == kPreviewImage) {
+        _previewOpCount++;
+    }
     [_operationQueue addOperation: operation];
 }
 
@@ -1425,13 +1438,20 @@ static NSString* nextPathname(NSString* path) {
         if (t != null) {
             // trace("NSImage.alloc initWithContentsOfFile %@", NSStringFromSize(t.size));
         }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _previewOpCount--;
+            trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
+            if (_previewOpCount == 0) {
+                _contentView.needsDisplay = true;
+            }
+        });
         return;
     } if (stage == kPreviewQL) {
         [self setCacheImage: [NSImage qlImage: url.path ofSize: NSMakeSize(512, 512) asIcon: true] to: item];
         return;
     }
     [_archive extract: @[item] to: url operation: op fileDescriptor: fd done: ^(NSError* error) {
-        NSAssert(stage == kPreviewEXIF, @"unexcpected stage %d instead of kPreviewEXIF", stage);
+        NSAssert(stage == kPreviewEXIF, @"unexpected stage %d instead of kPreviewEXIF", stage);
         // we are still on background thread here:
         NSImage* i = null;
         if (error == null && !op.isCancelled && !op.cancelRequested) {
@@ -1440,6 +1460,13 @@ static NSString* nextPathname(NSString* path) {
             trace("error=%@ isCancelled=%d cancelRequested=%d", error, op.isCancelled, op.cancelRequested);
         }
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (stage == kPreviewEXIF) {
+                _exifOpCount--;
+                trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
+                if (_exifOpCount == 0) {
+                    _contentView.needsDisplay = true;
+                }
+            }
             // trace("extracted for preview: %@ error=%@ image=%@", url, error, i.debugDescription);
             if (i != null) {
                 [self setCacheImage: i to: item];
@@ -1461,6 +1488,8 @@ static NSString* nextPathname(NSString* path) {
     [self scheduleAlerts];
     [_archive extract: items to: url operation: op fileDescriptor: -1 done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
+           _extractOpCount--;
+            trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
             [_alerts progress: 0 of: 0];
             if (error != null) {
                 [self restoreTrashed];
@@ -1711,6 +1740,8 @@ static NSString* multipartBasename(NSString* s) {
     }
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
+        _openOpCount--;
+        trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
         [_alerts progress: 0 of: 0];
         if (a != null) {
             [self endAlerts];
