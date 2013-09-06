@@ -1440,7 +1440,7 @@ static NSString* nextPathname(NSString* path) {
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             _previewOpCount--;
-            trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
+//          trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
             if (_previewOpCount == 0) {
                 _contentView.needsDisplay = true;
             }
@@ -1462,7 +1462,7 @@ static NSString* nextPathname(NSString* path) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (stage == kPreviewEXIF) {
                 _exifOpCount--;
-                trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
+//              trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
                 if (_exifOpCount == 0) {
                     _contentView.needsDisplay = true;
                 }
@@ -1489,7 +1489,7 @@ static NSString* nextPathname(NSString* path) {
     [_archive extract: items to: url operation: op fileDescriptor: -1 done: ^(NSError* error) {
         dispatch_async(dispatch_get_main_queue(), ^{
            _extractOpCount--;
-            trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
+//          trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
             [_alerts progress: 0 of: 0];
             if (error != null) {
                 [self restoreTrashed];
@@ -1741,7 +1741,7 @@ static NSString* multipartBasename(NSString* s) {
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
         _openOpCount--;
-        trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
+//      trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
         [_alerts progress: 0 of: 0];
         if (a != null) {
             [self endAlerts];

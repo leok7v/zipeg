@@ -14,13 +14,13 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     NSArray* _viewControllers;
     NSMutableDictionary* _minimumViewRects;
     NSString* _title;
-    NSViewController <ZGPreferencesViewController>* _selectedViewController;
+    NSViewController <ZGPreferencesViewControllerProtocol>* _selectedViewController;
 }
 
-- (NSViewController <ZGPreferencesViewController>*) viewControllerForIdentifier: (NSString*) identifier;
+- (NSViewController <ZGPreferencesViewControllerProtocol>*) viewControllerForIdentifier: (NSString*) identifier;
 
 @property (readonly) NSArray* toolbarItemIds;
-@property (nonatomic, retain) NSViewController <ZGPreferencesViewController>* selectedViewController;
+@property (nonatomic, retain) NSViewController <ZGPreferencesViewControllerProtocol>* selectedViewController;
 
 @end
 
@@ -64,7 +64,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         }
         if (self.viewControllers.count > 0) {
             NSString* id = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesSelected];
-            NSViewController<ZGPreferencesViewController>* vc = [self viewControllerForIdentifier: id];
+            NSViewController<ZGPreferencesViewControllerProtocol>* vc = [self viewControllerForIdentifier: id];
             self.selectedViewController = vc != null ? vc : self.firstViewController;
         }
         NSString* origin = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesPosition];
@@ -92,7 +92,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     _minimumViewRects = null;
 }
 
-- (NSViewController <ZGPreferencesViewController>*) firstViewController {
+- (NSViewController <ZGPreferencesViewControllerProtocol>*) firstViewController {
     for (id vc in self.viewControllers) {
         if ([vc isKindOfClass: NSViewController.class]) {
             return vc;
@@ -111,7 +111,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 }
 
 - (void) windowDidResize: (NSNotification*) n {
-    NSViewController <ZGPreferencesViewController>* viewController = self.selectedViewController;
+    NSViewController <ZGPreferencesViewControllerProtocol>* viewController = self.selectedViewController;
     if (viewController != null) {
         NSString* s = NSStringFromRect(viewController.view.bounds);
         NSString* key = PreferencesKeyForViewBounds(viewController.ident);
@@ -121,7 +121,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 
 - (NSArray*) toolbarItemIds {
     NSMutableArray* ids = [NSMutableArray arrayWithCapacity: _viewControllers.count];
-    for (NSViewController<ZGPreferencesViewController>* viewController in _viewControllers) {
+    for (NSViewController<ZGPreferencesViewControllerProtocol>* viewController in _viewControllers) {
         if (viewController == null) {
             [ids addObject: NSToolbarFlexibleSpaceItemIdentifier];
         } else {
@@ -154,7 +154,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     NSArray* ids = self.toolbarItemIds;
     NSUInteger ix = [ids indexOfObject: ident];
     if (ix != NSNotFound) {
-        id <ZGPreferencesViewController> c = _viewControllers[ix];
+        id <ZGPreferencesViewControllerProtocol> c = _viewControllers[ix];
         tbi.image = c.image;
         tbi.label = c.label;
         tbi.target = self;
@@ -183,8 +183,8 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     }
 }
 
-- (NSViewController<ZGPreferencesViewController>*) viewControllerForIdentifier: (NSString*) ident {
-    for (NSViewController<ZGPreferencesViewController>* vc in self.viewControllers) {
+- (NSViewController<ZGPreferencesViewControllerProtocol>*) viewControllerForIdentifier: (NSString*) ident {
+    for (NSViewController<ZGPreferencesViewControllerProtocol>* vc in self.viewControllers) {
         if (isEqual(vc.ident, ident)) {
             return vc;
         }
@@ -192,7 +192,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     return null;
 }
 
-- (void) setSelectedViewController: (NSViewController <ZGPreferencesViewController>*) c {
+- (void) setSelectedViewController: (NSViewController <ZGPreferencesViewControllerProtocol>*) c {
     if (_selectedViewController == c) {
         return;
     }

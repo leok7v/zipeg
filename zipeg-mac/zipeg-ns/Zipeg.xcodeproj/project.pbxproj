@@ -338,6 +338,7 @@
 		B39F3E4E17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */; };
 		B39F3E5117D0C5B300254ACB /* ZGAdvancedPreferencesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */; };
 		B39F3E5217D0C5B300254ACB /* ZGGeneralPreferencesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39F3E5017D0C5B300254ACB /* ZGGeneralPreferencesView.xib */; };
+		B3AF41E217DA55E900658672 /* ZGFileTypesPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */; };
 		B3B444B417BA41F4008D88A3 /* ZGAlerts.m in Sources */ = {isa = PBXBuildFile; fileRef = B3B444B317BA41F4008D88A3 /* ZGAlerts.m */; };
 		B3B444B717BA6088008D88A3 /* stop-n-32x32@2.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */; };
 		B3B444B817BA6088008D88A3 /* stop-p-32x32@2.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B444B617BA6088008D88A3 /* stop-p-32x32@2.png */; };
@@ -1129,7 +1130,7 @@
 		B39F1D4F17924E9900472FEF /* HashMapS2L.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HashMapS2L.hpp; path = ../p7z/HashMapS2L.hpp; sourceTree = "<group>"; };
 		B39F1D5017924E9900472FEF /* NanoTime.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = NanoTime.hpp; path = ../p7z/NanoTime.hpp; sourceTree = "<group>"; };
 		B39F1D5617924F0700472FEF /* p7z.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = p7z.hpp; path = ../p7z/p7z.hpp; sourceTree = "<group>"; };
-		B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGPreferencesViewController.h; sourceTree = "<group>"; };
+		B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewControllerProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGPreferencesViewControllerProtocol.h; sourceTree = "<group>"; };
 		B39F3E4417D0BA3B00254ACB /* ZGPreferencesWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGPreferencesWindowController.h; sourceTree = "<group>"; };
 		B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGPreferencesWindowController.m; sourceTree = "<group>"; };
 		B39F3E4917D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGAdvancedPreferencesViewController.h; sourceTree = "<group>"; };
@@ -1138,6 +1139,8 @@
 		B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGGeneralPreferencesViewController.m; sourceTree = "<group>"; };
 		B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ZGAdvancedPreferencesView.xib; path = Resources/ZGAdvancedPreferencesView.xib; sourceTree = "<group>"; };
 		B39F3E5017D0C5B300254ACB /* ZGGeneralPreferencesView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ZGGeneralPreferencesView.xib; path = Resources/ZGGeneralPreferencesView.xib; sourceTree = "<group>"; };
+		B3AF41E017DA55E900658672 /* ZGFileTypesPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGFileTypesPreferencesViewController.h; sourceTree = "<group>"; };
+		B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGFileTypesPreferencesViewController.m; sourceTree = "<group>"; };
 		B3B444B217BA41F4008D88A3 /* ZGAlerts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGAlerts.h; sourceTree = "<group>"; };
 		B3B444B317BA41F4008D88A3 /* ZGAlerts.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGAlerts.m; sourceTree = "<group>"; };
 		B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "stop-n-32x32@2.png"; path = "Resources/stop-n-32x32@2.png"; sourceTree = "<group>"; };
@@ -2195,11 +2198,13 @@
 				B34FEB6C1792443D005D798B /* ZGDocument.h */,
 				B34FEB6D1792443D005D798B /* ZGDocument.m */,
 				B30A704F17A4B3D200059168 /* ZGWindowController.h */,
-				B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewController.h */,
-				B39F3E4917D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.h */,
-				B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */,
+				B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewControllerProtocol.h */,
 				B39F3E4B17D0C4EF00254ACB /* ZGGeneralPreferencesViewController.h */,
 				B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */,
+				B39F3E4917D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.h */,
+				B3AF41E017DA55E900658672 /* ZGFileTypesPreferencesViewController.h */,
+				B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */,
+				B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */,
 				B39F3E4417D0BA3B00254ACB /* ZGPreferencesWindowController.h */,
 				B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */,
 				B30A705017A4B3D200059168 /* ZGWindowController.m */,
@@ -2833,6 +2838,7 @@
 				B39F3E4617D0BA3B00254ACB /* ZGPreferencesWindowController.m in Sources */,
 				B39F3E4D17D0C4F000254ACB /* ZGAdvancedPreferencesViewController.m in Sources */,
 				B39F3E4E17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m in Sources */,
+				B3AF41E217DA55E900658672 /* ZGFileTypesPreferencesViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

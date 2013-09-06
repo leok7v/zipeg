@@ -4,6 +4,7 @@
 #import "ZGErrors.h"
 #import "ZGPreferencesWindowController.h"
 #import "ZGGeneralPreferencesViewController.h"
+#import "ZGFileTypesPreferencesViewController.h"
 #import "ZGAdvancedPreferencesViewController.h"
 #import "ZGApp.h"
 
@@ -42,9 +43,10 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
 }
 
 - (IBAction) preferences: (id) sender {
-    trace(@"preferences");
     if (_preferencesWindowController == null) {
-        NSArray* controllers = @[ZGGeneralPreferencesViewController.new, ZGAdvancedPreferencesViewController.new];
+        NSArray* controllers = @[ZGGeneralPreferencesViewController.new,
+                                 ZGFileTypesPreferencesViewController.new,
+                                 ZGAdvancedPreferencesViewController.new];
         _preferencesWindowController = [ZGPreferencesWindowController.alloc initWithViewControllers: controllers title: @""];
     }
     if (_preferencesWindowController != null) {

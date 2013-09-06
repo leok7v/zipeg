@@ -1,4 +1,4 @@
-#import "ZGPreferencesViewController.h"
+#import "ZGPreferencesViewControllerProtocol.h"
 
-@interface ZGGeneralPreferencesViewController : NSViewController <ZGPreferencesViewController>
+@interface ZGGeneralPreferencesViewController : NSViewController <ZGPreferencesViewControllerProtocol>
 @end

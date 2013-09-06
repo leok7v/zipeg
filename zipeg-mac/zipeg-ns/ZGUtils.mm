@@ -154,7 +154,8 @@ static void _dumpViews(NSView* v, int level) {
           [@" tag=" stringByAppendingFormat: @"%ld", [v tag]] : @"";
     NSString* t = call(v, @selector(title));
     NSString* title = t != null ? [@" title=" stringByAppendingString: t] : @"";
-    NSString* sv = [v isKindOfClass: NSTextField.class] ? [(id)v stringValue] : null;
+    NSString* sv = [v isKindOfClass: NSTextField.class] ? ((NSTextField*)v).stringValue : null;
+    sv = [v isKindOfClass: NSText.class] ? ((NSText*)v).string : sv;
     NSString* text = sv != null ? [@" stringValue=" stringByAppendingString: sv] : @"";
     NSLog(@"%@%@%@%@ %@%@%@%@%@%@", indent, v.class, frame, bounds, delegate, dataSource, dataCell, tag, title, text);
     id subviews = getBySelector(v, @selector(subviews));

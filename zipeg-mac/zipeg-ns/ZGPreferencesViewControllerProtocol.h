@@ -1,4 +1,4 @@
-@protocol ZGPreferencesViewController <NSObject>
+@protocol ZGPreferencesViewControllerProtocol <NSObject>
 
 @optional
 - (void) viewWillAppear;
