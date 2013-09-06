@@ -36,6 +36,7 @@ static NSFont* font;
                            @"Checkmark this option to restore all alerts.");
         y = radioButtons(v, y, @"Radio:", @[@" foo", @" bar", @" snafu"]);
         y = comboBox(v, y, @"Combo:", @[@" fṧṤƿo", @" bar", @" snafu"]);
+        y = popUpButton(v, y, @"PopUp:", @[@" fṧṤƿo", @" bar", @" snafu"], @[@1, @2, @3]);
         y = createCheckBox(v, y, @"WWWW:", @" WWWW-----------------------", null);
         self.view = v;
         dumpViews(v);
@@ -84,7 +85,7 @@ static int createCheckBox(NSView* parent, CGFloat y, NSString* label, NSString* 
         tv.minSize = NSMakeSize(w, h);
         tv.constrainedFrameSize = NSMakeSize(w, parent.frame.size.height);
         [parent addSubview: tv];
-        tv.frame = NSMakeRect(middle + 20, cbx.frame.origin.y - tv.frame.size.height, w, tv.frame.size.height);
+        tv.frame = NSMakeRect(middle + 20, cbx.frame.origin.y - tv.frame.size.height - h * 0.25, w, tv.frame.size.height);
         y = tv.frame.origin.y - h * 1.5;
     }
     return y;
@@ -127,10 +128,41 @@ static int comboBox(NSView* parent, CGFloat y, NSString* label, NSArray* texts) 
         [cbx addItemWithObjectValue: texts[i]];
     }
     [cbx selectItemAtIndex: 0]; // TODO: restore selection from model
-    CGFloat h = lb.frame.size.height;
-    return y - h * 1.5;
+    return cbx.frame.origin.y - lb.frame.size.height * 1.75;
 }
 
+static void insertMenuItem(NSMenu* m, NSString* title, NSNumber* n) {
+    NSMenuItem *it = [NSMenuItem.alloc initWithTitle: NSLocalizedString(title, @"") action: null keyEquivalent:@""];
+    if (n != null) {
+        it.tag = n.intValue;
+    }
+    [m insertItem: it atIndex: m.itemArray.count];
+}
+
+static int popUpButton(NSView* parent, CGFloat y, NSString* label, NSArray* texts, NSArray* tags) {
+    NSText* lb = createLabel(parent, y, label);
+    CGFloat h = lb.frame.size.height;
+    int w = parent.frame.size.width - middle - margin * 2;
+    NSPopUpButton* btn = NSPopUpButton.new;
+    // btn.focusRingType = NSFocusRingTypeNone;
+    // btn.buttonType = NSToggleButton;
+    btn.title = texts[0];
+    NSButtonCell* bc = btn.cell;
+    NSRect r = NSMakeRect(middle, y - 4, w / 2, bc.cellSize.height);
+    btn.frame = r;
+    bc.bezelStyle = NSTexturedRoundedBezelStyle;
+    bc.highlightsBy = NSPushInCellMask;
+    bc.controlTint = NSBlueControlTint;
+    bc.font = font;
+//    bc.bordered = false;
+    btn.menu = [NSMenu new];
+    [parent addSubview: btn];
+    for (int i = 0; i < texts.count; i++) {
+        NSNumber* tag = tags != null && i < tags.count ? tags[i] : null;
+        insertMenuItem(btn.menu, texts[i], tag);
+    }
+    return btn.frame.origin.y - lb.frame.size.height * 1.75;
+}
 
 - (void) dealloc {
     dealloc_count(self);
