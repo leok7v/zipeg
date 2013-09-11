@@ -18,6 +18,11 @@
 
 @implementation ZGAppDelegate
 
++ (void) initialize {
+// TODO:
+//  [ZGAppDelegate setupDefaults];
+}
+
 - (id) init {
     self = [super init];
     if (self != null) {
@@ -195,5 +200,22 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     // [NSApp replyToApplicationShouldTerminate: r];
     // see: http://stackoverflow.com/questions/10224141/how-to-handle-cocoa-application-termination-properly
 }
+
+/* TODO: https://developer.apple.com/library/mac/documentation/cocoa/conceptual/CocoaBindings/Concepts/NSUserDefaultsController.html
++ (void)setupDefaults {
+    // load the default values for the user defaults
+    NSString* userDefaultsValuesPath=[NSBundle.mainBundle pathForResource: @"UserDefaults" ofType: @"plist"];
+    NSDictionary* userDefaultsValuesDict=[NSDictionary dictionaryWithContentsOfFile: userDefaultsValuesPath];
+    // set them in the standard user defaults
+    [NSUserDefaults.standardUserDefaults registerDefaults: userDefaultsValuesDict];
+    // TODO: move code below to Prefernces [Reset To Defaults] button:
+    // if your application supports resetting a subset of the defaults to factory values, you should set those values
+    // in the shared user defaults controller:
+    NSArray* resettableUserDefaultsKeys=@[ @"Value1",@"Value2",@"Value3"];
+    NSDictionary* initialValuesDict=[userDefaultsValuesDict dictionaryWithValuesForKeys:resettableUserDefaultsKeys];
+    // Set the initial values in the shared user defaults controller
+    [NSUserDefaultsController.sharedUserDefaultsController setInitialValues: initialValuesDict];
+}
+*/
 
 @end
