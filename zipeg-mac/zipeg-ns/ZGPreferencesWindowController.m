@@ -52,7 +52,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         cv.autoresizesSubviews = true;
         self.window.contentView = cv;
         self.window.contentSize = cv.frame.size;
-        NSToolbar* tb = [NSToolbar.alloc initWithIdentifier: @"Preferences"];
+        NSToolbar* tb = [NSToolbar.alloc initWithIdentifier: @"com.zipeg.preferences.toolbar"];
         tb.allowsUserCustomization = false;
         tb.autosavesConfiguration = false;
         tb.displayMode = NSToolbarDisplayModeIconAndLabel;
@@ -250,13 +250,13 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     [self.window standardWindowButton: NSWindowZoomButton].enabled = sizableWidth || sizableHeight;
     [self.window setFrame: newFrame display: true animate: self.window.isVisible];
     _selectedViewController = c;
-    if ([c respondsToSelector:@selector(viewWillAppear)]) {
+    if ([c respondsToSelector: @selector(viewWillAppear)]) {
         [c viewWillAppear];
     }
     self.window.contentView = controllerView;
     [self.window recalculateKeyViewLoop];
     if (self.window.firstResponder == self.window) {
-        if ([c respondsToSelector:@selector(initialKeyView)]) {
+        if ([c respondsToSelector: @selector(initialKeyView)]) {
             [self.window makeFirstResponder: c.initialKeyView];
         } else {
             [self.window selectKeyViewFollowingView: controllerView];

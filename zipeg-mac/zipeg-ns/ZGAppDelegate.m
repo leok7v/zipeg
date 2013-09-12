@@ -19,8 +19,8 @@
 @implementation ZGAppDelegate
 
 + (void) initialize {
-// TODO:
-//  [ZGAppDelegate setupDefaults];
+    [ZGAppDelegate setupDefaults];
+//  trace("NSUserDefaults.standardUserDefaults=%@", NSUserDefaults.standardUserDefaults);
 }
 
 - (id) init {
@@ -201,21 +201,38 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     // see: http://stackoverflow.com/questions/10224141/how-to-handle-cocoa-application-termination-properly
 }
 
-/* TODO: https://developer.apple.com/library/mac/documentation/cocoa/conceptual/CocoaBindings/Concepts/NSUserDefaultsController.html
+/* TODO: https://developer.apple.com/library/mac/documentation/cocoa/conceptual/CocoaBindings/Concepts/NSUserDefaultsController.html */
 + (void)setupDefaults {
-    // load the default values for the user defaults
-    NSString* userDefaultsValuesPath=[NSBundle.mainBundle pathForResource: @"UserDefaults" ofType: @"plist"];
-    NSDictionary* userDefaultsValuesDict=[NSDictionary dictionaryWithContentsOfFile: userDefaultsValuesPath];
+    // If we want to load default preferences from .plist (fragile):
+    NSString* udv = [NSBundle.mainBundle pathForResource: @"UserDefaults" ofType: @"plist"];
+    NSDictionary* d = udv != null ? [NSDictionary dictionaryWithContentsOfFile: udv] : null;
+    NSDictionary* defaults = d != null ? d :
+    @{
+       @"com.zipeg.preferences.showWelcome": @true,
+       @"com.zipeg.preferences.showInFinder": @true,
+       @"com.zipeg.preferences.closeAfterUnpack": @false,
+       @"com.zipeg.preferences.openNested": @true,
+       @"com.zipeg.preferences.allAlerts": @true,
+       @"com.zipeg.preferences.encoding": @(kCFStringEncodingUTF8),
+    };
     // set them in the standard user defaults
-    [NSUserDefaults.standardUserDefaults registerDefaults: userDefaultsValuesDict];
+    [NSUserDefaults.standardUserDefaults registerDefaults: defaults];
+/*  Does NOT seems to be necessary at all
+    NSString* bid = NSBundle.mainBundle.bundleIdentifier;
+    NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
+    d = [ud persistentDomainForName: bid];
+    [NSUserDefaults.standardUserDefaults setPersistentDomain: d forName: bid];
+*/
     // TODO: move code below to Prefernces [Reset To Defaults] button:
     // if your application supports resetting a subset of the defaults to factory values, you should set those values
     // in the shared user defaults controller:
+/*
     NSArray* resettableUserDefaultsKeys=@[ @"Value1",@"Value2",@"Value3"];
-    NSDictionary* initialValuesDict=[userDefaultsValuesDict dictionaryWithValuesForKeys:resettableUserDefaultsKeys];
+    NSDictionary* initialValuesDict=[userDefaultsValuesDict dictionaryWithValuesForKeys: resettableUserDefaultsKeys];
     // Set the initial values in the shared user defaults controller
     [NSUserDefaultsController.sharedUserDefaultsController setInitialValues: initialValuesDict];
-}
+    // TODO: also see + (void)NSUserDefaults.resetStandardUserDefaults;
 */
+}
 
 @end

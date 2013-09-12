@@ -1,7 +1,47 @@
 #import "ZGGeneralPreferencesViewController.h"
 
-@implementation ZGGeneralPreferencesViewController
+@interface KeyButton : NSButton @end
 
+@implementation KeyButton
+- (BOOL) acceptsFirstResponder { return true; }
+- (BOOL) canBecomeKeyView { return true; }
+- (BOOL) needsPanelToBecomeKey { return false; }
+- (void) mouseDown: (NSEvent*) e { [super mouseDown: e]; [self.window makeFirstResponder: self]; }
+@end
+
+@interface KeyPopUpButton : NSPopUpButton @end
+
+@implementation KeyPopUpButton
+- (BOOL) acceptsFirstResponder { return true; }
+- (BOOL) canBecomeKeyView { return true; }
+- (BOOL) needsPanelToBecomeKey { return false; }
+- (void) mouseDown: (NSEvent*) e { [super mouseDown: e]; [self.window makeFirstResponder: self]; }
+@end
+
+@interface KeyComboBox : NSComboBox @end
+
+@implementation KeyComboBox
+- (BOOL) acceptsFirstResponder { return true; }
+- (BOOL) canBecomeKeyView { return true; }
+- (BOOL) needsPanelToBecomeKey { return false; }
+- (void) mouseDown: (NSEvent*) e { [super mouseDown: e]; [self.window makeFirstResponder: self]; }
+@end
+
+@interface KeyMatrix : NSMatrix @end
+
+@implementation KeyMatrix
+- (BOOL) acceptsFirstResponder { return true; }
+- (BOOL) canBecomeKeyView { return true; }
+- (BOOL) needsPanelToBecomeKey { return false; }
+- (void) mouseDown: (NSEvent*) e { [super mouseDown: e]; [self.window makeFirstResponder: self]; }
+@end
+
+@interface ZGGeneralPreferencesViewController() {
+    id userDefaultsObserver;
+}
+@end
+
+@implementation ZGGeneralPreferencesViewController
 
 enum {
     width = 540,
@@ -10,10 +50,15 @@ enum {
     margin = 15
 };
 
+
+static NSDictionary* _n2e; // NSString->NSNumber (CFStringEncoding)
+static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEncoding for NSEncoding
+
 static NSFont* font;
 
 + (void) initialize {
     font = [NSFont systemFontOfSize: NSFont.systemFontSize - 1];
+    [ZGGeneralPreferencesViewController initEncodings];
 }
 
 
@@ -39,13 +84,70 @@ static NSFont* font;
         y = popUpButton(v, y, @"PopUp:", @[@" fṧṤƿo", @" bar", @" snafu"], @[@1, @2, @3]);
         y = createCheckBox(v, y, @"WWWW:", @" WWWW-----------------------", null);
         self.view = v;
-        dumpViews(v);
+        // dumpViews(v);
     }
+    userDefaultsObserver = addObserver(NSUserDefaultsDidChangeNotification, null,
+        ^(NSNotification* n) {
+            NSUserDefaults* ud = (NSUserDefaults*)n.object;
+            // NSDictionary* d = [ud persistentDomainForName: NSBundle.mainBundle.bundleIdentifier];
+            NSDictionary* d = ud.dictionaryRepresentation;
+            trace("\n[ud valueForKey: @\"Preferences.a\"]=%@\n%@", [ud valueForKey: @"com.zipeg.preferences.a"], d);
+            NSObject* o = d[@"com.zipeg.preferences.a"];
+            trace("Preferences.a=%@", o);
+            trace("-----\n");
+    });
     return self;
 }
 
-static NSText* createLabel(NSView* parent, CGFloat y, NSString* labelText) {
-    NSText* label = NSTextView.new;
+- (void) dealloc {
+    dealloc_count(self);
+    removeObserver(userDefaultsObserver);
+}
+
+- (NSString*) ident {
+    return @"GeneralPreferences";
+}
+
+- (NSImage*) image {
+    return [NSImage imageNamed: NSImageNamePreferencesGeneral];
+}
+
+- (NSString*) label {
+    return NSLocalizedString(@"General", @"Zipeg General Preferences");
+}
+
++ (void) initEncodings {
+    // at the time of writing 105 encoding are reported by OSX 10.8
+    NSMutableDictionary* n2e = [NSMutableDictionary dictionaryWithCapacity: 150];
+    NSMutableDictionary* e2n = [NSMutableDictionary dictionaryWithCapacity: 150];
+    const CFStringEncoding* encs = CFStringGetListOfAvailableEncodings();
+    while (*encs != kCFStringEncodingInvalidId) {
+        CFStringEncoding enc = *encs;
+        CFStringRef cfename =  CFStringGetNameOfEncoding(enc);
+        NSString* ename = (__bridge NSString*)cfename;
+        NSNumber* e = @(enc);
+        trace("[%@]=%@ [ns=0x%08lx]", ename, e, CFStringConvertEncodingToNSStringEncoding(enc));
+        n2e[ename] = e;
+        e2n[e] = ename;
+        encs++;
+    }
+    _n2e = [NSDictionary dictionaryWithDictionary: n2e];
+    _e2n = [NSDictionary dictionaryWithDictionary: e2n];
+    trace("n2e=%ld", _n2e.allKeys.count);
+    trace("e2n=%ld", _e2n.allKeys.count);
+}
+
+
+static void addChild(NSView* parent, NSView* child) {
+    NSView* last = parent.subviews != null ? parent.subviews[parent.subviews.count - 1] : null;
+    [parent addSubview: child];
+    if (child.canBecomeKeyView && last != null) {
+        last.nextKeyView = child;
+    }
+}
+
+static NSTextView* createLabel(NSView* parent, CGFloat y, NSString* labelText) {
+    NSTextView* label = NSTextView.new;
     label.font = font;
     CGFloat h = font.boundingRectForFont.size.height;
     label.string = labelText;
@@ -61,14 +163,19 @@ static NSText* createLabel(NSView* parent, CGFloat y, NSString* labelText) {
 static int createCheckBox(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra) {
     NSText* lb = createLabel(parent, y, label);
     CGFloat h = lb.frame.size.height;
-    NSButton* cbx = NSButton.new;
+    NSButton* cbx = KeyButton.new;
     cbx.font = font;
     cbx.buttonType = NSSwitchButton;
     cbx.title = checkbox;
     NSButtonCell* c = cbx.cell;
     c.lineBreakMode = NSLineBreakByClipping;
     cbx.frame = NSMakeRect(middle, y, parent.frame.size.width - middle - margin, h);
-    [parent addSubview: cbx];
+    addChild(parent, cbx);
+    [cbx bind: @"value"
+     toObject: NSUserDefaultsController.sharedUserDefaultsController
+  withKeyPath: @"values.com.zipeg.preferences.a"
+      options:@{@"NSContinuouslyUpdatesValue": [NSNumber numberWithBool: true]}
+     ];
     y -= h * 1.5;
     if (extra != null && extra.length > 0) {
         NSTextView* tv = NSTextView.new;
@@ -101,29 +208,29 @@ static int radioButtons(NSView* parent, CGFloat y, NSString* label, NSArray* tex
     CGFloat h = MAX(cell.cellSize.height + 2, lb.frame.size.height);
     int w = parent.frame.size.width - middle - margin * 2;
     NSRect r = NSMakeRect(middle, y - h * (texts.count - 1) - 2, w, h * texts.count);
-    NSMatrix* mx = [NSMatrix.alloc initWithFrame: r
-                                            mode: NSRadioModeMatrix
-                                       prototype: cell
-                                    numberOfRows: texts.count
-                                 numberOfColumns: 1];
-    [parent addSubview: mx];
+    NSMatrix* mx = [KeyMatrix.alloc initWithFrame: r
+                                             mode: NSRadioModeMatrix
+                                        prototype: cell
+                                     numberOfRows: texts.count
+                                  numberOfColumns: 1];
+    addChild(parent, mx);
     for (int i = 0; i < texts.count; i++) {
         NSCell* c = mx.cells[i];
         c.title = texts[i];
     }
-    trace("c.height=%f y=%f h=%f %f %f", cell.cellSize.height, y, h, lb.frame.origin.y + lb.frame.size.height, mx.frame.origin.y + mx.frame.size.height);
+    // trace("c.height=%f y=%f h=%f %f %f", cell.cellSize.height, y, h, lb.frame.origin.y + lb.frame.size.height, mx.frame.origin.y + mx.frame.size.height);
     return y - h * (int)texts.count - lh * 0.25;
 }
 
 static int comboBox(NSView* parent, CGFloat y, NSString* label, NSArray* texts) {
     NSText* lb = createLabel(parent, y, label);
     int w = parent.frame.size.width - middle - margin * 2;
-    NSComboBox* cbx = NSComboBox.new;
+    NSComboBox* cbx = KeyComboBox.new;
     NSRect r = NSMakeRect(middle, y - 4, w / 2, cbx.itemHeight + 4);
     cbx.frame = r;
     NSComboBoxCell* c = cbx.cell;
     c.editable = false;
-    [parent addSubview: cbx];
+    addChild(parent, cbx);
     for (int i = 0; i < texts.count; i++) {
         [cbx addItemWithObjectValue: texts[i]];
     }
@@ -141,11 +248,8 @@ static void insertMenuItem(NSMenu* m, NSString* title, NSNumber* n) {
 
 static int popUpButton(NSView* parent, CGFloat y, NSString* label, NSArray* texts, NSArray* tags) {
     NSText* lb = createLabel(parent, y, label);
-    CGFloat h = lb.frame.size.height;
     int w = parent.frame.size.width - middle - margin * 2;
-    NSPopUpButton* btn = NSPopUpButton.new;
-    // btn.focusRingType = NSFocusRingTypeNone;
-    // btn.buttonType = NSToggleButton;
+    NSPopUpButton* btn = KeyPopUpButton.new;
     btn.title = texts[0];
     NSButtonCell* bc = btn.cell;
     NSRect r = NSMakeRect(middle, y - 4, w / 2, bc.cellSize.height);
@@ -154,9 +258,8 @@ static int popUpButton(NSView* parent, CGFloat y, NSString* label, NSArray* text
     bc.highlightsBy = NSPushInCellMask;
     bc.controlTint = NSBlueControlTint;
     bc.font = font;
-//    bc.bordered = false;
     btn.menu = [NSMenu new];
-    [parent addSubview: btn];
+    addChild(parent, btn);
     for (int i = 0; i < texts.count; i++) {
         NSNumber* tag = tags != null && i < tags.count ? tags[i] : null;
         insertMenuItem(btn.menu, texts[i], tag);
@@ -164,20 +267,21 @@ static int popUpButton(NSView* parent, CGFloat y, NSString* label, NSArray* text
     return btn.frame.origin.y - lb.frame.size.height * 1.75;
 }
 
-- (void) dealloc {
-    dealloc_count(self);
-}
+// TODO: for the status bar:
+//     c.backgroundStyle = NSBackgroundStyleRaised;
+// http://whomwah.com/2009/03/11/replicating-apples-embossed-text-in-a-cocoa-app/
 
-- (NSString*) ident {
-    return @"GeneralPreferences";
-}
+/*
+ 
+ [theTextField bind:@"value"
+ toObject:[NSUserDefaultsController sharedUserDefaultsController]
+ withKeyPath:@"values.userName"
+ options:[NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES]
+ forKey:@"NSContinuouslyUpdatesValue"]];
+ 
+ https://developer.apple.com/library/mac/documentation/cocoa/conceptual/CocoaBindings/Concepts/NSUserDefaultsController.html
 
-- (NSImage*) image {
-    return [NSImage imageNamed: NSImageNamePreferencesGeneral];
-}
+ */
 
-- (NSString*) label {
-    return NSLocalizedString(@"General", @"Zipeg General Preferences");
-}
 
 @end
