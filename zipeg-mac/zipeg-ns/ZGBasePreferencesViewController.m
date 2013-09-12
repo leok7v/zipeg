@@ -18,7 +18,7 @@
 - (BOOL) acceptsFirstResponder { return true; }
 - (BOOL) canBecomeKeyView { return true; }
 - (BOOL) needsPanelToBecomeKey { return false; }
-//- (void) mouseDown: (NSEvent*) e { [super mouseDown: e]; [self.window makeFirstResponder: self]; }
+- (void) mouseDown: (NSEvent*) e { [super mouseDown: e]; [self.window makeFirstResponder: self]; }
 @end
 
 @implementation ZGKeyMatrix
@@ -26,50 +26,6 @@
 - (BOOL) canBecomeKeyView { return true; }
 - (BOOL) needsPanelToBecomeKey { return false; }
 - (void) mouseDown: (NSEvent*) e { [super mouseDown: e]; [self.window makeFirstResponder: self]; }
-@end
-
-
-@interface ZGComboBoxDataSource : NSObject<NSComboBoxCellDataSource> {
-    NSArray* _content;
-}
-- (id) initWithTexts: (NSArray*) texts;
-@end
-
-@implementation ZGComboBoxDataSource
-
-- (id) initWithTexts: (NSArray*) texts {
-    self = [super init];
-    if (self != null) {
-        _content = texts;
-    }
-    return self;
-}
-
-
-- (NSInteger) numberOfItemsInComboBoxCell: (NSComboBoxCell*) c {
-    return _content.count;
-}
-
-- (id) comboBoxCell: (NSComboBoxCell*) c objectValueForItemAtIndex: (NSInteger) ix {
-    return _content[ix];
-}
-
-- (NSUInteger)comboBoxCell:(NSComboBoxCell*) c indexOfItemWithStringValue:(NSString *)string {
-    return [_content indexOfObject: string];
-}
-
-- (NSString *)comboBoxCell:(NSComboBoxCell*) c completedString: (NSString*) partialString {
-    trace("completedString %@", partialString);
-    /*
-     for (NSString* dataString in dataSourceArray) {
-     if ([[dataString commonPrefixWithString:partialString options:NSCaseInsensitiveSearch] length] == [commonPrefixWithString:partialString length]) {
-     return testItem;
-     }
-     }
-     */
-    return @"";
-}
-
 @end
 
 @implementation ZGBasePreferencesViewController
@@ -173,7 +129,7 @@ CGFloat checkBox(NSView* parent, CGFloat y, NSString* label, NSString* checkbox,
     return y;
 }
 
-CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra) {
+CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra, id target, SEL sel) {
     NSText* lb = createLabel(parent, y, label);
     CGFloat h = lb.frame.size.height;
     NSButton* btn = NSButton.new;
@@ -187,13 +143,14 @@ CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, N
     c.bezelStyle = NSTexturedRoundedBezelStyle;
     addChild(parent, btn);
     [btn sizeToFit];
+    btn.target = target;
+    btn.action = sel;
     y -= btn.frame.size.height * 1.5;
     if (extra != null && extra.length > 0) {
         y = extraText(parent, btn.frame.origin.y, h, extra);
     }
     return y;
 }
-
 
 CGFloat radioButtons(NSView* parent, CGFloat y, NSString* label, NSArray* texts, NSString* prefs) {
     NSText* lb = createLabel(parent, y, label);

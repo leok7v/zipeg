@@ -19,8 +19,9 @@
 @implementation ZGAppDelegate
 
 + (void) initialize {
-    [ZGAppDelegate setupDefaults];
-//  trace("NSUserDefaults.standardUserDefaults=%@", NSUserDefaults.standardUserDefaults);
+    NSDictionary* defaults = ZGAppDelegate.defaultPreferences;
+    //  [NSUserDefaults.standardUserDefaults registerDefaults: defaults];
+    [NSUserDefaultsController.sharedUserDefaultsController setInitialValues: defaults];
 }
 
 - (id) init {
@@ -34,6 +35,26 @@
 - (void) dealloc {
     _preferencesWindowController = null;
     dealloc_count(self);
+}
+
+static NSString* enameUTF8;
+
++ (NSDictionary*) defaultPreferences {
+    if (enameUTF8 == null) {
+        CFStringRef cfenameUTF8 =  CFStringGetNameOfEncoding(kCFStringEncodingUTF8);
+        enameUTF8 = (__bridge NSString*)cfenameUTF8;
+        CFRelease(cfenameUTF8);
+    }
+    return @{
+      @"com.zipeg.preferences.showWelcome": @true,
+      @"com.zipeg.preferences.showInFinder": @true,
+      @"com.zipeg.preferences.closeAfterUnpack": @false,
+      @"com.zipeg.preferences.openNested": @true,
+      @"com.zipeg.preferences.allAlerts": @true,
+      @"com.zipeg.preferences.encoding.detect": @true,
+      @"com.zipeg.preferences.playSounds": @true,
+      @"com.zipeg.preferences.encoding": enameUTF8
+    };
 }
 
 // TODO: remove me
@@ -199,24 +220,6 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     // OSX will just gray out (disable) App Quit and will stay this way forever... unless you use:
     // [NSApp replyToApplicationShouldTerminate: r];
     // see: http://stackoverflow.com/questions/10224141/how-to-handle-cocoa-application-termination-properly
-}
-
-+ (void) setupDefaults {
-    CFStringRef cfenameUTF8 =  CFStringGetNameOfEncoding(kCFStringEncodingUTF8);
-    NSString* enameUTF8 = (__bridge NSString*)cfenameUTF8;
-    CFRelease(cfenameUTF8);
-
-    [NSUserDefaults.standardUserDefaults registerDefaults:
-     @{
-     @"com.zipeg.preferences.showWelcome": @true,
-     @"com.zipeg.preferences.showInFinder": @true,
-     @"com.zipeg.preferences.closeAfterUnpack": @false,
-     @"com.zipeg.preferences.openNested": @true,
-     @"com.zipeg.preferences.allAlerts": @true,
-     @"com.zipeg.preferences.encoding.detect": @true,
-     @"com.zipeg.preferences.encoding": enameUTF8
-     }
-    ];
 }
 
 @end

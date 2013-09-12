@@ -15,7 +15,7 @@ CGFloat checkBox(NSView* parent, CGFloat y, NSString* label, NSString* checkbox,
 CGFloat radioButtons(NSView* parent, CGFloat y, NSString* label, NSArray* texts, NSString* prefs);
 CGFloat comboBox(NSView* parent, CGFloat y, NSString* label, NSArray* texts, CGFloat width, NSString* prefs);
 CGFloat popUpButton(NSView* parent, CGFloat y, NSString* label, NSArray* texts, NSArray* tags, NSString* prefs);
-CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra);
+CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra, id target, SEL sel);
 
 @end
 

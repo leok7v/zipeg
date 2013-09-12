@@ -19,7 +19,7 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
         alloc_count(self);
         NSView* v = NSView.new;
         v.autoresizesSubviews = true;
-        v.frameSize = NSMakeSize(width, 125);
+        v.frameSize = NSMakeSize(width, 120);
         NSFont* font = ZGBasePreferencesViewController.font;
         CGFloat y = v.frame.size.height - font.boundingRectForFont.size.height;
         NSArray* keys = [_n2e.allKeys sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
@@ -34,11 +34,7 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
                      @"com.zipeg.preferences.encoding.detect");
         int w = width - middle - margin * 2;
         y = comboBox(v, y, @"Deafault Encoding:", keys, w * 3 / 4, @"com.zipeg.preferences.encoding");
-        CGFloat left = v.frame.size.height - y;
-        trace("left=%f", left);
         self.view = v;
-        v.frameSize = NSMakeSize(width, left);
-
     }
     return self;
 }
