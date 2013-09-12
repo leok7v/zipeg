@@ -393,6 +393,7 @@
 		B3E87DAC17A95C6100B246B8 /* folders-blue.png in Resources */ = {isa = PBXBuildFile; fileRef = B3E87DAA17A95C6100B246B8 /* folders-blue.png */; };
 		B3F7414C17A1F923009A8ECF /* ZGTableViewDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B3F7414B17A1F923009A8ECF /* ZGTableViewDelegate.m */; };
 		B3F7414F17A21B79009A8ECF /* ZGImages.m in Sources */ = {isa = PBXBuildFile; fileRef = B3F7414E17A21B79009A8ECF /* ZGImages.m */; };
+		B3FAD14C17E1BBDC00266748 /* ZGBasePreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B3FAD14B17E1BBDC00266748 /* ZGBasePreferencesViewController.m */; };
 		B3FC1D9917A0929000BE0ED3 /* ZGHeroView.m in Sources */ = {isa = PBXBuildFile; fileRef = B3FC1D9817A0929000BE0ED3 /* ZGHeroView.m */; };
 		B3FC1D9B17A095B600BE0ED3 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B3FC1D9A17A095B600BE0ED3 /* QuartzCore.framework */; };
 		B3FC1DA017A0B40B00BE0ED3 /* leaf-0-64x64.png in Resources */ = {isa = PBXBuildFile; fileRef = B3FC1D9C17A0B40B00BE0ED3 /* leaf-0-64x64.png */; };
@@ -1230,6 +1231,8 @@
 		B3F7414B17A1F923009A8ECF /* ZGTableViewDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGTableViewDelegate.m; sourceTree = "<group>"; };
 		B3F7414D17A21B79009A8ECF /* ZGImages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGImages.h; sourceTree = "<group>"; };
 		B3F7414E17A21B79009A8ECF /* ZGImages.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGImages.m; sourceTree = "<group>"; };
+		B3FAD14A17E1BBDC00266748 /* ZGBasePreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGBasePreferencesViewController.h; sourceTree = "<group>"; };
+		B3FAD14B17E1BBDC00266748 /* ZGBasePreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGBasePreferencesViewController.m; sourceTree = "<group>"; };
 		B3FC1D9717A0929000BE0ED3 /* ZGHeroView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGHeroView.h; sourceTree = "<group>"; };
 		B3FC1D9817A0929000BE0ED3 /* ZGHeroView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGHeroView.m; sourceTree = "<group>"; };
 		B3FC1D9A17A095B600BE0ED3 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
@@ -2198,16 +2201,8 @@
 				B34FEB6C1792443D005D798B /* ZGDocument.h */,
 				B34FEB6D1792443D005D798B /* ZGDocument.m */,
 				B30A704F17A4B3D200059168 /* ZGWindowController.h */,
-				B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewControllerProtocol.h */,
-				B39F3E4B17D0C4EF00254ACB /* ZGGeneralPreferencesViewController.h */,
-				B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */,
-				B39F3E4917D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.h */,
-				B3AF41E017DA55E900658672 /* ZGFileTypesPreferencesViewController.h */,
-				B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */,
-				B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */,
-				B39F3E4417D0BA3B00254ACB /* ZGPreferencesWindowController.h */,
-				B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */,
 				B30A705017A4B3D200059168 /* ZGWindowController.m */,
+				B3FAD14917E1BAD200266748 /* Preferences */,
 				B35EDC7A1799E36F00E6CCF9 /* Zipeg-Info.plist */,
 				B37E554A179278DF00E54693 /* zipeg.icns */,
 				B34FEB611792443D005D798B /* Supporting Files */,
@@ -2383,6 +2378,24 @@
 				B3BECD9D179A149300B07871 /* universalchardet.h */,
 			);
 			name = chardet;
+			sourceTree = "<group>";
+		};
+		B3FAD14917E1BAD200266748 /* Preferences */ = {
+			isa = PBXGroup;
+			children = (
+				B39F3E4317D0BA3B00254ACB /* ZGPreferencesViewControllerProtocol.h */,
+				B39F3E4417D0BA3B00254ACB /* ZGPreferencesWindowController.h */,
+				B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */,
+				B3FAD14A17E1BBDC00266748 /* ZGBasePreferencesViewController.h */,
+				B3FAD14B17E1BBDC00266748 /* ZGBasePreferencesViewController.m */,
+				B39F3E4B17D0C4EF00254ACB /* ZGGeneralPreferencesViewController.h */,
+				B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */,
+				B3AF41E017DA55E900658672 /* ZGFileTypesPreferencesViewController.h */,
+				B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */,
+				B39F3E4917D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.h */,
+				B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */,
+			);
+			name = Preferences;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -2839,6 +2852,7 @@
 				B39F3E4D17D0C4F000254ACB /* ZGAdvancedPreferencesViewController.m in Sources */,
 				B39F3E4E17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m in Sources */,
 				B3AF41E217DA55E900658672 /* ZGFileTypesPreferencesViewController.m in Sources */,
+				B3FAD14C17E1BBDC00266748 /* ZGBasePreferencesViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -201,38 +201,22 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     // see: http://stackoverflow.com/questions/10224141/how-to-handle-cocoa-application-termination-properly
 }
 
-/* TODO: https://developer.apple.com/library/mac/documentation/cocoa/conceptual/CocoaBindings/Concepts/NSUserDefaultsController.html */
-+ (void)setupDefaults {
-    // If we want to load default preferences from .plist (fragile):
-    NSString* udv = [NSBundle.mainBundle pathForResource: @"UserDefaults" ofType: @"plist"];
-    NSDictionary* d = udv != null ? [NSDictionary dictionaryWithContentsOfFile: udv] : null;
-    NSDictionary* defaults = d != null ? d :
-    @{
-       @"com.zipeg.preferences.showWelcome": @true,
-       @"com.zipeg.preferences.showInFinder": @true,
-       @"com.zipeg.preferences.closeAfterUnpack": @false,
-       @"com.zipeg.preferences.openNested": @true,
-       @"com.zipeg.preferences.allAlerts": @true,
-       @"com.zipeg.preferences.encoding": @(kCFStringEncodingUTF8),
-    };
-    // set them in the standard user defaults
-    [NSUserDefaults.standardUserDefaults registerDefaults: defaults];
-/*  Does NOT seems to be necessary at all
-    NSString* bid = NSBundle.mainBundle.bundleIdentifier;
-    NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
-    d = [ud persistentDomainForName: bid];
-    [NSUserDefaults.standardUserDefaults setPersistentDomain: d forName: bid];
-*/
-    // TODO: move code below to Prefernces [Reset To Defaults] button:
-    // if your application supports resetting a subset of the defaults to factory values, you should set those values
-    // in the shared user defaults controller:
-/*
-    NSArray* resettableUserDefaultsKeys=@[ @"Value1",@"Value2",@"Value3"];
-    NSDictionary* initialValuesDict=[userDefaultsValuesDict dictionaryWithValuesForKeys: resettableUserDefaultsKeys];
-    // Set the initial values in the shared user defaults controller
-    [NSUserDefaultsController.sharedUserDefaultsController setInitialValues: initialValuesDict];
-    // TODO: also see + (void)NSUserDefaults.resetStandardUserDefaults;
-*/
++ (void) setupDefaults {
+    CFStringRef cfenameUTF8 =  CFStringGetNameOfEncoding(kCFStringEncodingUTF8);
+    NSString* enameUTF8 = (__bridge NSString*)cfenameUTF8;
+    CFRelease(cfenameUTF8);
+
+    [NSUserDefaults.standardUserDefaults registerDefaults:
+     @{
+     @"com.zipeg.preferences.showWelcome": @true,
+     @"com.zipeg.preferences.showInFinder": @true,
+     @"com.zipeg.preferences.closeAfterUnpack": @false,
+     @"com.zipeg.preferences.openNested": @true,
+     @"com.zipeg.preferences.allAlerts": @true,
+     @"com.zipeg.preferences.encoding.detect": @true,
+     @"com.zipeg.preferences.encoding": enameUTF8
+     }
+    ];
 }
 
 @end
