@@ -26,6 +26,10 @@ static NSWindow* __weak window;
 
 @implementation ZGApp
 
++ (void) initialize {
+    [ZGApp cleanup: false];
+}
+
 - (id) init {
     self = [super init];
     if (self != null) {
@@ -47,6 +51,11 @@ static NSWindow* __weak window;
     [super run];
 }
 
+- (void) exit  {
+    traceObservers();
+    trace_allocs();
+}
+
 - (NSInteger) runModalForWindow: (NSWindow*) s {
     if (s == sheet) { // this is a bit of a hack but it works
         [self beginSheet: s
@@ -65,7 +74,6 @@ static NSWindow* __weak window;
     sheet = null;
     window = null;
 }
-
 
 static NSImage* _appIcon;
 static NSImage* _appIcon16x16;
@@ -119,15 +127,6 @@ static void loadIcons() {
     }
 }
 
-+ (void) initialize {
-    [ZGApp cleanup: false];
-}
-
-- (void) exit  {
-    traceObservers();
-    trace_allocs();
-}
-
 + (void) cleanup: (BOOL) sync {
     NSDictionary* uf = ZGApp.allUnpackingFolders.copy;
     if (uf.allKeys.count > 0) {
@@ -142,9 +141,7 @@ static void loadIcons() {
                             dispatch_semaphore_signal(sema);
                         }
                         if (sync) {
-                            dispatch_sync(dispatch_get_main_queue(), ^{
-                                [ZGApp unregisterUnpackingFolder: temp];
-                            });
+                            [ZGApp unregisterUnpackingFolder: temp];
                         } else {
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 [ZGApp unregisterUnpackingFolder: temp];
@@ -162,7 +159,6 @@ static void loadIcons() {
         }
     }
 }
-
 
 - (void) terminate: (id) sender {
     NSApplicationTerminateReply r = NSTerminateNow;
@@ -185,35 +181,43 @@ static void loadIcons() {
     });
 }
 
+// because of NSUserDefaults.resetStandardUserDefaults rewriting
+// /Users/<user>/Library/Preferences/com.zipeg.zipeg.plist back to defaults
+// when user presses [Defaults] button in preferences the unpacking.folders
+// are kept separately in the
+// /Users/<user>/Library/Preferences/com.zipeg.unpacking.folders.plist
+
 #define kUnpackingFolders @"com.zipeg.unpacking.folders"
 
 + (void) registerUnpackingFolder: (NSString*) path to: (NSString*) dest {
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
-    NSDictionary* d = [ud dictionaryForKey: kUnpackingFolders];
+    NSDictionary* d = [ud persistentDomainForName: kUnpackingFolders];
     if (d != null) {
         NSMutableDictionary* folders = [NSMutableDictionary dictionaryWithDictionary: d];
         folders[path] = dest;
-        [ud setObject: folders forKey: kUnpackingFolders];
+        d = folders;
     } else {
-        [ud setObject: @{ path: dest } forKey: kUnpackingFolders];
+        NSDictionary* folders = @{path: dest};
+        d = folders;
     }
+    [ud setPersistentDomain: d forName: kUnpackingFolders];
     [ud synchronize];
 }
 
 + (void) unregisterUnpackingFolder: (NSString*) path {
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
-    NSDictionary* d = [ud dictionaryForKey: kUnpackingFolders];
+    NSDictionary* d = [ud persistentDomainForName: kUnpackingFolders];
     if (d != null) {
         NSMutableDictionary* folders = [NSMutableDictionary dictionaryWithDictionary: d];
         [folders removeObjectForKey: path];
-        [ud setObject: folders forKey: kUnpackingFolders];
+        [ud setPersistentDomain: folders forName: kUnpackingFolders];
         [ud synchronize];
     }
 }
 
 + (NSMutableDictionary*) allUnpackingFolders {
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
-    NSDictionary* d = [ud dictionaryForKey: kUnpackingFolders];
+    NSDictionary* d = [ud persistentDomainForName: kUnpackingFolders];
     return d != null ? [NSMutableDictionary dictionaryWithDictionary: d] : null;
 }
 
