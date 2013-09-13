@@ -141,6 +141,9 @@ static void loadIcons() {
                             dispatch_semaphore_signal(sema);
                         }
                         if (sync) {
+                            // this is direct call from background thread with the hope that
+                            // NSUserDefaults are thread safe. At least it is guaranteed that
+                            // main thread is blocked at this point.
                             [ZGApp unregisterUnpackingFolder: temp];
                         } else {
                             dispatch_async(dispatch_get_main_queue(), ^{
