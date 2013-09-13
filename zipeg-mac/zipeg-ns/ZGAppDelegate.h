@@ -1,4 +1,2 @@
-@interface ZGAppDelegate : NSObject <NSApplicationDelegate>
-+ (NSDictionary*) defaultPreferences;
-@end
+@interface ZGAppDelegate : NSObject <NSApplicationDelegate> @end
 

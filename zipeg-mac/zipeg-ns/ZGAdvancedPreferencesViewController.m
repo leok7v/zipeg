@@ -19,7 +19,7 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
         alloc_count(self);
         NSView* v = NSView.new;
         v.autoresizesSubviews = true;
-        v.frameSize = NSMakeSize(width, 120);
+        v.frameSize = NSMakeSize(width, 290);
         NSFont* font = ZGBasePreferencesViewController.font;
         CGFloat y = v.frame.size.height - font.boundingRectForFont.size.height;
         NSArray* keys = [_n2e.allKeys sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
@@ -27,13 +27,24 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
         for (int i = 0; i < keys.count; i++) {
             values[i] = _n2e[keys[i]];
         }
+        y = checkBox(v, y, @"Sort:", @" case sensitive", @"",
+                     @"com.zipeg.preferences.sortCaseSensitive");
+        y = checkBox(v, y, @"Group:", @" folders first",
+                     @"When sorting, keep folders on top of the list.",
+                     @"com.zipeg.preferences.sortFoldersFirst");
+        y = checkBox(v, y, @"Archive window:", @" close after unpack", null,
+                     @"com.zipeg.preferences.closeAfterUnpack");
+        y = checkBox(v, y, @"Delete items:", @" using Trash Bin",
+                     @"DANGER: !!! ☠ if you uncheck this option you will accept full responsibility "
+                     @"of losing data when the items are irrecoverably deleted ☠ !!!",
+                     @"com.zipeg.preferences.useTrashBin");
         y = checkBox(v, y, @"Detect encoding:", @" automatically",
                      @"Zipeg will attempt to detect national alphabet for item names encoding. "
-                     @"If detection fails - Zipeg will use default encoding specified below. "
-                     @"Keep it Unicode (UTF-8) if in doubt.",
+                     @"If detection is unsuccessful - Zipeg will use default encoding specified below. "
+                     @"Select «Unicode (UTF-8)» if in doubt.",
                      @"com.zipeg.preferences.encoding.detect");
         int w = width - middle - margin * 2;
-        y = comboBox(v, y, @"Deafault Encoding:", keys, w * 3 / 4, @"com.zipeg.preferences.encoding");
+        y = comboBox(v, y, @"Default Encoding:", keys, w * 3 / 4, @"com.zipeg.preferences.encoding");
         self.view = v;
     }
     return self;

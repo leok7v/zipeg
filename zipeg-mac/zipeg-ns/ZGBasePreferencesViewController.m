@@ -31,21 +31,31 @@
 @implementation ZGBasePreferencesViewController
 
 static NSFont* _font;
+static NSString* _enameUTF8;
 
 + (void) initialize {
     _font = [NSFont systemFontOfSize: NSFont.systemFontSize - 1];
+    CFStringRef cfenameUTF8 =  CFStringGetNameOfEncoding(kCFStringEncodingUTF8);
+    _enameUTF8 = (__bridge NSString*)cfenameUTF8;
+    CFRelease(cfenameUTF8);
 }
 
-- (id) init {
-    self = [super init];
-    if (self != null) {
-        alloc_count(self);
-    }
-    return self;
-}
-
-- (void) dealloc {
-    dealloc_count(self);
++ (NSDictionary*) defaultPreferences {
+    return @{
+             @"com.zipeg.preferences.showWelcome": @true,
+             @"com.zipeg.preferences.showInFinder": @true,
+             @"com.zipeg.preferences.closeAfterUnpack": @false,
+             @"com.zipeg.preferences.openNested": @true,
+             @"com.zipeg.preferences.allAlerts": @true,
+             @"com.zipeg.preferences.encoding.detect": @true,
+             @"com.zipeg.preferences.playSounds": @true,
+             @"com.zipeg.preferences.unpackSelection": @0,
+             @"com.zipeg.preferences.showPasswords": @false,
+             @"com.zipeg.preferences.sortCaseSensitive": @false,
+             @"com.zipeg.preferences.sortFoldersFirst": @true,
+             @"com.zipeg.preferences.useTrashBin": @true,
+             @"com.zipeg.preferences.encoding": _enameUTF8
+             };
 }
 
 - (NSString*) ident {
@@ -88,7 +98,6 @@ NSTextView* createLabel(NSView* parent, CGFloat y, NSString* labelText) {
 
 
 static CGFloat extraText(NSView* parent, CGFloat y, CGFloat h, NSString* extra) {
-    // TODO: generalize with button
     NSTextView* tv = NSTextView.new;
     tv.string = extra;
     tv.editable = false;
@@ -156,8 +165,12 @@ CGFloat radioButtons(NSView* parent, CGFloat y, NSString* label, NSArray* texts,
     NSText* lb = createLabel(parent, y, label);
     NSButtonCell *cell = NSButtonCell.new;
     cell.buttonType = NSRadioButton;
-    cell.title = @"MeasureMe";
     cell.font = _font;
+    CGFloat max = 0;
+    for (int i = 0; i < texts.count; i++) {
+        cell.title = texts[i];
+        max = MAX(max, cell.cellSize.width);
+    }
     CGFloat lh = lb.frame.size.height;
     CGFloat h = MAX(cell.cellSize.height + 2, lb.frame.size.height);
     int w = parent.frame.size.width - middle - margin * 2;
@@ -167,12 +180,15 @@ CGFloat radioButtons(NSView* parent, CGFloat y, NSString* label, NSArray* texts,
                                         prototype: cell
                                      numberOfRows: texts.count
                                   numberOfColumns: 1];
+    mx.cellSize = NSMakeSize(max, cell.cellSize.height);
     addChild(parent, mx);
     for (int i = 0; i < texts.count; i++) {
         NSCell* c = mx.cells[i];
         c.title = texts[i];
     }
-    // trace("c.height=%f y=%f h=%f %f %f", cell.cellSize.height, y, h, lb.frame.origin.y + lb.frame.size.height, mx.frame.origin.y + mx.frame.size.height);
+    [mx bind: @"selectedIndex" toObject: NSUserDefaultsController.sharedUserDefaultsController
+                    withKeyPath: [NSString stringWithFormat: @"values.%@", prefs]
+                        options: @{@"NSContinuouslyUpdatesValue": @true}];
     return y - h * (int)texts.count - lh * 0.25;
 }
 
@@ -183,7 +199,6 @@ CGFloat comboBox(NSView* parent, CGFloat y, NSString* label, NSArray* texts, CGF
     cbx.frame = r;
     cbx.completes = true;
     NSComboBoxCell* c = cbx.cell;
-//    c.allowsTypeSelect = true;
     c.editable = false;
     addChild(parent, cbx);
     for (int i = 0; i < texts.count; i++) {

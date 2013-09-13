@@ -2,6 +2,8 @@
 
 @interface ZGBasePreferencesViewController : NSViewController <ZGPreferencesViewControllerProtocol>
 
++ (NSDictionary*) defaultPreferences;
+
 enum {
     width = 540,
     middle = 160,

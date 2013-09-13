@@ -1,12 +1,13 @@
 #include "c.h"
 #import "ZGAppDelegate.h"
+#import "ZGApp.h"
 #import "ZGDocument.h"
 #import "ZGErrors.h"
+#import "ZGBasePreferencesViewController.h"
 #import "ZGPreferencesWindowController.h"
 #import "ZGGeneralPreferencesViewController.h"
 #import "ZGFileTypesPreferencesViewController.h"
 #import "ZGAdvancedPreferencesViewController.h"
-#import "ZGApp.h"
 
 @interface ZGAppDelegate() {
     ZGPreferencesWindowController* _preferencesWindowController;
@@ -19,7 +20,7 @@
 @implementation ZGAppDelegate
 
 + (void) initialize {
-    NSDictionary* defaults = ZGAppDelegate.defaultPreferences;
+    NSDictionary* defaults = ZGBasePreferencesViewController.defaultPreferences;
     //  [NSUserDefaults.standardUserDefaults registerDefaults: defaults];
     [NSUserDefaultsController.sharedUserDefaultsController setInitialValues: defaults];
 }
@@ -35,26 +36,6 @@
 - (void) dealloc {
     _preferencesWindowController = null;
     dealloc_count(self);
-}
-
-static NSString* enameUTF8;
-
-+ (NSDictionary*) defaultPreferences {
-    if (enameUTF8 == null) {
-        CFStringRef cfenameUTF8 =  CFStringGetNameOfEncoding(kCFStringEncodingUTF8);
-        enameUTF8 = (__bridge NSString*)cfenameUTF8;
-        CFRelease(cfenameUTF8);
-    }
-    return @{
-      @"com.zipeg.preferences.showWelcome": @true,
-      @"com.zipeg.preferences.showInFinder": @true,
-      @"com.zipeg.preferences.closeAfterUnpack": @false,
-      @"com.zipeg.preferences.openNested": @true,
-      @"com.zipeg.preferences.allAlerts": @true,
-      @"com.zipeg.preferences.encoding.detect": @true,
-      @"com.zipeg.preferences.playSounds": @true,
-      @"com.zipeg.preferences.encoding": enameUTF8
-    };
 }
 
 // TODO: remove me
