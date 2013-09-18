@@ -65,14 +65,14 @@
    forTableColumn: (NSTableColumn*) column row: (NSInteger) row {
     ZGTableViewDataSource* ds = (ZGTableViewDataSource*) v.dataSource;
     NSObject<ZGItemProtocol>* it = [ds itemAtRow: row];
-    if ([cell isKindOfClass:[ZGImageAndTextCell class]]) {
+    if ([cell isKindOfClass: ZGImageAndTextCell.class]) {
         ZGImageAndTextCell* c = (ZGImageAndTextCell*)cell;
         NSImage* image = [_document itemImage: it open: false];
         c.representedObject = it;
         c.image = image;
         c.stringValue = it.name;
-    } else if ([cell isKindOfClass:[NSTextFieldCell class]]) {
-        NSObject* o = [ds tableView: v objectValueForTableColumn:column row: row];
+    } else if ([cell isKindOfClass: NSTextFieldCell.class]) {
+        NSObject* o = [ds tableView: v objectValueForTableColumn: column row: row];
         NSTextFieldCell* t = (NSTextFieldCell*)cell;
         t.stringValue = o.description;
     } else {
@@ -112,7 +112,7 @@
     for (NSInteger i = from; i < to; i++) {
         NSCell *cell = [tableColumn dataCellForRow:i];
         id item = ov != null ? [ov itemAtRow: i] : [tds itemAtRow: i];
-        if ([cell isKindOfClass: [ZGImageAndTextCell class]] &&
+        if ([cell isKindOfClass: ZGImageAndTextCell.class] &&
             [item conformsToProtocol: @protocol(ZGItemProtocol)]) {
             [cell setRepresentedObject:item];
             ZGImageAndTextCell* itc = (ZGImageAndTextCell*)cell;
@@ -121,7 +121,7 @@
             itc.image = nodeIcon;
             itc.stringValue = it.name;
             itc.representedObject = it;
-        } else if ([cell isKindOfClass: [NSTextFieldCell class]]) {
+        } else if ([cell isKindOfClass: NSTextFieldCell.class]) {
             // assume this is table
             NSObject* o = [tds tableView: view objectValueForTableColumn: tableColumn row: i];
             NSTextFieldCell* tc = (NSTextFieldCell*)cell;

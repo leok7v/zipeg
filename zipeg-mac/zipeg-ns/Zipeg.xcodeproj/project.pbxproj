@@ -290,6 +290,7 @@
 		B308542117D039C80099F6DA /* smallfn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B308521717D035E00099F6DA /* smallfn.cpp */; settings = {COMPILER_FLAGS = "-w"; }; };
 		B308542217D039C80099F6DA /* system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B308521D17D035E00099F6DA /* system.cpp */; settings = {COMPILER_FLAGS = "-w"; }; };
 		B30A705117A4B3D200059168 /* ZGWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = B30A705017A4B3D200059168 /* ZGWindowController.m */; };
+		B31944FD17E93623006D72D4 /* fnotify.scpt in Resources */ = {isa = PBXBuildFile; fileRef = B31944FC17E93623006D72D4 /* fnotify.scpt */; };
 		B31A49BE17B2444600030DD5 /* next.png in Resources */ = {isa = PBXBuildFile; fileRef = B31A49BA17B2444600030DD5 /* next.png */; };
 		B31A49BF17B2444600030DD5 /* play-n.png in Resources */ = {isa = PBXBuildFile; fileRef = B31A49BB17B2444600030DD5 /* play-n.png */; };
 		B31A49C017B2444600030DD5 /* play-p.png in Resources */ = {isa = PBXBuildFile; fileRef = B31A49BC17B2444600030DD5 /* play-p.png */; };
@@ -1057,6 +1058,7 @@
 		B308541617D0384A0099F6DA /* p7z.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = p7z.cpp; path = ../p7z/p7z.cpp; sourceTree = "<group>"; };
 		B30A704F17A4B3D200059168 /* ZGWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGWindowController.h; sourceTree = "<group>"; };
 		B30A705017A4B3D200059168 /* ZGWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGWindowController.m; sourceTree = "<group>"; };
+		B31944FC17E93623006D72D4 /* fnotify.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; name = fnotify.scpt; path = Resources/fnotify.scpt; sourceTree = "<group>"; };
 		B31A49BA17B2444600030DD5 /* next.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = next.png; path = Resources/next.png; sourceTree = "<group>"; };
 		B31A49BB17B2444600030DD5 /* play-n.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "play-n.png"; path = "Resources/play-n.png"; sourceTree = "<group>"; };
 		B31A49BC17B2444600030DD5 /* play-p.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "play-p.png"; path = "Resources/play-p.png"; sourceTree = "<group>"; };
@@ -2253,6 +2255,7 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B31944FC17E93623006D72D4 /* fnotify.scpt */,
 				B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */,
 				B32B60CF17C7D55600FB2ECC /* subtle_white_feathers_@2X.png */,
 				B32B60D017C7D55600FB2ECC /* subtle_white_feathers.png */,
@@ -2498,6 +2501,7 @@
 				B32B60D117C7D55600FB2ECC /* subtle_white_feathers_@2X.png in Resources */,
 				B32B60D217C7D55600FB2ECC /* subtle_white_feathers.png in Resources */,
 				B39F3E5117D0C5B300254ACB /* ZGAdvancedPreferencesView.xib in Resources */,
+				B31944FD17E93623006D72D4 /* fnotify.scpt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,8 +1,3 @@
-#import "ZGPreferencesViewControllerProtocol.h"
+#import "ZGBasePreferencesViewController.h"
 
-@interface ZGFileTypesPreferencesViewController : NSViewController <ZGPreferencesViewControllerProtocol>
-
-@property (nonatomic, assign) IBOutlet NSTextField *textField;
-@property (assign) IBOutlet NSTableView *tableView;
-
-@end
+@interface ZGFileTypesPreferencesViewController : ZGBasePreferencesViewController<NSTableViewDataSource, NSTableViewDelegate> @end
