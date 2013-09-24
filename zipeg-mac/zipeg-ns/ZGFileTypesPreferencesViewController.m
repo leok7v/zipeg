@@ -15,26 +15,26 @@ static NSArray* keys;
 
 + (void) initialize {
     NSArray* a = @[
-        @"zip",   @"public.zip-archive",
-        @"rar",   @"com.rarlab.rar-archive",
-        @"gz",    @"org.gnu.gnu-zip-archive",
-        @"gzip",  @"org.gnu.gnu-zip-archive",
-        @"tgz",   @"org.gnu.gnu-zip-tar-archive",
-        @"tar",   @"public.tar-archive",
-        @"bz2",   @"public.bzip2-archive",
-        @"bzip",  @"public.bzip2-archive",
-        @"bzip2", @"public.bzip2-archive",
-        @"7z",    @"org.7-zip.7-zip-archive",
-        @"arj",   @"public.arj-archive",
-        @"lzh",   @"public.lzh-archive",
-        @"z",     @"com.public.z-archive",
-        @"cab",   @"com.microsoft.cab-archive",
-        @"chm",   @"com.microsoft.chm-archive",
-        @"ear",   @"com.sun.ear-archive",
-        @"war",   @"com.sun.war-archive",
-        @"cbr",   @"com.public.cbr-archive",
-        @"cbz",   @"Comic Book Archive (zip)",
-        @"cpio",  @"public.cpio-archive"
+        @"zip",   @[@"public.zip-archive", @"com.winzip.zip-archive", @"com.pkware.zip-archive"],
+        @"rar",   @[@"com.rarlab.rar-archive"],
+        @"gz",    @[@"org.gnu.gnu-zip-archive"],
+        @"gzip",  @[@"org.gnu.gnu-zip-archive"],
+        @"tgz",   @[@"org.gnu.gnu-zip-tar-archive"],
+        @"tar",   @[@"public.tar-archive"],
+        @"bz2",   @[@"public.bzip2-archive"],
+        @"bzip",  @[@"public.bzip2-archive"],
+        @"bzip2", @[@"public.bzip2-archive"],
+        @"7z",    @[@"org.7-zip.7-zip-archive"],
+        @"arj",   @[@"public.arj-archive"],
+        @"lzh",   @[@"public.lzh-archive"],
+        @"z",     @[@"com.public.z-archive"],
+        @"cab",   @[@"com.microsoft.cab-archive"],
+        @"chm",   @[@"com.microsoft.chm-archive"],
+        @"ear",   @[@"com.sun.ear-archive"],
+        @"war",   @[@"com.sun.war-archive"],
+        @"cbr",   @[@"com.public.cbr-archive"],
+        @"cbz",   @[@"Comic Book Archive (zip)"],
+        @"cpio",  @[@"public.cpio-archive"]
     ];
     int j = 0;
     NSMutableDictionary* e2u = [NSMutableDictionary dictionaryWithCapacity: a.count];
@@ -59,7 +59,10 @@ extern char **environ;
         } else {
             _state = [NSMutableDictionary dictionaryWithCapacity: keys.count * 2];
             for (int i = 0; i < keys.count; i++) {
-                _state[ext2uti[keys[i]]] = @true;
+                NSArray* utis = ext2uti[keys[i]];
+                for (NSString* uti in utis) {
+                     _state[uti] = @true;
+                }
             }
             [NSUserDefaults.standardUserDefaults setObject: _state forKey: @"com.zipeg.filetypes"];
         }
@@ -88,11 +91,46 @@ extern char **environ;
         _tableView.headerView = null;
         _tableView.backgroundColor = NSColor.clearColor;
 
-        CFStringRef ct = (__bridge CFStringRef)ext2uti[@"zip"];
-        CFStringRef id = (__bridge CFStringRef)(NSBundle.mainBundle.bundleIdentifier);
-        int roles = kLSRolesAll; // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
-        OSStatus r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
-        trace("%d", r);
+        NSArray* utis = ext2uti[@"zip"];
+        [self alwaysOpenFile];
+        for (NSString* uti in utis) {
+            CFStringRef ct = (__bridge CFStringRef)uti;
+            CFStringRef id = (__bridge CFStringRef)(NSBundle.mainBundle.bundleIdentifier);
+            OSStatus r = 0;
+            r = LSSetHandlerOptionsForContentType(ct, kLSHandlerOptionsIgnoreCreator);
+            trace("LSSetHandlerOptionsForContentType %@ %d", uti, r);
+            // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
+            int roles = kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell;
+            r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
+            trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
+            roles = kLSRolesAll;
+            r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
+            trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
+            roles = kLSRolesEditor;
+            r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
+            trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
+
+            CFStringRef drh = LSCopyDefaultRoleHandlerForContentType(ct, kLSRolesNone);
+            NSString* bi = (__bridge NSString *)(drh);
+            NSURL* appURL = [NSWorkspace.sharedWorkspace URLForApplicationWithBundleIdentifier: bi];
+            trace("LSCopyDefaultRoleHandlerForContentType=%@ URLForApplicationWithBundleIdentifier=%@", drh, appURL);
+            CFRelease(drh);
+
+
+
+//          NSImage* icns = [NSWorkspace.sharedWorkspace iconForFileType: uti];
+
+            NSArray* desktop = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, true);
+            [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
+            NSString* fullPath = @"/Users/leo/Desktop/quincy-absolutenoobcocoacheckboxes-fb3537315428.zip";
+            [NSWorkspace.sharedWorkspace noteFileSystemChanged: fullPath];
+
+            NSString* appName;
+            NSString* type;
+            BOOL b = [NSWorkspace.sharedWorkspace  getInfoForFile: fullPath application: &appName type: &type];
+            trace("getInfoForFile=%d %@ %@", b, type, appName);
+        }
+/*
         char ** e = environ;
         char * a[2];
         a[0] = "";
@@ -100,29 +138,30 @@ extern char **environ;
         //r = system("/usr/bin/osascript /Users/leo/3ipeg/zipeg-mac/zipeg-ns/Resources/fnotify.scpt");
         //trace("system=%d", r);
         NSArray* desktop = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, true);
-        //[NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
-        NSImage* icns = [NSWorkspace.sharedWorkspace iconForFileType: ext2uti[@"zip"]];
-        // FSEvents?
-
-
-        ct = (__bridge CFStringRef)ext2uti[@"zip"];
-        int role = kLSRolesAll; // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
-        CFArrayRef cfa = LSCopyAllRoleHandlersForContentType(ct, role);
-        NSArray* nsa = [NSArray arrayWithArray: (__bridge NSArray *)(cfa)];
-        CFRelease(cfa);
-        trace("%@", nsa);
-
-        for (NSString* bi in nsa) {
-            NSString* path = [NSWorkspace.sharedWorkspace absolutePathForAppBundleWithIdentifier: bi];
-            NSBundle* b = [NSBundle bundleWithPath: path];
-            NSDictionary* bid = [b localizedInfoDictionary];
-            NSImage* icon = [NSWorkspace.sharedWorkspace iconForFile: path];
-            NSString* name = bid[@"CFBundleDisplayName"];
-            if (name == null) {
-                name = path.lastPathComponent.stringByDeletingPathExtension;
+        [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
+//      FSEvents?
+*/
+#if 0
+        for (NSString* uti in utis) {
+            CFStringRef ct = (__bridge CFStringRef)uti;
+            int role = kLSRolesAll; // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
+            CFArrayRef cfa = LSCopyAllRoleHandlersForContentType(ct, role);
+            NSArray* nsa = [NSArray arrayWithArray: (__bridge NSArray *)(cfa)];
+            CFRelease(cfa);
+            trace("uti=%@ bundles=%@", uti, nsa);
+            for (NSString* bi in nsa) {
+                NSString* path = [NSWorkspace.sharedWorkspace absolutePathForAppBundleWithIdentifier: bi];
+                NSBundle* b = [NSBundle bundleWithPath: path];
+                NSDictionary* bid = [b localizedInfoDictionary];
+                NSImage* icon = [NSWorkspace.sharedWorkspace iconForFile: path];
+                NSString* name = bid[@"CFBundleDisplayName"];
+                if (name == null) {
+                    name = path.lastPathComponent.stringByDeletingPathExtension;
+                }
+                trace("\n\n---------\n*** %@ ***\npath=%@\ndisplay=%@\nicon=%@\n%@", bi, path, name, icon, bid);
             }
-            trace("\n\n---------\n*** %@ ***\npath=%@\ndisplay=%@\nicon=%@\n%@", bi, path, name, icon, bid);
         }
+#endif
         NSScrollView* sv = NSScrollView.new;
         sv.frame = NSMakeRect(0, 0, width, 390);
         sv.documentView = _tableView;
@@ -135,9 +174,27 @@ extern char **environ;
         sv.drawsBackground = false;
         v.subviews = @[ sv ];
         self.view = v;
-        dumpViews(self.view);
+        // dumpViews(self.view);
     }
     return self;
+}
+
+
++ (BOOL) setMyselfAsDefaultApplicationForFileExtension: (NSString*) ext {
+    CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
+    CFStringRef bi = (__bridge CFStringRef)NSBundle.mainBundle.bundleIdentifier;
+    return LSSetDefaultRoleHandlerForContentType(uti, kLSRolesAll, bi) == 0;
+}
+
+- (void) alwaysOpenFile {
+    FSRef ref;
+    NSString* fp = @"/Users/leo/Desktop/quincy-absolutenoobcocoacheckboxes-fb3537315428.zip";
+    OSStatus os_status = FSPathMakeRef((const UInt8 *)fp.fileSystemRepresentation, &ref, null);
+    assert(os_status == noErr);
+    CFStringRef type = null;
+    LSCopyItemAttribute(&ref, kLSRolesNone, kLSItemContentType, (CFTypeRef *)&type);
+//    LSSetDefaultRoleHandlerForContentType(type, kLSRolesAll, (CFStringRef) [[NSBundle bundleWithPath:[iObject singleFilePath]] bundleIdentifier]);
+    CFRelease(type);
 }
 
 - (void) dealloc {
@@ -167,7 +224,8 @@ extern char **environ;
 
 - (id)tableView: (NSTableView*) tv objectValueForTableColumn: (NSTableColumn*) tc row:(NSInteger) row {
     if (tc == tv.tableColumns[0]) {
-        return _state[ext2uti[keys[row]]];
+        NSArray* utis = ext2uti[keys[row]];
+        return _state[utis[0]];
     } else {
         return keys[row];
     }
@@ -192,9 +250,11 @@ extern char **environ;
 
 - (void) check: (id) sender {
     trace("check %ld", _tableView.selectedRow);
-    NSString* uti = ext2uti[keys[_tableView.selectedRow]];
-    NSNumber* b = _state[uti];
-    _state[uti] = @(!b.boolValue);
+    NSArray* utis = ext2uti[keys[_tableView.selectedRow]];
+    for (NSString* uti in utis) {
+        NSNumber* b = _state[uti];
+        _state[uti] = @(!b.boolValue);
+    }
     self.view.needsDisplay = true;
 }
 

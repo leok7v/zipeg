@@ -290,7 +290,6 @@
 		B308542117D039C80099F6DA /* smallfn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B308521717D035E00099F6DA /* smallfn.cpp */; settings = {COMPILER_FLAGS = "-w"; }; };
 		B308542217D039C80099F6DA /* system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B308521D17D035E00099F6DA /* system.cpp */; settings = {COMPILER_FLAGS = "-w"; }; };
 		B30A705117A4B3D200059168 /* ZGWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = B30A705017A4B3D200059168 /* ZGWindowController.m */; };
-		B31944FD17E93623006D72D4 /* fnotify.scpt in Resources */ = {isa = PBXBuildFile; fileRef = B31944FC17E93623006D72D4 /* fnotify.scpt */; };
 		B31A49BE17B2444600030DD5 /* next.png in Resources */ = {isa = PBXBuildFile; fileRef = B31A49BA17B2444600030DD5 /* next.png */; };
 		B31A49BF17B2444600030DD5 /* play-n.png in Resources */ = {isa = PBXBuildFile; fileRef = B31A49BB17B2444600030DD5 /* play-n.png */; };
 		B31A49C017B2444600030DD5 /* play-p.png in Resources */ = {isa = PBXBuildFile; fileRef = B31A49BC17B2444600030DD5 /* play-p.png */; };
@@ -337,7 +336,6 @@
 		B39F3E4617D0BA3B00254ACB /* ZGPreferencesWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4517D0BA3B00254ACB /* ZGPreferencesWindowController.m */; };
 		B39F3E4D17D0C4F000254ACB /* ZGAdvancedPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */; };
 		B39F3E4E17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */; };
-		B39F3E5117D0C5B300254ACB /* ZGAdvancedPreferencesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */; };
 		B3AF41E217DA55E900658672 /* ZGFileTypesPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */; };
 		B3B444B417BA41F4008D88A3 /* ZGAlerts.m in Sources */ = {isa = PBXBuildFile; fileRef = B3B444B317BA41F4008D88A3 /* ZGAlerts.m */; };
 		B3B444B717BA6088008D88A3 /* stop-n-32x32@2.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */; };
@@ -1058,7 +1056,6 @@
 		B308541617D0384A0099F6DA /* p7z.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = p7z.cpp; path = ../p7z/p7z.cpp; sourceTree = "<group>"; };
 		B30A704F17A4B3D200059168 /* ZGWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGWindowController.h; sourceTree = "<group>"; };
 		B30A705017A4B3D200059168 /* ZGWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGWindowController.m; sourceTree = "<group>"; };
-		B31944FC17E93623006D72D4 /* fnotify.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; name = fnotify.scpt; path = Resources/fnotify.scpt; sourceTree = "<group>"; };
 		B31A49BA17B2444600030DD5 /* next.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = next.png; path = Resources/next.png; sourceTree = "<group>"; };
 		B31A49BB17B2444600030DD5 /* play-n.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "play-n.png"; path = "Resources/play-n.png"; sourceTree = "<group>"; };
 		B31A49BC17B2444600030DD5 /* play-p.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "play-p.png"; path = "Resources/play-p.png"; sourceTree = "<group>"; };
@@ -1139,7 +1136,6 @@
 		B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGAdvancedPreferencesViewController.m; sourceTree = "<group>"; };
 		B39F3E4B17D0C4EF00254ACB /* ZGGeneralPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGGeneralPreferencesViewController.h; sourceTree = "<group>"; };
 		B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGGeneralPreferencesViewController.m; sourceTree = "<group>"; };
-		B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ZGAdvancedPreferencesView.xib; path = Resources/ZGAdvancedPreferencesView.xib; sourceTree = "<group>"; };
 		B3AF41E017DA55E900658672 /* ZGFileTypesPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGFileTypesPreferencesViewController.h; sourceTree = "<group>"; };
 		B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGFileTypesPreferencesViewController.m; sourceTree = "<group>"; };
 		B3B444B217BA41F4008D88A3 /* ZGAlerts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGAlerts.h; sourceTree = "<group>"; };
@@ -2255,8 +2251,6 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B31944FC17E93623006D72D4 /* fnotify.scpt */,
-				B39F3E4F17D0C5B300254ACB /* ZGAdvancedPreferencesView.xib */,
 				B32B60CF17C7D55600FB2ECC /* subtle_white_feathers_@2X.png */,
 				B32B60D017C7D55600FB2ECC /* subtle_white_feathers.png */,
 				B3D8999C17C60351006823AD /* textured_paper.png */,
@@ -2426,7 +2420,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = ZG;
-				LastUpgradeCheck = 0460;
+				LastUpgradeCheck = 0500;
 				ORGANIZATIONNAME = "Zipeg Labs";
 			};
 			buildConfigurationList = B34FEB521792443D005D798B /* Build configuration list for PBXProject "Zipeg" */;
@@ -2500,8 +2494,6 @@
 				B3D8999D17C60351006823AD /* textured_paper.png in Resources */,
 				B32B60D117C7D55600FB2ECC /* subtle_white_feathers_@2X.png in Resources */,
 				B32B60D217C7D55600FB2ECC /* subtle_white_feathers.png in Resources */,
-				B39F3E5117D0C5B300254ACB /* ZGAdvancedPreferencesView.xib in Resources */,
-				B31944FD17E93623006D72D4 /* fnotify.scpt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2910,7 +2902,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libstdc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -2967,7 +2958,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libstdc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -3017,7 +3007,6 @@
 		B34FEB8C1792443D005D798B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -3034,7 +3023,6 @@
 		B34FEB8D1792443D005D798B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;

@@ -215,4 +215,15 @@
     return b;
 }
 
+- (NSDragOperation) draggingSession: (NSDraggingSession*) session sourceOperationMaskForDraggingContext: (NSDraggingContext) ctx {
+    if (ctx  == NSDraggingContextOutsideApplication) {
+        return NSDragOperationCopy;
+    } else if (ctx == NSDraggingContextWithinApplication) {
+        return NSDragOperationNone;
+    } else {
+        trace("something new: %ld", ctx);
+        return NSDragOperationNone;
+    }
+}
+
 @end

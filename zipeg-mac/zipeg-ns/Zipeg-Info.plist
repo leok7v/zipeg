@@ -23,8 +23,8 @@
 			<string>Editor</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.winzip.zip-archive</string>
 				<string>public.zip-archive</string>
+				<string>com.winzip.zip-archive</string>
 				<string>com.pkware.zip-archive</string>
 			</array>
 			<key>LSTypeIsPackage</key>
@@ -115,6 +115,8 @@
 			<array>
 				<string>*</string>
 			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>zipeg-archive</string>
 			<key>CFBundleTypeName</key>
 			<string>Dragged Files</string>
 			<key>CFBundleTypeOSTypes</key>
@@ -122,7 +124,7 @@
 				<string>****</string>
 			</array>
 			<key>CFBundleTypeRole</key>
-			<string>None</string>
+			<string>Viewer</string>
 			<key>LSTypeIsPackage</key>
 			<false/>
 			<key>NSDocumentClass</key>
@@ -149,10 +151,21 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>3</string>
+	<key>CFBundleTypeExtensions</key>
+	<array>
+		<string>zip</string>
+	</array>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
+	<key>LSItemContentTypes</key>
+	<array>
+		<string>public.zip-archive</string>
+		<string>com.pkware.zip-archive</string>
+		<string>com.winzip.zip-archive</string>
+		<string>public.zip</string>
+	</array>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
@@ -167,20 +180,27 @@
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>
+				<string>public.archive</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>WinZip Zip Archive</string>
+			<string>Zip Archive</string>
 			<key>UTTypeIconFile</key>
 			<string>zipeg-archive</string>
 			<key>UTTypeIdentifier</key>
-			<string>com.winzip.zip-archive</string>
+			<string>public.zip-archive</string>
 			<key>UTTypeReferenceURL</key>
-			<string>http://winzip.com</string>
+			<string></string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
 					<string>zip</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/zip</string>
+					<string>application/x-zip</string>
+					<string>application/x-zip-compressed</string>
 				</array>
 			</dict>
 		</dict>
@@ -248,16 +268,14 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>RAR archive</string>
-			<key>UTTypeIconName</key>
-			<string>file-rar.icns</string>
+			<key>UTTypeIconFile</key>
+			<string>zipeg-archive</string>
 			<key>UTTypeIdentifier</key>
 			<string>com.rarlab.rar-archive</string>
 			<key>UTTypeReferenceURL</key>
 			<string>http://www.rarlab.com/</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
-				<key>com.apple.macos.ostype</key>
-				<string>RARf</string>
 				<key>public.filename-extension</key>
 				<array>
 					<string>rar</string>
