@@ -1360,6 +1360,7 @@ static NSString* nextPathname(NSString* path) {
                                         items: items
                                         to: url
                                         DnD: dnd];
+    _extractOpCount++;
     [_operationQueue addOperation: operation];
 }
 
