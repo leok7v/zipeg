@@ -695,7 +695,7 @@ static NSString* starifyMultipartFilename(NSString* s) {
     bool b = false;
     @try {
         _op = op;
-        b = a->open(_archiveFilePath.UTF8String) && a->getNumberOfItems() > 0 && a->getNumberOfProperties() > 0;
+        b = a->open(_archiveFilePath.fileSystemRepresentation) && a->getNumberOfItems() > 0 && a->getNumberOfProperties() > 0;
         if (b) {
             _numberOfItems = a->getNumberOfItems();
             _properties = a->getNumberOfProperties();
@@ -786,7 +786,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
     NSMutableDictionary* dic = [NSMutableDictionary dictionaryWithCapacity: _properties * 3 / 2];
     if (itemIndex == 0) {
         for (int i = 0; i < _properties; i++) {
-            _pnames[i] = [NSString stringWithUTF8String: names[i]];
+            _pnames[i] = [NSString stringWithFileSystemRepresentation: names[i]];
             if (_pathIndex < 0 && [_pnames[i] isEqualToString:@"Path"]) {
                 _pathIndex = i;
             }
@@ -856,8 +856,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 }
 
 - (BOOL) file: (const char*) file error: (const char*) message {
-    NSString* path = file == null ? @"" :
-                  [NSFileManager.defaultManager stringWithFileSystemRepresentation: file length: strlen(file)];
+    NSString* path = file == null ? @"" : [NSString stringWithFileSystemRepresentation: file];
     bool b = [document askToContinue: _op
                                 path: path
               error: [NSString stringWithUTF8String: message]];
@@ -973,7 +972,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
         p = parent;
         while (!isEqual(p, _root)) {
             NSString* name = p.name;
-            prefixComponents[--i] = name.UTF8String;
+            prefixComponents[--i] = name.fileSystemRepresentation;
             p = p.parent;
         }
         assert(i == 0);
@@ -1017,7 +1016,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
         }
         _error = null;
         // timestamp("extract");
-        bool b = a->extract(indices, n, path.UTF8String, prefixComponents, pc, fd);
+        bool b = a->extract(indices, n, path.fileSystemRepresentation, prefixComponents, pc, fd);
         // timestamp("extract");
         delete[] indices;
         delete[] prefixComponents;

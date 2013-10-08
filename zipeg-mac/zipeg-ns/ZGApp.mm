@@ -27,7 +27,22 @@ static NSWindow* __weak window;
 @implementation ZGApp
 
 + (void) initialize {
+    [ZGApp registerApp: false];
     [ZGApp cleanup: false];
+}
+
++ (void) registerApp: (BOOL) force {
+    timestamp("LSRegisterFSRef");
+    FSRef fsref = {0};
+    OSStatus oss = FSPathMakeRef((const UInt8*)NSBundle.mainBundle.bundlePath.fileSystemRepresentation, &fsref, NULL);
+    if (oss != 0) {
+        console(@"FSPathMakeRef = %d error", oss);
+    }
+    oss = LSRegisterFSRef(&fsref, force); // force registration of this app for file type associations
+    if (oss != 0) {
+        console(@"LSRegisterFSRef = %d error", oss);
+    }
+    timestamp("LSRegisterFSRef");
 }
 
 - (id) init {

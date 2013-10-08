@@ -197,7 +197,7 @@ BOOL rmdirs(NSString* path) {
     if (a[NSFileType] == NSFileTypeSymbolicLink) {
         // http://linux.die.net/man/2/unlink
         trace("unlink(%@) - symbolic link", path);
-        b = unlink(path.UTF8String) == 0 && b; // If the name referred to a symbolic link the link is removed.
+        b = unlink(path.fileSystemRepresentation) == 0 && b; // If the name referred to a symbolic link the link is removed.
         return b; // do not follow symbolic links
     }
     NSArray* filenames = [NSFileManager.defaultManager contentsOfDirectoryAtPath: path error: null];
@@ -209,12 +209,12 @@ BOOL rmdirs(NSString* path) {
                 b = rmdirs(p) == 0 && b;
             } else {
                 // trace("unlink(%@)", p);
-                b = unlink(p.UTF8String) == 0 && b;
+                b = unlink(p.fileSystemRepresentation) == 0 && b;
             }
         }
     }
     // trace("rmdir(%@)", path);
-    b = rmdir(path.UTF8String) == 0 && b;
+    b = rmdir(path.fileSystemRepresentation) == 0 && b;
     return b;
 }
 
@@ -285,6 +285,10 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     } else {
         @throw NSRangeException;
     }
+}
+
++ (NSString*) stringWithFileSystemRepresentation: (const char*) utf8 {
+    return [NSFileManager.defaultManager stringWithFileSystemRepresentation: utf8 length: strlen(utf8)];
 }
 
 @end
@@ -531,7 +535,7 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
             char* r = mkdtemp(cs);
             if (r != null) {
                 NSAssert(r == cs, @"expected mkdtemp return value and parameter to be the same");
-                folder = [NSFileManager.defaultManager stringWithFileSystemRepresentation: r length: strlen(r)];
+                folder = [NSString stringWithFileSystemRepresentation: r];
             }
             free(cs);
         }
@@ -556,7 +560,7 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
             fd = open(cc, O_CREAT|O_RDWR|O_EXLOCK|O_CLOEXEC);
             if (fd != -1) {
                 if (res != null) {
-                    *res = [NSFileManager.defaultManager stringWithFileSystemRepresentation: cc length: strlen(cc)];
+                    *res = [NSString stringWithFileSystemRepresentation: cc];
                     // trace("createTemporaryFile OK: %s", cc);
                 }
                 break;

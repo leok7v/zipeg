@@ -1,4 +1,5 @@
 #import "ZGDocument.h"
+#import "ZGUtils.h"
 #import "ZGGenericItem.h"
 #import "ZG7zip.h"
 #import "ZGFileSystem.h"
@@ -1148,7 +1149,7 @@ static NSString* nextPathname(NSString* path) {
         assert(false);
         return false;
     }
-    return mkdir(_temporaryUnpackingFolder.UTF8String, 0700) == 0;
+    return mkdir(_temporaryUnpackingFolder.fileSystemRepresentation, 0700) == 0;
 }
 
 - (void) posixError: (NSString*) path {
@@ -1515,7 +1516,7 @@ static NSString* nextPathname(NSString* path) {
         for (NSString* _from in _trashedDestination.allKeys) {
             NSString* from = [NSString stringWithFormat: @"%@", _from];
             NSString* to = [NSString stringWithFormat: @"%@", _trashedDestination[_from]];
-            b = rename(to.UTF8String, from.UTF8String) == 0;
+            b = rename(to.fileSystemRepresentation, from.fileSystemRepresentation) == 0;
             if (!b) {
                 [self posixError: to];
             }
@@ -1558,10 +1559,10 @@ static NSString* nextPathname(NSString* path) {
          [_preNextLastPathComponent equalsIgnoreCase: c[0]]);
         BOOL b = true;
         if (collapse) {
-            b = rename(cp.UTF8String, _finalDestination.UTF8String) == 0;
-            rmdir(_temporaryUnpackingFolder.UTF8String);
+            b = rename(cp.fileSystemRepresentation, _finalDestination.fileSystemRepresentation) == 0;
+            rmdir(_temporaryUnpackingFolder.fileSystemRepresentation);
         } else {
-            b = rename(_temporaryUnpackingFolder.UTF8String, _finalDestination.UTF8String) == 0;
+            b = rename(_temporaryUnpackingFolder.fileSystemRepresentation, _finalDestination.fileSystemRepresentation) == 0;
         }
         if (!b) {
             [self restoreTrashed];
@@ -1606,7 +1607,7 @@ static NSString* nextPathname(NSString* path) {
     int __block answer = NSAlertErrorReturn;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
-        NSString* name = [NSString stringWithUTF8String: fromName];
+        NSString* name = [NSString stringWithFileSystemRepresentation: fromName];
         [self askOverwrite: name appltToAll: _itemsToExtract > 1 done:^(int r) {
             answer = r;
             dispatch_semaphore_signal(sema);
@@ -1673,7 +1674,7 @@ static NSString* nextPathname(NSString* path) {
     BOOL __block b = false;
     dispatch_async(dispatch_get_main_queue(), ^{
         assert([NSThread isMainThread]);
-        NSString* name = [NSString stringWithUTF8String: pathname];
+        NSString* name = [NSString stringWithFileSystemRepresentation: pathname];
         [NSWorkspace.sharedWorkspace recycleURLs: @[[NSURL fileURLWithPath: name]]
                                completionHandler: ^(NSDictionary* moved, NSError *error){
                                    // trace("moved=%@ %@", moved, error);

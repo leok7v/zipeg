@@ -1,3 +1,4 @@
+#import "ZGApp.h"
 #import "ZGFileTypesPreferencesViewController.h"
 #import "ApplicationServices/ApplicationServices.h"
 
@@ -33,7 +34,7 @@ static NSArray* keys;
         @"ear",   @[@"com.sun.ear-archive"],
         @"war",   @[@"com.sun.war-archive"],
         @"cbr",   @[@"com.public.cbr-archive"],
-        @"cbz",   @[@"Comic Book Archive (zip)"],
+        @"cbz",   @[@"com.public.cbr-archive"],
         @"cpio",  @[@"public.cpio-archive"]
     ];
     int j = 0;
@@ -45,9 +46,8 @@ static NSArray* keys;
     }
     keys = k; // to maintain order of extensions (most frequently used on top)
     ext2uti = e2u;
+    [ZGApp registerApp: true];
 }
-
-extern char **environ;
 
 - (id) init {
     self = [super init];
@@ -93,6 +93,7 @@ extern char **environ;
 
         NSArray* utis = ext2uti[@"zip"];
         [self alwaysOpenFile];
+
         for (NSString* uti in utis) {
             CFStringRef ct = (__bridge CFStringRef)uti;
             CFStringRef id = (__bridge CFStringRef)(NSBundle.mainBundle.bundleIdentifier);
@@ -124,6 +125,11 @@ extern char **environ;
             [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
             NSString* fullPath = @"/Users/leo/Desktop/quincy-absolutenoobcocoacheckboxes-fb3537315428.zip";
             [NSWorkspace.sharedWorkspace noteFileSystemChanged: fullPath];
+
+            NSFileManager* fm = NSFileManager.defaultManager;
+            NSError* err = null;
+            NSDictionary* attrs = [fm attributesOfItemAtPath: fullPath error: &err];
+            [fm setAttributes: attrs ofItemAtPath: fullPath error: &err];
 
             NSString* appName;
             NSString* type;
