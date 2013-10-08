@@ -19,7 +19,7 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
         alloc_count(self);
         NSView* v = NSView.new;
         v.autoresizesSubviews = true;
-        v.frameSize = NSMakeSize(width, 290);
+        v.frameSize = NSMakeSize(width, 350);
         NSFont* font = ZGBasePreferencesViewController.font;
         CGFloat y = v.frame.size.height - font.boundingRectForFont.size.height;
         NSArray* keys = [_n2e.allKeys sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
@@ -38,6 +38,12 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
                      @"DANGER: !!! ☠ if you uncheck this option you will accept full responsibility "
                      @"of losing data when the items are irrecoverably deleted ☠ !!!",
                      @"com.zipeg.preferences.useTrashBin");
+        y = checkBox(v, y, @"Simplified:", @" toolbar",
+                     @"",
+                     @"com.zipeg.preferences.simplifiedToolbar");
+        y = checkBox(v, y, @"Outline view:", @" white background",
+                     @"instead of gradient for tree view",
+                     @"com.zipeg.preferences.whiteOutline");
         y = checkBox(v, y, @"Detect encoding:", @" automatically",
                      @"Zipeg will attempt to detect national alphabet for item names encoding. "
                      @"If detection is unsuccessful - Zipeg will use default encoding specified below. "
