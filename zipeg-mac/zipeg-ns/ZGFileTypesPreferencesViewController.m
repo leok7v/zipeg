@@ -63,7 +63,7 @@ static NSArray* keys;
     ext2uti = e2u;
 
     NSArray* exts = @[
-                   @[@"zip", @"jar", @"xpi", @"odt", @"ods", @"docx", @"xlsx"],
+                   @[@"zip", @"jar" /*, @"xpi", @"odt", @"ods", @"docx", @"xlsx" */],
                    @"zipx",
                    @[@"rar", @"r00"],
                    @[@"gz", @"gzip", @"tgz", @"tpz"],
@@ -75,38 +75,38 @@ static NSArray* keys;
                    @[@"lzh", @"lha"],
                    @[@"z", @"taz"],
                    @"cab",
-                   @"chm",
+//                 @"chm",
                    @"ear",
                    @"war",
                    @"cbr",
                    @"cbz",
                    @"cpio",
-                   @"amp",
-                   @[ @"msi", @"msp", @"doc", @"xls", @"ppt"],
+//                 @"amp",
+                   @[ @"msi" /*, @"msp", @"doc", @"xls", @"ppt" */],
                    @"deb",
                    @"dmg",
-                   @"cramfs",
-                   @"elf",
-                   @"fat",
+//                 @"cramfs",
+//                 @"elf",
+//                 @"fat",
                    @"img",
                    @"iso",
-                   @"flv",
-                   @"hfs",
+//                 @"flv",
+//                 @"hfs",
                    @[@"lzma", @"lzma86"],
-                   @"MachO",
-                   @"mbr",
-                   @"MsLZ"
-                   @"mub",
+//                 @"MachO",
+//                 @"mbr",
+//                 @"MsLZ",
+//                 @"mub",
                    @"nsis",
-                   @"ntfs",
-                   @[@"exe", @"dll", @"sys"],
-                   @[@"ppmd", @"pmd"],
-                   @"squashfs",
-                   @"swf",
+//                 @"ntfs",
+                   @[@"exe", @"dll" /*, @"sys"*/],
+//                 @[@"ppmd", @"pmd"],
+//                 @"squashfs",
+//                 @"swf",
                    @"rpm",
-                   @"udf",
-                   @"vhd",
-                   @[@"wim", @"swm"],
+//                 @"udf",
+//                 @"vhd",
+//                 @[@"wim", @"swm"],
                    @"xar"];
     for (int i = 0; i < exts.count; i++) {
         NSObject* o = exts[i];
@@ -117,7 +117,11 @@ static NSArray* keys;
             NSArray* utis = (__bridge NSArray*)at;
             for (int j = 0; j < utis.count; j++) {
                 CFStringRef desc = UTTypeCopyDescription((__bridge CFStringRef)utis[j]);
-                trace("%@=%@ %@", ext, utis[j], desc);
+                CFStringRef mime = UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)utis[j], kUTTagClassMIMEType);
+                trace("%@=%@ %@ %@", ext, utis[j], desc, mime);
+                if (mime != null) {
+                    CFRelease(mime);
+                }
                 if (desc != null) {
                     CFRelease(desc);
                 }
@@ -132,7 +136,11 @@ static NSArray* keys;
                 NSArray* utis = (__bridge NSArray*)at;
                 for (int j = 0; j < utis.count; j++) {
                     CFStringRef desc = UTTypeCopyDescription((__bridge CFStringRef)utis[j]);
-                    trace("%@=%@ %@", ext, utis[j], desc);
+                    CFStringRef mime = UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)utis[j], kUTTagClassMIMEType);
+                    trace("%@=%@ %@ %@", ext, utis[j], desc, mime);
+                    if (mime != null) {
+                        CFRelease(mime);
+                    }
                     if (desc != null) {
                         CFRelease(desc);
                     }
