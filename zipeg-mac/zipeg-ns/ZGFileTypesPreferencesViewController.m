@@ -14,9 +14,15 @@
 static NSDictionary* ext2uti;
 static NSArray* keys;
 
+// "amp", "bz2 bzip2 tbz2 tbz" "msi msp doc xls ppt" "cramfs" "deb" "dmg" "elf" "fat img" "flv" "gz gzip tgz tpz"
+// "hfs" "iso img" "lzh lha" "lzma lzma86" "MachO" "mbr" "MsLZ"
+// "mub" "nsis" "ntfs img" "exe dll sys" "ppmd pmd" "rar" "r00" "rpm" "001" "squashfs" "swf" "tar" "udf"
+// "iso img" "vhd" "wim swm" "xar" "xz txz" "z taz" "zip jar xpi odt ods docx xlsx"
+
 + (void) initialize {
     NSArray* a = @[
         @"zip",   @[@"public.zip-archive", @"com.winzip.zip-archive", @"com.pkware.zip-archive"],
+        @"zipx",  @[@"com.winzip.zipx-archive"],
         @"rar",   @[@"com.rarlab.rar-archive"],
         @"gz",    @[@"org.gnu.gnu-zip-archive"],
         @"gzip",  @[@"org.gnu.gnu-zip-archive"],
@@ -26,26 +32,115 @@ static NSArray* keys;
         @"bzip",  @[@"public.bzip2-archive"],
         @"bzip2", @[@"public.bzip2-archive"],
         @"7z",    @[@"org.7-zip.7-zip-archive"],
+        @"xz",    @[@"org.tukaani.xz-archive"],
         @"arj",   @[@"public.arj-archive"],
         @"lzh",   @[@"public.lzh-archive"],
         @"z",     @[@"com.public.z-archive"],
         @"cab",   @[@"com.microsoft.cab-archive"],
-        @"chm",   @[@"com.microsoft.chm-archive"],
+        @"chm",   @[@"com.microsoft.chm-archive"], // dyn.age80g4dr not known to Apple
         @"ear",   @[@"com.sun.ear-archive"],
         @"war",   @[@"com.sun.war-archive"],
         @"cbr",   @[@"com.public.cbr-archive"],
-        @"cbz",   @[@"com.public.cbr-archive"],
+        @"cbz",   @[@"com.public.cbz-archive"],
         @"cpio",  @[@"public.cpio-archive"]
     ];
     int j = 0;
     NSMutableDictionary* e2u = [NSMutableDictionary dictionaryWithCapacity: a.count];
     NSMutableArray* k = [NSMutableArray arrayWithCapacity: a.count / 2];
     for (int i = 0; i < a.count; i += 2) {
+        CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)a[i], null);
+        CFRelease(uti);
+        CFArrayRef at = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)a[i], null);
+        NSArray* na = (__bridge NSArray*)at;
+        for (int j = 0; j < na.count; j++) {
+            trace("%@=%@", a[i], na[j]);
+        }
+        CFRelease(at);
         k[j++] = a[i];
         e2u[a[i]] = a[i + 1];
     }
     keys = k; // to maintain order of extensions (most frequently used on top)
     ext2uti = e2u;
+
+    NSArray* exts = @[
+                   @[@"zip", @"jar", @"xpi", @"odt", @"ods", @"docx", @"xlsx"],
+                   @"zipx",
+                   @[@"rar", @"r00"],
+                   @[@"gz", @"gzip", @"tgz", @"tpz"],
+                   @"tar",
+                   @[@"bz2", @"bzip", @"bzip2", @"tbz2", @"tbz"],
+                   @"7z",
+                   @[@"xz", @"txz"],
+                   @"arj",
+                   @[@"lzh", @"lha"],
+                   @[@"z", @"taz"],
+                   @"cab",
+                   @"chm",
+                   @"ear",
+                   @"war",
+                   @"cbr",
+                   @"cbz",
+                   @"cpio",
+                   @"amp",
+                   @[ @"msi", @"msp", @"doc", @"xls", @"ppt"],
+                   @"deb",
+                   @"dmg",
+                   @"cramfs",
+                   @"elf",
+                   @"fat",
+                   @"img",
+                   @"iso",
+                   @"flv",
+                   @"hfs",
+                   @[@"lzma", @"lzma86"],
+                   @"MachO",
+                   @"mbr",
+                   @"MsLZ"
+                   @"mub",
+                   @"nsis",
+                   @"ntfs",
+                   @[@"exe", @"dll", @"sys"],
+                   @[@"ppmd", @"pmd"],
+                   @"squashfs",
+                   @"swf",
+                   @"rpm",
+                   @"udf",
+                   @"vhd",
+                   @[@"wim", @"swm"],
+                   @"xar"];
+    for (int i = 0; i < exts.count; i++) {
+        NSObject* o = exts[i];
+        if ([o isKindOfClass: NSString.class]) {
+            trace("\n------------");
+            NSString* ext = exts[i];
+            CFArrayRef at = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
+            NSArray* utis = (__bridge NSArray*)at;
+            for (int j = 0; j < utis.count; j++) {
+                CFStringRef desc = UTTypeCopyDescription((__bridge CFStringRef)utis[j]);
+                trace("%@=%@ %@", ext, utis[j], desc);
+                if (desc != null) {
+                    CFRelease(desc);
+                }
+            }
+            CFRelease(at);
+        } else {
+            NSArray* na = exts[i];
+            trace("\n------------");
+            for (int j = 0; j < na.count; j++) {
+                NSString* ext = na[j];
+                CFArrayRef at = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
+                NSArray* utis = (__bridge NSArray*)at;
+                for (int j = 0; j < utis.count; j++) {
+                    CFStringRef desc = UTTypeCopyDescription((__bridge CFStringRef)utis[j]);
+                    trace("%@=%@ %@", ext, utis[j], desc);
+                    if (desc != null) {
+                        CFRelease(desc);
+                    }
+                }
+                CFRelease(at);
+            }
+        }
+    }
     [ZGApp registerApp: true];
 }
 
@@ -97,7 +192,7 @@ static NSArray* keys;
         for (NSString* uti in utis) {
             CFStringRef ct = (__bridge CFStringRef)uti;
             CFStringRef id = (__bridge CFStringRef)(NSBundle.mainBundle.bundleIdentifier);
-            OSStatus r = 0;
+            OSStatus r = noErr;
             r = LSSetHandlerOptionsForContentType(ct, kLSHandlerOptionsIgnoreCreator);
             trace("LSSetHandlerOptionsForContentType %@ %d", uti, r);
             // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
@@ -147,7 +242,7 @@ static NSArray* keys;
         [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
 //      FSEvents?
 */
-#if 0
+#if 1
         for (NSString* uti in utis) {
             CFStringRef ct = (__bridge CFStringRef)uti;
             int role = kLSRolesAll; // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
