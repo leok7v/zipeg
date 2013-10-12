@@ -51,6 +51,7 @@ FOUNDATION_EXPORT BOOL isEqual(NSObject* o1, NSObject* o2);
 - (BOOL) contains: (NSString*) s;
 - (BOOL) containsIgnoreCase: (NSString*) s;
 - (NSString*) substringFrom: (int) fromInclusive to: (int) toExclusive;
+- (NSString*) substringFrom: (int) fromInclusive;
 + (NSString*) stringWithFileSystemRepresentation: (const char*) utf8;
 @end
 

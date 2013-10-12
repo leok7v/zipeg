@@ -1,4 +1,5 @@
 #import "ZGApp.h"
+#import "ZGUtils.h"
 #import "ZGFileTypesPreferencesViewController.h"
 #import "ApplicationServices/ApplicationServices.h"
 
@@ -20,29 +21,54 @@ static NSArray* keys;
 // "iso img" "vhd" "wim swm" "xar" "xz txz" "z taz" "zip jar xpi odt ods docx xlsx"
 
 + (void) initialize {
+    trace("%@", getDescription(@[@"zipx"]));
+    trace("%@", getDescription(@[@"lzma", @"lzma86"]));
+    trace("%@", getDescription(@[@"bz2", @"bzip", @"bzip2", @"tbz2", @"tbz"]));
+    trace(@"apps(%@)=%@", @"zip", getApps(@[@"zip"]));
+
     NSArray* a = @[
-        @"zip",   @[@"public.zip-archive", @"com.winzip.zip-archive", @"com.pkware.zip-archive"],
-        @"zipx",  @[@"com.winzip.zipx-archive"],
-        @"rar",   @[@"com.rarlab.rar-archive"],
-        @"gz",    @[@"org.gnu.gnu-zip-archive"],
-        @"gzip",  @[@"org.gnu.gnu-zip-archive"],
-        @"tgz",   @[@"org.gnu.gnu-zip-tar-archive"],
-        @"tar",   @[@"public.tar-archive"],
-        @"bz2",   @[@"public.bzip2-archive"],
-        @"bzip",  @[@"public.bzip2-archive"],
-        @"bzip2", @[@"public.bzip2-archive"],
-        @"7z",    @[@"org.7-zip.7-zip-archive"],
-        @"xz",    @[@"org.tukaani.xz-archive"],
-        @"arj",   @[@"public.arj-archive"],
-        @"lzh",   @[@"public.lzh-archive"],
-        @"z",     @[@"com.public.z-archive"],
-        @"cab",   @[@"com.microsoft.cab-archive"],
-        @"chm",   @[@"com.microsoft.chm-archive"], // dyn.age80g4dr not known to Apple
-        @"ear",   @[@"com.sun.ear-archive"],
-        @"war",   @[@"com.sun.war-archive"],
-        @"cbr",   @[@"com.public.cbr-archive"],
-        @"cbz",   @[@"com.public.cbz-archive"],
-        @"cpio",  @[@"public.cpio-archive"]
+      @"zip",    @[@"com.pkware.zip-archive", @"public.zip-archive", @"com.winzip.zip-archive"],
+      @"zipx",   @[@"com.winzip.zipx-archive"],
+      @"rar",    @[@"com.rarlab.rar-archive"],
+      @"r00",    @[@"com.rarlab.rar-archive"],
+      @"gz",     @[@"org.gnu.gnu-zip-archive"],
+      @"gzip",   @[@"org.gnu.gnu-zip-archive"],
+      @"tgz",    @[@"org.gnu.gnu-zip-tar-archive"],
+      @"tpz",    @[@"org.gnu.gnu-zip-tar-archive"],
+      @"tar",    @[@"public.tar-archive"],
+      @"bz2",    @[@"public.bzip2-archive"],
+      @"bzip",   @[@"public.bzip2-archive"],
+      @"bzip2",  @[@"public.bzip2-archive"],
+      @"tbz2",   @[@"public.tar-bzip2-archive"],
+      @"tbz",    @[@"public.tar-bzip2-archive"],
+      @"7z",     @[@"org.7-zip.7-zip-archive"],
+      @"xz",     @[@"org.tukaani.xz-archive"],
+      @"txz",    @[@"org.tukaani.tar-xz-archive"],
+      @"arj",    @[@"public.arj-archive", @"cx.c3.arj-archive"],
+      @"lzh",    @[@"public.lzh-archive", @"public.archive.lha", @"com.winzip.lha-archive", @"cx.c3.lha-archive"],
+      @"lha",    @[@"public.lzh-archive", @"public.archive.lha", @"com.winzip.lha-archive", @"cx.c3.lha-archive"],
+      @"z",      @[@"public.z-archive", @"com.public.z-archive"],
+      @"taz",    @[@"cx.c3.compress-tar-archive"],
+      @"ear",    @[@"com.sun.ear-archive"],
+      @"war",    @[@"com.sun.web-application-archive", @"com.sun.war-archive"],
+      @"jar",    @[@"com.sun.java-archive"],
+      @"cbr",    @[@"public.cbr-archive", @"com.public.cbr-archive"],
+      @"cbz",    @[@"public.cbz-archive", @"com.public.cbz-archive"],
+      @"cpio",   @[@"public.cpio-archive"],
+      @"msi",    @[@"com.microsoft.msi-installer"],
+      @"deb",    @[@"org.debian.deb-archive"],
+      @"dmg",    @[@"com.apple.disk-image-udif"],
+      @"img",    @[@"com.apple.disk-image-ndif"],
+      @"iso",    @[@"public.iso-image"],
+      @"lzma",   @[@"org.tukaani.lzma-archive"],
+      @"lzma86", @[@"org.tukaani.lzma-archive"],
+      @"cab",    @[@"com.microsoft.cab-archive"],
+      @"chm",    @[@"com.microsoft.chm-archive"],
+      @"nsis",   @[@"com.nullsoft.nsis"],
+      @"exe",    @[@"com.microsoft.windows-executable"],
+      @"dll",    @[@"com.microsoft.windows-dynamic-link-library"],
+      @"rpm",    @[@"com.redhat.rpm-archive"],
+      @"xar",    @[@"com.apple.xar-archive"],
     ];
     int j = 0;
     NSMutableDictionary* e2u = [NSMutableDictionary dictionaryWithCapacity: a.count];
@@ -63,90 +89,86 @@ static NSArray* keys;
     ext2uti = e2u;
 
     NSArray* exts = @[
-                   @[@"zip", @"jar" /*, @"xpi", @"odt", @"ods", @"docx", @"xlsx" */],
-                   @"zipx",
+                   @[@"zip"],
+                   @[@"zipx"],
                    @[@"rar", @"r00"],
                    @[@"gz", @"gzip", @"tgz", @"tpz"],
-                   @"tar",
+                   @[@"tar"],
                    @[@"bz2", @"bzip", @"bzip2", @"tbz2", @"tbz"],
-                   @"7z",
+                   @[@"7z"],
                    @[@"xz", @"txz"],
-                   @"arj",
+                   @[@"arj"],
                    @[@"lzh", @"lha"],
                    @[@"z", @"taz"],
-                   @"cab",
-//                 @"chm",
-                   @"ear",
-                   @"war",
-                   @"cbr",
-                   @"cbz",
-                   @"cpio",
-//                 @"amp",
+                   @[@"ear"],
+                   @[@"war"],
+                   @[@"jar"],
+                   @[@"cbr"],
+                   @[@"cbz"],
+                   @[@"cpio"],
+//                 @[@"amp"],
                    @[ @"msi" /*, @"msp", @"doc", @"xls", @"ppt" */],
-                   @"deb",
-                   @"dmg",
-//                 @"cramfs",
-//                 @"elf",
-//                 @"fat",
-                   @"img",
-                   @"iso",
-//                 @"flv",
-//                 @"hfs",
+                   @[@"deb"],
+                   @[@"dmg"],
+//                 @[@"cramfs"],
+//                 @[@"elf"],
+//                 @[@"fat"],
+                   @[@"img"],
+                   @[@"iso"],
+//                 @[@"flv"],
+//                 @[@"hfs"],
                    @[@"lzma", @"lzma86"],
-//                 @"MachO",
-//                 @"mbr",
-//                 @"MsLZ",
-//                 @"mub",
-                   @"nsis",
-//                 @"ntfs",
+                   @[@"cab"],
+                   @[@"chm"],
+//                 @[@"xpi", @"odt", @"ods", @"docx", @"xlsx"],
+//                 @[@"MachO"],
+//                 @[@"mbr"],
+//                 @[@"MsLZ"],
+//                 @[@"mub"],
+                   @[@"nsis"],
+//                 @[@"ntfs"],
                    @[@"exe", @"dll" /*, @"sys"*/],
 //                 @[@"ppmd", @"pmd"],
-//                 @"squashfs",
-//                 @"swf",
-                   @"rpm",
-//                 @"udf",
-//                 @"vhd",
+//                 @[@"squashfs"],
+//                 @[@"swf"],
+                   @[@"rpm"],
+//                 @[@"udf"],
+//                 @[@"vhd"],
 //                 @[@"wim", @"swm"],
-                   @"xar"];
+                   @[@"xar"]];
     for (int i = 0; i < exts.count; i++) {
-        NSObject* o = exts[i];
-        if ([o isKindOfClass: NSString.class]) {
-            trace("\n------------");
-            NSString* ext = exts[i];
+        NSArray* na = exts[i];
+        for (int j = 0; j < na.count; j++) {
+            NSString* ext = na[j];
             CFArrayRef at = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
             NSArray* utis = (__bridge NSArray*)at;
+            NSString* desc = getDescription(exts[i]);
+            assert(desc != null);
+            NSMutableDictionary* us = [NSMutableDictionary dictionaryWithCapacity: 32];
+            NSArray* ua = ext2uti[ext];
+            for (NSString* u in ua) {
+                us[u] = @true;
+            }
             for (int j = 0; j < utis.count; j++) {
-                CFStringRef desc = UTTypeCopyDescription((__bridge CFStringRef)utis[j]);
                 CFStringRef mime = UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)utis[j], kUTTagClassMIMEType);
-                trace("%@=%@ %@ %@", ext, utis[j], desc, mime);
+//              trace("%@=%@ %@ %@", ext, utis[j], desc, mime);
+                if (![utis[j] hasPrefix: @"dyn."]) {
+                    us[utis[j]] = @true;
+                }
                 if (mime != null) {
                     CFRelease(mime);
                 }
-                if (desc != null) {
-                    CFRelease(desc);
-                }
             }
             CFRelease(at);
-        } else {
-            NSArray* na = exts[i];
-            trace("\n------------");
-            for (int j = 0; j < na.count; j++) {
-                NSString* ext = na[j];
-                CFArrayRef at = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
-                NSArray* utis = (__bridge NSArray*)at;
-                for (int j = 0; j < utis.count; j++) {
-                    CFStringRef desc = UTTypeCopyDescription((__bridge CFStringRef)utis[j]);
-                    CFStringRef mime = UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)utis[j], kUTTagClassMIMEType);
-                    trace("%@=%@ %@ %@", ext, utis[j], desc, mime);
-                    if (mime != null) {
-                        CFRelease(mime);
-                    }
-                    if (desc != null) {
-                        CFRelease(desc);
-                    }
+            NSString* res = @"";
+            for (NSString* k in us.allKeys) {
+                if (res.length > 0) {
+                    res = [NSString stringWithFormat: @"%@, @\"%@\"", res, k];
+                } else {
+                    res = [NSString stringWithFormat: @"@\"%@\"", k];
                 }
-                CFRelease(at);
             }
+            NSLog(@"@\"%@\", @[%@],", ext, res);
         }
     }
     [ZGApp registerApp: true];
@@ -220,10 +242,6 @@ static NSArray* keys;
             trace("LSCopyDefaultRoleHandlerForContentType=%@ URLForApplicationWithBundleIdentifier=%@", drh, appURL);
             CFRelease(drh);
 
-
-
-//          NSImage* icns = [NSWorkspace.sharedWorkspace iconForFileType: uti];
-
             NSArray* desktop = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, true);
             [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
             NSString* fullPath = @"/Users/leo/Desktop/quincy-absolutenoobcocoacheckboxes-fb3537315428.zip";
@@ -239,38 +257,6 @@ static NSArray* keys;
             BOOL b = [NSWorkspace.sharedWorkspace  getInfoForFile: fullPath application: &appName type: &type];
             trace("getInfoForFile=%d %@ %@", b, type, appName);
         }
-/*
-        char ** e = environ;
-        char * a[2];
-        a[0] = "";
-        a[1] = 0;
-        //r = system("/usr/bin/osascript /Users/leo/3ipeg/zipeg-mac/zipeg-ns/Resources/fnotify.scpt");
-        //trace("system=%d", r);
-        NSArray* desktop = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, true);
-        [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
-//      FSEvents?
-*/
-#if 1
-        for (NSString* uti in utis) {
-            CFStringRef ct = (__bridge CFStringRef)uti;
-            int role = kLSRolesAll; // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
-            CFArrayRef cfa = LSCopyAllRoleHandlersForContentType(ct, role);
-            NSArray* nsa = [NSArray arrayWithArray: (__bridge NSArray *)(cfa)];
-            CFRelease(cfa);
-            trace("uti=%@ bundles=%@", uti, nsa);
-            for (NSString* bi in nsa) {
-                NSString* path = [NSWorkspace.sharedWorkspace absolutePathForAppBundleWithIdentifier: bi];
-                NSBundle* b = [NSBundle bundleWithPath: path];
-                NSDictionary* bid = [b localizedInfoDictionary];
-                NSImage* icon = [NSWorkspace.sharedWorkspace iconForFile: path];
-                NSString* name = bid[@"CFBundleDisplayName"];
-                if (name == null) {
-                    name = path.lastPathComponent.stringByDeletingPathExtension;
-                }
-                trace("\n\n---------\n*** %@ ***\npath=%@\ndisplay=%@\nicon=%@\n%@", bi, path, name, icon, bid);
-            }
-        }
-#endif
         NSScrollView* sv = NSScrollView.new;
         sv.frame = NSMakeRect(0, 0, width, 390);
         sv.documentView = _tableView;
@@ -365,6 +351,84 @@ static NSArray* keys;
         _state[uti] = @(!b.boolValue);
     }
     self.view.needsDisplay = true;
+}
+
+static NSString* getDescription(NSArray* exts) {
+    assert(exts != null && exts.count > 0);
+    CFStringRef desc = null;
+    for (NSString* ext in exts) {
+        CFArrayRef utis = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
+        if (utis != null) {
+            for (int j = 0; j < CFArrayGetCount(utis) && desc == null; j++) {
+                desc = UTTypeCopyDescription((CFStringRef)CFArrayGetValueAtIndex(utis,j));
+            }
+            CFRelease(utis);
+        }
+        if (desc != null) {
+            break;
+        }
+    }
+    if (desc != null) {
+        return (__bridge_transfer NSString*)desc;
+    }
+    // Plan B - no localized description:
+    // public.zip-archive "Zip-архив" (base)
+    // public.z-archive "Архив Z" (tested with)
+    // com.winzip.zipx-archive "WinZip Zipx Archive" (tested with)
+    desc = UTTypeCopyDescription((__bridge CFStringRef)@"public.zip-archive");
+    NSString* ext = exts[0];
+    NSString* res = null;
+    if (desc != null) {
+        res = (__bridge_transfer NSString*)desc;
+        NSString* lc = res.lowercaseString;
+        int ix = [lc indexOf: @"zip"];
+        if (ix >= 0) {
+            if (ix == 0) {
+                res = [NSString stringWithFormat:@"%@%@", ext, [res substringFrom: 3]];
+            } else if (ix + 3 == lc.length) {
+                res = [NSString stringWithFormat:@"%@%@", [res substringFrom: 0 to: ix], ext];
+            } else {
+                res = [NSString stringWithFormat:@"%@%@%@", [res substringFrom: 0 to: ix], ext, [res substringFrom: ix + 3]];
+            }
+        } else {
+            res = [NSString stringWithFormat:@"%@ archive", ext];
+        }
+    } else {
+        res = [NSString stringWithFormat:@"%@ archive", ext];
+    }
+    return res;
+}
+
+static NSDictionary* getApps(NSArray* exts) {
+    NSMutableDictionary* res = [NSMutableDictionary dictionaryWithCapacity: exts.count * 16];
+    for (NSString* ext in exts) {
+        CFArrayRef cts = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
+        if (cts != null) {
+            for (int j = 0; j < CFArrayGetCount(cts); j++) {
+                CFStringRef ct = (CFStringRef)CFArrayGetValueAtIndex(cts, j);
+                CFArrayRef rhs = LSCopyAllRoleHandlersForContentType(ct, kLSRolesAll);
+                for (int k = 0; k < CFArrayGetCount(rhs); k++) {
+                    CFStringRef rh = (CFStringRef)CFArrayGetValueAtIndex(rhs, k);
+                    NSString* bi = [NSString stringWithFormat: @"%@", (__bridge NSString*)rh];
+                    NSString* path = [NSWorkspace.sharedWorkspace absolutePathForAppBundleWithIdentifier: bi];
+                    NSBundle* b = [NSBundle bundleWithPath: path];
+                    if (path != null && b != null) {
+                        NSDictionary* bid = [b localizedInfoDictionary];
+                        NSImage* icon = [NSWorkspace.sharedWorkspace iconForFile: path];
+                        NSString* name = bid[@"CFBundleDisplayName"];
+                        if (name == null) {
+                            name = path.lastPathComponent.stringByDeletingPathExtension;
+                        }
+                        if (name != null && icon != null) {
+                            res[bi] = @{ @"bundle": b, @"icon": icon, @"name": name, @"path": path };
+                        }
+                    }
+                }
+            }
+            CFRelease(cts);
+        }
+    }
+    return res;
 }
 
 @end

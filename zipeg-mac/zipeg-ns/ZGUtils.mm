@@ -287,6 +287,10 @@ BOOL isEqual(NSObject* o1, NSObject* o2) {
     }
 }
 
+- (NSString*) substringFrom: (int) from {
+    return [self substringFrom: from to: (int) self.length];
+}
+
 + (NSString*) stringWithFileSystemRepresentation: (const char*) utf8 {
     return [NSFileManager.defaultManager stringWithFileSystemRepresentation: utf8 length: strlen(utf8)];
 }
