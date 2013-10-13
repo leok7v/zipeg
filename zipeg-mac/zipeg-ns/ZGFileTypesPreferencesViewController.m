@@ -6,26 +6,21 @@
 @interface ZGFileTypesPreferencesViewController() {
     NSTextField* _textField;
     NSTableView* _tableView;
-    NSMutableDictionary* _state; // uti->bool
 }
 @end
 
 @implementation ZGFileTypesPreferencesViewController
 
-static NSDictionary* ext2uti;
-static NSArray* keys;
-
-// "amp", "bz2 bzip2 tbz2 tbz" "msi msp doc xls ppt" "cramfs" "deb" "dmg" "elf" "fat img" "flv" "gz gzip tgz tpz"
-// "hfs" "iso img" "lzh lha" "lzma lzma86" "MachO" "mbr" "MsLZ"
-// "mub" "nsis" "ntfs img" "exe dll sys" "ppmd pmd" "rar" "r00" "rpm" "001" "squashfs" "swf" "tar" "udf"
-// "iso img" "vhd" "wim swm" "xar" "xz txz" "z taz" "zip jar xpi odt ods docx xlsx"
+static NSDictionary* ext2uti; // @"zip" -> NSDictionary.allKeys UTIs -> @true
+static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
 
 + (void) initialize {
+/*
     trace("%@", getDescription(@[@"zipx"]));
     trace("%@", getDescription(@[@"lzma", @"lzma86"]));
     trace("%@", getDescription(@[@"bz2", @"bzip", @"bzip2", @"tbz2", @"tbz"]));
     trace(@"apps(%@)=%@", @"zip", getApps(@[@"zip"]));
-
+*/
     NSArray* a = @[
       @"zip",    @[@"com.pkware.zip-archive", @"public.zip-archive", @"com.winzip.zip-archive"],
       @"zipx",   @[@"com.winzip.zipx-archive"],
@@ -70,107 +65,54 @@ static NSArray* keys;
       @"rpm",    @[@"com.redhat.rpm-archive"],
       @"xar",    @[@"com.apple.xar-archive"],
     ];
-    int j = 0;
     NSMutableDictionary* e2u = [NSMutableDictionary dictionaryWithCapacity: a.count];
-    NSMutableArray* k = [NSMutableArray arrayWithCapacity: a.count / 2];
     for (int i = 0; i < a.count; i += 2) {
-        CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)a[i], null);
-        CFRelease(uti);
         CFArrayRef at = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)a[i], null);
-        NSArray* na = (__bridge NSArray*)at;
-        for (int j = 0; j < na.count; j++) {
-            trace("%@=%@", a[i], na[j]);
+        CFIndex n = CFArrayGetCount(at);
+        NSArray* ai1 = a[i + 1];
+        NSMutableDictionary* us = [NSMutableDictionary dictionaryWithCapacity: (n + ai1.count) * 2];
+        for (int j = 0; j < n; j++) {
+            CFStringRef cfs = CFArrayGetValueAtIndex(at, j);
+            us[(__bridge NSString*)cfs] = @true;
+        }
+        for (NSString* u in ai1) {
+            us[u] = @true;
         }
         CFRelease(at);
-        k[j++] = a[i];
-        e2u[a[i]] = a[i + 1];
+        e2u[a[i]] = us;
     }
-    keys = k; // to maintain order of extensions (most frequently used on top)
     ext2uti = e2u;
-
-    NSArray* exts = @[
-                   @[@"zip"],
-                   @[@"zipx"],
-                   @[@"rar", @"r00"],
-                   @[@"gz", @"gzip", @"tgz", @"tpz"],
-                   @[@"tar"],
-                   @[@"bz2", @"bzip", @"bzip2", @"tbz2", @"tbz"],
-                   @[@"7z"],
-                   @[@"xz", @"txz"],
-                   @[@"arj"],
-                   @[@"lzh", @"lha"],
-                   @[@"z", @"taz"],
-                   @[@"ear"],
-                   @[@"war"],
-                   @[@"jar"],
-                   @[@"cbr"],
-                   @[@"cbz"],
-                   @[@"cpio"],
-//                 @[@"amp"],
-                   @[ @"msi" /*, @"msp", @"doc", @"xls", @"ppt" */],
-                   @[@"deb"],
-                   @[@"dmg"],
-//                 @[@"cramfs"],
-//                 @[@"elf"],
-//                 @[@"fat"],
-                   @[@"img"],
-                   @[@"iso"],
-//                 @[@"flv"],
-//                 @[@"hfs"],
-                   @[@"lzma", @"lzma86"],
-                   @[@"cab"],
-                   @[@"chm"],
-//                 @[@"xpi", @"odt", @"ods", @"docx", @"xlsx"],
-//                 @[@"MachO"],
-//                 @[@"mbr"],
-//                 @[@"MsLZ"],
-//                 @[@"mub"],
-                   @[@"nsis"],
-//                 @[@"ntfs"],
-                   @[@"exe", @"dll" /*, @"sys"*/],
-//                 @[@"ppmd", @"pmd"],
-//                 @[@"squashfs"],
-//                 @[@"swf"],
-                   @[@"rpm"],
-//                 @[@"udf"],
-//                 @[@"vhd"],
-//                 @[@"wim", @"swm"],
-                   @[@"xar"]];
-    for (int i = 0; i < exts.count; i++) {
-        NSArray* na = exts[i];
-        for (int j = 0; j < na.count; j++) {
-            NSString* ext = na[j];
-            CFArrayRef at = UTTypeCreateAllIdentifiersForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
-            NSArray* utis = (__bridge NSArray*)at;
-            NSString* desc = getDescription(exts[i]);
-            assert(desc != null);
-            NSMutableDictionary* us = [NSMutableDictionary dictionaryWithCapacity: 32];
-            NSArray* ua = ext2uti[ext];
-            for (NSString* u in ua) {
-                us[u] = @true;
-            }
-            for (int j = 0; j < utis.count; j++) {
-                CFStringRef mime = UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)utis[j], kUTTagClassMIMEType);
-//              trace("%@=%@ %@ %@", ext, utis[j], desc, mime);
-                if (![utis[j] hasPrefix: @"dyn."]) {
-                    us[utis[j]] = @true;
-                }
-                if (mime != null) {
-                    CFRelease(mime);
-                }
-            }
-            CFRelease(at);
-            NSString* res = @"";
-            for (NSString* k in us.allKeys) {
-                if (res.length > 0) {
-                    res = [NSString stringWithFormat: @"%@, @\"%@\"", res, k];
-                } else {
-                    res = [NSString stringWithFormat: @"@\"%@\"", k];
-                }
-            }
-            NSLog(@"@\"%@\", @[%@],", ext, res);
-        }
-    }
+    exts = @[
+      @[@"zip"],
+      @[@"zipx"],
+      @[@"rar", @"r00"],
+      @[@"gz", @"gzip", @"tgz", @"tpz"],
+      @[@"tar"],
+      @[@"bz2", @"bzip", @"bzip2", @"tbz2", @"tbz"],
+      @[@"7z"],
+      @[@"xz", @"txz"],
+      @[@"arj"],
+      @[@"lzh", @"lha"],
+      @[@"z", @"taz"],
+      @[@"ear"],
+      @[@"war"],
+      @[@"jar"],
+      @[@"cbr"],
+      @[@"cbz"],
+      @[@"cpio"],
+      @[ @"msi"],
+      @[@"deb"],
+      @[@"dmg"],
+      @[@"img"],
+      @[@"iso"],
+      @[@"lzma", @"lzma86"],
+      @[@"cab"],
+      @[@"chm"],
+      @[@"nsis"],
+      @[@"exe", @"dll"],
+      @[@"rpm"],
+      @[@"xar"]
+    ];
     [ZGApp registerApp: true];
 }
 
@@ -179,42 +121,48 @@ static NSArray* keys;
     if (self != null) {
         alloc_count(self);
         NSDictionary* s = [NSUserDefaults.standardUserDefaults dictionaryForKey: @"com.zipeg.filetypes"];
-        if (s != null && s.count == keys.count) {
-            _state = [NSMutableDictionary dictionaryWithDictionary: s];
-        } else {
-            _state = [NSMutableDictionary dictionaryWithCapacity: keys.count * 2];
-            for (int i = 0; i < keys.count; i++) {
-                NSArray* utis = ext2uti[keys[i]];
-                for (NSString* uti in utis) {
-                     _state[uti] = @true;
-                }
-            }
-            [NSUserDefaults.standardUserDefaults setObject: _state forKey: @"com.zipeg.filetypes"];
-        }
+        [NSUserDefaults.standardUserDefaults setObject: s forKey: @"com.zipeg.filetypes"];
+//???
         NSView* v = NSView.new;
         v.autoresizesSubviews = true;
-        v.frameSize = NSMakeSize(width, 390);
+        int width2 = width + 30;
+        v.frameSize = NSMakeSize(width2, 390);
 
         _tableView = NSTableView.new;
-        _tableView.frame = NSMakeRect(0, 0, width, 390);
+        _tableView.frame = NSMakeRect(0, 0, width2, 390);
+        _tableView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleNone;
 
         NSTableColumn* tc0 = NSTableColumn.new;
-        tc0.width = 22;
-        NSButtonCell* cbx = NSButtonCell.new;
-        cbx.buttonType = NSSwitchButton;
-        tc0.dataCell = cbx;
+        tc0.width = 180;
+        NSTextFieldCell* tfc = NSTextFieldCell.new;
+        tfc.usesSingleLineMode = true;
+        tfc.wraps = false;
+        tfc.scrollable = true;
+        tc0.dataCell = tfc;
+        tfc.alignment = NSRightTextAlignment;
         [_tableView addTableColumn: tc0];
 
         NSTableColumn* tc1 = NSTableColumn.new;
-        tc1.width = width - tc0.width - 4;
-        NSTextFieldCell* tfc = NSTextFieldCell.new;
-        tc1.dataCell = tfc;
+        tc1.width = 150;
+        NSButtonCell* cbx = NSPopUpButtonCell.new;
+        tc1.dataCell = cbx;
         [_tableView addTableColumn: tc1];
+
+        NSTableColumn* tc2 = NSTableColumn.new;
+        tc2.width = width2 - tc0.width - tc1.width - 8;
+        tfc = NSTextFieldCell.new;
+        tfc.wraps = false;
+        tfc.scrollable = true;
+//        tfc.usesSingleLineMode = true;
+        tc2.dataCell = tfc;
+        [_tableView addTableColumn: tc2];
 
         _tableView.dataSource = self;
         _tableView.delegate = self;
         _tableView.headerView = null;
         _tableView.backgroundColor = NSColor.clearColor;
+
+        _tableView.rowHeight = 25;
 
         NSArray* utis = ext2uti[@"zip"];
         [self alwaysOpenFile];
@@ -258,7 +206,7 @@ static NSArray* keys;
             trace("getInfoForFile=%d %@ %@", b, type, appName);
         }
         NSScrollView* sv = NSScrollView.new;
-        sv.frame = NSMakeRect(0, 0, width, 390);
+        sv.frame = NSMakeRect(0, 0, width2, 390);
         sv.documentView = _tableView;
         sv.hasVerticalScroller = true;
         sv.hasHorizontalScroller = false;
@@ -314,15 +262,25 @@ static NSArray* keys;
 }
 
 - (NSInteger) numberOfRowsInTableView: (NSTableView*) tableView {
-    return keys.count;
+    return exts.count;
 }
 
 - (id)tableView: (NSTableView*) tv objectValueForTableColumn: (NSTableColumn*) tc row:(NSInteger) row {
     if (tc == tv.tableColumns[0]) {
-        NSArray* utis = ext2uti[keys[row]];
-        return _state[utis[0]];
+        NSString* s = @"";
+        for (NSString* e in exts[row]) {
+            if (s.length == 0) {
+                s = [NSString stringWithString: e];
+            } else {
+                s = [NSString stringWithFormat: @"%@, %@", s, e];
+            }
+        }
+        return [NSString stringWithFormat: @"%@:", s];
+    } else if (tc == tv.tableColumns[1]) {
+        NSDictionary* utis = ext2uti[exts[row]];
+        return utis;
     } else {
-        return keys[row];
+        return getDescription(exts[row]);
     }
 }
 
@@ -330,11 +288,27 @@ static NSArray* keys;
     forTableColumn: (NSTableColumn*) column row: (NSInteger) row {
     NSObject* o = [self tableView: v objectValueForTableColumn: column row: row];
     if ([cell isKindOfClass: NSButtonCell.class]) {
-        NSButtonCell* cbx = (NSButtonCell*)cell;
+        NSPopUpButtonCell* cbx = (NSPopUpButtonCell*)cell;
+        NSMenu *m = NSMenu.new;
+        NSMenuItem *it = [NSMenuItem.alloc initWithTitle: @"bla" action: null keyEquivalent:@""];
+        it.image = ZGApp.appIcon16x16;
+        it.tag = 123;
+        [m insertItem: it atIndex: m.itemArray.count];
+        it = [NSMenuItem.alloc initWithTitle: @"foo" action: null keyEquivalent:@""];
+        it.image = ZGApp.appIcon16x16;
+        it.tag = 231;
+        [m insertItem: it atIndex: m.itemArray.count];
+        it = [NSMenuItem.alloc initWithTitle: @"bar" action: null keyEquivalent:@""];
+        it.tag = 321;
+        it.image = ZGApp.appIcon16x16;
+        [m insertItem: it atIndex: m.itemArray.count];
+        [cbx setMenu: m];
+/*
         cbx.state = isEqual(o, @true) ? NSOnState : NSOffState;
         cbx.title = null;
         cbx.action = @selector(check:);
         cbx.target = self;
+*/
     } else if ([cell isKindOfClass: NSTextFieldCell.class]) {
         NSTextFieldCell* t = (NSTextFieldCell*)cell;
         t.stringValue = o.description;
@@ -343,12 +317,27 @@ static NSArray* keys;
     }
 }
 
+/*
+- (void)drawSelectionInRect:(NSRect)dirtyRect {
+    if (self.selectionHighlightStyle != NSTableViewSelectionHighlightStyleNone) {
+        NSRect selectionRect = NSInsetRect(self.bounds, 2.5, 2.5);
+        [[NSColor colorWithCalibratedWhite:.65 alpha:1.0] setStroke];
+        [[NSColor colorWithCalibratedWhite:.82 alpha:1.0] setFill];
+        NSBezierPath *selectionPath = [NSBezierPath bezierPathWithRoundedRect:selectionRect xRadius:6 yRadius:6];
+        [selectionPath fill];
+        [selectionPath stroke];
+    }
+}
+*/
+
 - (void) check: (id) sender {
     trace("check %ld", _tableView.selectedRow);
-    NSArray* utis = ext2uti[keys[_tableView.selectedRow]];
-    for (NSString* uti in utis) {
+    NSDictionary* utis = ext2uti[exts[_tableView.selectedRow]];
+    for (NSString* uti in utis.allKeys) {
+/*
         NSNumber* b = _state[uti];
         _state[uti] = @(!b.boolValue);
+*/
     }
     self.view.needsDisplay = true;
 }
