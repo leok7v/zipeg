@@ -34,15 +34,11 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
                      @"com.zipeg.preferences.sortFoldersFirst");
         y = checkBox(v, y, @"Archive window:", @" close after unpack", null,
                      @"com.zipeg.preferences.closeAfterUnpack");
-        y = checkBox(v, y, @"Delete items:", @" using Trash Bin",
-                     @"DANGER: !!! ☠ if you uncheck this option you will accept full responsibility "
-                     @"of losing data when the items are irrecoverably deleted ☠ !!!",
-                     @"com.zipeg.preferences.useTrashBin");
         y = checkBox(v, y, @"Simplified:", @" toolbar",
                      @"",
                      @"com.zipeg.preferences.simplifiedToolbar");
         y = checkBox(v, y, @"Outline view:", @" white background",
-                     @"instead of gradient for tree view",
+                     @"white instead of gradient background for tree view",
                      @"com.zipeg.preferences.whiteOutline");
         y = checkBox(v, y, @"Detect encoding:", @" automatically",
                      @"Zipeg will attempt to detect national alphabet for item names encoding. "
@@ -51,6 +47,10 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
                      @"com.zipeg.preferences.encoding.detect");
         int w = width - middle - margin * 2;
         y = comboBox(v, y, @"Default Encoding:", keys, w * 3 / 4, @"com.zipeg.preferences.encoding");
+        y = checkBox(v, y, @"Delete items:", @" using Trash Bin",
+                     @"DANGER: !!! ☠ if you uncheck this option you will accept full responsibility "
+                     @"of losing data when the items are irrecoverably deleted ☠ !!!",
+                     @"com.zipeg.preferences.useTrashBin");
         self.view = v;
     }
     return self;

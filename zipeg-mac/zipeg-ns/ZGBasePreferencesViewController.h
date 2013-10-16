@@ -12,7 +12,7 @@ enum {
 
 + (NSFont*) font;
 
-NSTextView* createLabel(NSView* parent, CGFloat y, NSString* labelText);
+CGFloat labelNoteAndExtra(NSView* parent, CGFloat y, NSString* label, NSString* note, NSString* extra);
 CGFloat checkBox(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra, NSString* prefs);
 CGFloat radioButtons(NSView* parent, CGFloat y, NSString* label, NSArray* texts, NSString* prefs);
 CGFloat comboBox(NSView* parent, CGFloat y, NSString* label, NSArray* texts, CGFloat width, NSString* prefs);

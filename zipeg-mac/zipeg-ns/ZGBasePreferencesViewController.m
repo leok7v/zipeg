@@ -74,7 +74,7 @@ static NSString* _enameUTF8;
     return _font;
 }
 
-void addChild(NSView* parent, NSView* child) {
+static void addChild(NSView* parent, NSView* child) {
     NSView* last = parent.subviews != null ? parent.subviews[parent.subviews.count - 1] : null;
     [parent addSubview: child];
     if (child.canBecomeKeyView && last != null) {
@@ -82,8 +82,9 @@ void addChild(NSView* parent, NSView* child) {
     }
 }
 
-NSTextView* createLabel(NSView* parent, CGFloat y, NSString* labelText) {
+static NSTextView* createLabel(NSView* parent, CGFloat y, NSString* labelText) {
     NSTextView* label = NSTextView.new;
+    label.autoresizingMask = NSViewMinYMargin;
     label.font = _font;
     CGFloat h = _font.boundingRectForFont.size.height;
     label.string = labelText;
@@ -96,9 +97,9 @@ NSTextView* createLabel(NSView* parent, CGFloat y, NSString* labelText) {
     return label;
 }
 
-
 static CGFloat extraText(NSView* parent, CGFloat y, CGFloat h, NSString* extra) {
     NSTextView* tv = NSTextView.new;
+    tv.autoresizingMask = NSViewMinYMargin;
     tv.string = extra;
     tv.editable = false;
     tv.selectable = false;
@@ -117,10 +118,26 @@ static CGFloat extraText(NSView* parent, CGFloat y, CGFloat h, NSString* extra) 
     return y;
 }
 
+CGFloat labelNoteAndExtra(NSView* parent, CGFloat y, NSString* label, NSString* note, NSString* extra) {
+    NSText* lb = createLabel(parent, y, label);
+    CGFloat h = lb.frame.size.height;
+    NSText* nt = createLabel(parent, y, note);
+    nt.alignment = NSLeftTextAlignment;
+    nt.font = _font;
+    nt.frame = NSMakeRect(middle + 20, y - 1, parent.frame.size.width - middle - margin, h);
+    addChild(parent, nt);
+    if (extra != null && extra.length > 0) {
+        y -= h * 1.5;
+        y = extraText(parent, lb.frame.origin.y, h, extra);
+    }
+    return y;
+}
+
 CGFloat checkBox(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra, NSString* prefs) {
     NSText* lb = createLabel(parent, y, label);
     CGFloat h = lb.frame.size.height;
     NSButton* cbx = ZGKeyButton.new;
+    cbx.autoresizingMask = NSViewMinYMargin;
     cbx.font = _font;
     cbx.buttonType = NSSwitchButton;
     cbx.title = checkbox;
@@ -142,10 +159,11 @@ CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, N
     NSText* lb = createLabel(parent, y, label);
     CGFloat h = lb.frame.size.height;
     NSButton* btn = NSButton.new;
+    btn.autoresizingMask = NSViewMinYMargin;
     btn.font = _font;
     btn.buttonType = NSMomentaryPushInButton;
     btn.title = checkbox;
-    btn.frame = NSMakeRect(middle, y - 6, width, h);
+    btn.frame = NSMakeRect(middle + 24, y - 6, width, h);
     NSButtonCell* c = btn.cell;
     c.wraps = false;
     c.scrollable = false;
@@ -181,6 +199,7 @@ CGFloat radioButtons(NSView* parent, CGFloat y, NSString* label, NSArray* texts,
                                      numberOfRows: texts.count
                                   numberOfColumns: 1];
     mx.cellSize = NSMakeSize(max, cell.cellSize.height);
+    mx.autoresizingMask = NSViewMinYMargin;
     addChild(parent, mx);
     for (int i = 0; i < texts.count; i++) {
         NSCell* c = mx.cells[i];
@@ -195,6 +214,7 @@ CGFloat radioButtons(NSView* parent, CGFloat y, NSString* label, NSArray* texts,
 CGFloat comboBox(NSView* parent, CGFloat y, NSString* label, NSArray* texts, CGFloat width, NSString* prefs) {
     NSText* lb = createLabel(parent, y, label);
     NSComboBox* cbx = ZGKeyComboBox.new;
+    cbx.autoresizingMask = NSViewMinYMargin;
     NSRect r = NSMakeRect(middle, y - 4, width, cbx.itemHeight + 4);
     cbx.frame = r;
     cbx.completes = true;
@@ -222,6 +242,7 @@ CGFloat popUpButton(NSView* parent, CGFloat y, NSString* label, NSArray* texts, 
     NSText* lb = createLabel(parent, y, label);
     int w = parent.frame.size.width - middle - margin * 2;
     NSPopUpButton* btn = ZGKeyPopUpButton.new;
+    btn.autoresizingMask = NSViewMinYMargin;
     btn.title = texts[0];
     NSButtonCell* bc = btn.cell;
     NSRect r = NSMakeRect(middle, y - 4, w / 2, bc.cellSize.height);

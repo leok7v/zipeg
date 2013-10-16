@@ -4,8 +4,10 @@
 #import "ApplicationServices/ApplicationServices.h"
 
 @interface ZGFileTypesPreferencesViewController() {
-    NSTextField* _textField;
     NSTableView* _tableView;
+    NSButton* _more;
+    int _rows;
+    enum { ROWS = 6 };
 }
 @end
 
@@ -84,15 +86,15 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
     ext2uti = e2u;
     exts = @[
       @[@"zip"],
-      @[@"zipx"],
       @[@"rar", @"r00"],
+      @[@"7z"],
+      @[@"zipx"],
+      @[@"lzh", @"lha"],
+      @[@"arj"],
       @[@"gz", @"gzip", @"tgz", @"tpz"],
       @[@"tar"],
       @[@"bz2", @"bzip", @"bzip2", @"tbz2", @"tbz"],
-      @[@"7z"],
       @[@"xz", @"txz"],
-      @[@"arj"],
-      @[@"lzh", @"lha"],
       @[@"z", @"taz"],
       @[@"ear"],
       @[@"war"],
@@ -125,12 +127,13 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
 //???
         NSView* v = NSView.new;
         v.autoresizesSubviews = true;
-        int width2 = width + 30;
-        v.frameSize = NSMakeSize(width2, 390);
+        v.autoresizingMask = NSViewHeightSizable | NSViewMinYMargin;
+        v.frameSize = NSMakeSize(width, 285);
 
         _tableView = NSTableView.new;
-        _tableView.frame = NSMakeRect(0, 0, width2, 390);
+        _tableView.frame = NSMakeRect(0, 0, width, 890);
         _tableView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleNone;
+        _rows = ROWS;
 
         NSTableColumn* tc0 = NSTableColumn.new;
         tc0.width = 180;
@@ -149,7 +152,7 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         [_tableView addTableColumn: tc1];
 
         NSTableColumn* tc2 = NSTableColumn.new;
-        tc2.width = width2 - tc0.width - tc1.width - 8;
+        tc2.width = width - tc0.width - tc1.width - 8;
         tfc = NSTextFieldCell.new;
         tfc.wraps = false;
         tfc.scrollable = true;
@@ -172,17 +175,17 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
             CFStringRef id = (__bridge CFStringRef)(NSBundle.mainBundle.bundleIdentifier);
             OSStatus r = noErr;
             r = LSSetHandlerOptionsForContentType(ct, kLSHandlerOptionsIgnoreCreator);
-            trace("LSSetHandlerOptionsForContentType %@ %d", uti, r);
+            // trace("LSSetHandlerOptionsForContentType %@ %d", uti, r);
             // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
             int roles = kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell;
             r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
-            trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
+            // trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
             roles = kLSRolesAll;
             r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
-            trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
+            // trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
             roles = kLSRolesEditor;
             r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
-            trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
+            // trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
 
             CFStringRef drh = LSCopyDefaultRoleHandlerForContentType(ct, kLSRolesNone);
             NSString* bi = (__bridge NSString *)(drh);
@@ -205,8 +208,14 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
             BOOL b = [NSWorkspace.sharedWorkspace  getInfoForFile: fullPath application: &appName type: &type];
             trace("getInfoForFile=%d %@ %@", b, type, appName);
         }
+        NSFont* font = ZGBasePreferencesViewController.font;
+        CGFloat h = font.boundingRectForFont.size.height;
+        CGFloat y = v.frame.size.height - h;
+        y = button(v, y, @"", @"More ", @"show/hide advanced file types in the scrollable list below", self, @selector(moreTypes));
+        y = labelNoteAndExtra(v, y, @"", @"Open With:", @"files of following types will be opened with selected application");
+        _more = (NSButton*)[v findViewByClassName: @"NSButton"];
         NSScrollView* sv = NSScrollView.new;
-        sv.frame = NSMakeRect(0, 0, width2, 390);
+        sv.frame = NSMakeRect(0, h * 0.5, width, y + h * 0.5);
         sv.documentView = _tableView;
         sv.hasVerticalScroller = true;
         sv.hasHorizontalScroller = false;
@@ -215,13 +224,27 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         sv.autohidesScrollers = false;
         sv.scrollsDynamically = true; // must be true
         sv.drawsBackground = false;
-        v.subviews = @[ sv ];
+        [v addSubview: sv];
         self.view = v;
         // dumpViews(self.view);
     }
     return self;
 }
 
+- (void) dealloc {
+    dealloc_count(self);
+}
+
+- (void) moreTypes {
+    if (_rows == exts.count) {
+        _more.title = @"More";
+        _rows = ROWS;
+    } else {
+        _more.title = @"Less";
+        _rows = (int)exts.count;
+    }
+    [_tableView reloadData];
+}
 
 + (BOOL) setMyselfAsDefaultApplicationForFileExtension: (NSString*) ext {
     CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
@@ -240,10 +263,6 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
     CFRelease(type);
 }
 
-- (void) dealloc {
-    dealloc_count(self);
-}
-
 - (NSString*) ident {
     return @"FileTypesPreferences";
 }
@@ -257,15 +276,15 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
 }
 
 - (NSView *) initialKeyView {
-    NSInteger focusedControlIndex = [[NSApp valueForKeyPath: @"delegate.focusedAdvancedControlIndex"] integerValue];
-    return (focusedControlIndex == 0 ? _textField : _tableView);
+    self.view.window.contentMaxSize = NSMakeSize(width, 890);
+    return _tableView;
 }
 
 - (NSInteger) numberOfRowsInTableView: (NSTableView*) tableView {
-    return exts.count;
+    return _rows;
 }
 
-- (id)tableView: (NSTableView*) tv objectValueForTableColumn: (NSTableColumn*) tc row:(NSInteger) row {
+- (id) tableView: (NSTableView*) tv objectValueForTableColumn: (NSTableColumn*) tc row:(NSInteger) row {
     if (tc == tv.tableColumns[0]) {
         NSString* s = @"";
         for (NSString* e in exts[row]) {
@@ -316,19 +335,6 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         assert(false);
     }
 }
-
-/*
-- (void)drawSelectionInRect:(NSRect)dirtyRect {
-    if (self.selectionHighlightStyle != NSTableViewSelectionHighlightStyleNone) {
-        NSRect selectionRect = NSInsetRect(self.bounds, 2.5, 2.5);
-        [[NSColor colorWithCalibratedWhite:.65 alpha:1.0] setStroke];
-        [[NSColor colorWithCalibratedWhite:.82 alpha:1.0] setFill];
-        NSBezierPath *selectionPath = [NSBezierPath bezierPathWithRoundedRect:selectionRect xRadius:6 yRadius:6];
-        [selectionPath fill];
-        [selectionPath stroke];
-    }
-}
-*/
 
 - (void) check: (id) sender {
     trace("check %ld", _tableView.selectedRow);
