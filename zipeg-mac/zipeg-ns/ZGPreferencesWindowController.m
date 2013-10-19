@@ -15,6 +15,8 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     NSMutableDictionary* _minimumViewRects;
     NSString* _title;
     NSViewController <ZGPreferencesViewControllerProtocol>* _selectedViewController;
+    id __weak _windowDidMoveObserver;
+    id __weak _windowDidResizeObserver;
 }
 
 - (NSViewController <ZGPreferencesViewControllerProtocol>*) viewControllerForIdentifier: (NSString*) identifier;
@@ -73,18 +75,20 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         }
         // TODO: this will actually hold the ARC references forever unless we do observe Window close
         // not a big issue since the Preferences are never really closed...
-        [NSNotificationCenter.defaultCenter addObserver: self
-                                               selector: @selector(windowDidMove:)
-                                                   name: NSWindowDidMoveNotification object: self.window];
-        [NSNotificationCenter.defaultCenter addObserver: self
-                                               selector: @selector(windowDidResize:)
-                                                   name: NSWindowDidResizeNotification object: self.window];
+        _windowDidMoveObserver = addObserver(NSWindowDidMoveNotification, self.window, ^(NSNotification* n) {
+            [self windowDidMove: n];
+        });
+        _windowDidResizeObserver = addObserver(NSWindowDidResizeNotification, self.window, ^(NSNotification* n) {
+            [self windowDidResize: n];
+        });
     }
     return self;
 }
 
 - (void) dealloc {
     dealloc_count(self);
+    _windowDidMoveObserver = removeObserver(_windowDidMoveObserver);
+    _windowDidResizeObserver = removeObserver(_windowDidResizeObserver);
     [NSNotificationCenter.defaultCenter removeObserver: self];
     self.window.delegate = null;
     _viewControllers = null;

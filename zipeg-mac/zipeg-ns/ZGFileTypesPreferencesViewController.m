@@ -8,7 +8,11 @@
     NSButton* _more;
     NSArray* _menus;
     int _rows;
-    enum { ROWS = 6 };
+    enum {
+        ROWS = 6,
+        _minHeight = 260,
+        _maxHeight = 850
+    };
 }
 @end
 
@@ -18,12 +22,6 @@ static NSDictionary* ext2uti; // @"zip" -> NSDictionary.allKeys UTIs -> @true
 static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
 
 + (void) initialize {
-/*
-    trace("%@", getDescription(@[@"zipx"]));
-    trace("%@", getDescription(@[@"lzma", @"lzma86"]));
-    trace("%@", getDescription(@[@"bz2", @"bzip", @"bzip2", @"tbz2", @"tbz"]));
-    trace(@"apps(%@)=%@", @"zip", getApps(@[@"zip"]));
-*/
     NSArray* a = @[
       @"zip",    @[@"com.pkware.zip-archive", @"public.zip-archive", @"com.winzip.zip-archive"],
       @"zipx",   @[@"com.winzip.zipx-archive"],
@@ -105,7 +103,7 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
       @[@"cpio"],
       @[ @"msi"],
       @[@"deb"],
-      @[@"dmg"],
+//    @[@"dmg"],  // to change association of .dmg is BAD idea... because of Apple install app workflow
       @[@"img"],
       @[@"iso"],
       @[@"lzma", @"lzma86"],
@@ -134,10 +132,10 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         NSView* v = NSView.new;
         v.autoresizesSubviews = true;
         v.autoresizingMask = NSViewHeightSizable | NSViewMinYMargin;
-        v.frameSize = NSMakeSize(width, 285);
+        v.frameSize = NSMakeSize(width, _minHeight);
 
         _tableView = NSTableView.new;
-        _tableView.frame = NSMakeRect(0, 0, width, 890);
+        _tableView.frame = NSMakeRect(0, 0, width, _maxHeight);
         _tableView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleNone;
         _rows = ROWS;
 
@@ -176,11 +174,14 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         NSFont* font = ZGBasePreferencesViewController.font;
         CGFloat h = font.boundingRectForFont.size.height;
         CGFloat y = v.frame.size.height - h;
-        y = button(v, y, @"", @"More ", @"show/hide advanced file types in the scrollable list below", self, @selector(moreTypes));
-        y = labelNoteAndExtra(v, y, @"", @"Open With:", @"files of following types will be opened with selected application");
-        _more = (NSButton*)[v findViewByClassName: @"NSButton"];
+        y = button(v, y, @"", @"All ", @"set Zipeg for these filetypes", @"", self, @selector(allTypes));
+        y += h * 0.25;
+        _more = createCheckBox(v, &y, @"Show ", @" more file types in the scrollable list below",
+                               @"Open files of following types with selected application:", @"com.zipeg.preferences.showAllUTIs");
+        _more.target = self;
+        _more.action = @selector(moreTypes);
         NSScrollView* sv = NSScrollView.new;
-        sv.frame = NSMakeRect(0, h * 0.5, width, y + h * 0.5);
+        sv.frame = NSMakeRect(0, h * 0.5, width, y + h * 0.25);
         sv.documentView = _tableView;
         sv.hasVerticalScroller = true;
         sv.hasHorizontalScroller = false;
@@ -200,13 +201,30 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
     dealloc_count(self);
 }
 
+- (void) allTypes {
+    for (int i = 0; i < _rows; i++) {
+        setDefaultRoleHandler(exts2utis(exts[i]), NSBundle.mainBundle.bundleIdentifier, false);
+    }
+    [_tableView reloadData];
+    notifyFinder();
+}
+
 - (void) moreTypes {
-    if (_rows == exts.count) {
-        _more.title = @"More";
+    [self resize: true];
+}
+
+- (void) resize: (BOOL) animate {
+    NSWindow* w = self.view.window;
+    NSRect f = w.frame;
+    NSNumber* all = [NSUserDefaults.standardUserDefaults objectForKey: @"com.zipeg.preferences.showAllUTIs"];
+    if (!all.boolValue) {
         _rows = ROWS;
+        f.size.height = _minHeight + 80;
+        [w setFrame: f display: true animate: animate];
     } else {
-        _more.title = @"Less";
         _rows = (int)exts.count;
+        f.size.height = _maxHeight + 80;
+        [w setFrame: f display: true animate: animate];
     }
     [_tableView reloadData];
 }
@@ -215,17 +233,6 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
     CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)ext, null);
     CFStringRef bi = (__bridge CFStringRef)NSBundle.mainBundle.bundleIdentifier;
     return LSSetDefaultRoleHandlerForContentType(uti, kLSRolesAll, bi) == 0;
-}
-
-- (void) alwaysOpenFile {
-    FSRef ref;
-    NSString* fp = @"/Users/leo/Desktop/quincy-absolutenoobcocoacheckboxes-fb3537315428.zip";
-    OSStatus os_status = FSPathMakeRef((const UInt8 *)fp.fileSystemRepresentation, &ref, null);
-    assert(os_status == noErr);
-    CFStringRef type = null;
-    LSCopyItemAttribute(&ref, kLSRolesNone, kLSItemContentType, (CFTypeRef *)&type);
-//    LSSetDefaultRoleHandlerForContentType(type, kLSRolesAll, (CFStringRef) [[NSBundle bundleWithPath:[iObject singleFilePath]] bundleIdentifier]);
-    CFRelease(type);
 }
 
 - (NSString*) ident {
@@ -241,7 +248,12 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
 }
 
 - (NSView *) initialKeyView {
-    self.view.window.contentMaxSize = NSMakeSize(width, 890);
+    NSWindow* w = self.view.window;
+    NSScreen* scr = w.screen;
+    CGFloat height = MIN(_maxHeight, scr.visibleFrame.size.height - 60);
+    self.view.window.contentMaxSize = NSMakeSize(width, height);
+    self.view.window.contentMinSize = NSMakeSize(width, _minHeight);
+    [self resize: false];
     return _tableView;
 }
 
@@ -280,7 +292,6 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         if (index == NSNotFound) { // just because WinZip's bindings are fucked up
             index = [lcs indexOfObject: drh.lowercaseString];
         }
-//      trace("%@ in %@ index=%ld", drh, apps, index);
         return index == NSNotFound ? @0 : @(index);
     } else {
         return getDescription(exts[row]);
@@ -293,10 +304,9 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         NSMenu* m = _menus[row];
         NSMenuItem* it = m.itemArray[n.intValue];
         NSDictionary* d = it.representedObject;
-        setDefaultRoleHandler(exts2utis(exts[row]), d[@"id"]);
+        setDefaultRoleHandler(exts2utis(exts[row]), d[@"id"], true);
     }
 }
-
 
 - (void) tableView: (NSTableView*) v willDisplayCell: (id) cell forTableColumn: (NSTableColumn*) c row: (NSInteger) r {
     NSObject* o = [self tableView: v objectValueForTableColumn: c row: r];
@@ -333,10 +343,8 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         }
         [m insertItem: it atIndex: m.itemArray.count];
     }
-//  trace("m.itemArray.count=%ld apps=%@", m.itemArray.count, apps);
     pub.menu = m;
     NSMenuItem *it = m.itemArray[sel < 0 ? 0 : sel];
-//  trace("pub.title=%@", it.title);
     pub.title = it.title;
 }
 
@@ -377,7 +385,6 @@ static NSString* getDefaultRoleHandler(NSArray* utis) {
         CFStringRef drh = LSCopyDefaultRoleHandlerForContentType((__bridge CFStringRef)uti, roles);
         if (drh != null) {
             NSString* r = [NSString stringWithFormat: @"%@", (__bridge NSString*)drh];
-//          trace("LSCopyDefaultRoleHandlerForContentType=%@ URLForApplicationWithBundleIdentifier=%@", uti, r);
             CFRelease(drh);
             return r;
         }
@@ -385,7 +392,7 @@ static NSString* getDefaultRoleHandler(NSArray* utis) {
     return null;
 }
 
-static void setDefaultRoleHandler(NSArray* utis, NSString* bi) {
+static void setDefaultRoleHandler(NSArray* utis, NSString* bi, BOOL notify) {
     LSRolesMask roles = isZip(utis) ? (kLSRolesEditor | kLSRolesViewer) : kLSRolesViewer;
     roles = kLSRolesAll; // this is necessary hack because WinZip is super greedy
     for (NSString* uti in utis) {
@@ -400,31 +407,25 @@ static void setDefaultRoleHandler(NSArray* utis, NSString* bi) {
             console(@"LSSetDefaultRoleHandlerForContentType error=%d", r);
         }
     }
-    notifyFinder();
-    NSArray* desktop = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, true);
-    [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
-//  NSString* fullPath = @"/Users/leo/Desktop/quincy-absolutenoobcocoacheckboxes-fb3537315428.zip";
-//    [NSWorkspace.sharedWorkspace noteFileSystemChanged: fullPath];
-/*
-    NSFileManager* fm = NSFileManager.defaultManager;
-    NSError* err = null;
-    NSDictionary* attrs = [fm attributesOfItemAtPath: fullPath error: &err];
-    [fm setAttributes: attrs ofItemAtPath: fullPath error: &err];
-    NSString* appName;
-    NSString* type;
-    BOOL b = [NSWorkspace.sharedWorkspace  getInfoForFile: fullPath application: &appName type: &type];
-    trace("getInfoForFile=%d %@ %@", b, type, appName);
- */
+    if (notify) {
+        notifyFinder();
+    }
 }
 
 static void notifyFinder() {
+    // This option is obsolete
+    //    NSArray* desktop = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, true);
+    //    [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
+    // and does not do any good anyway...
     // The icon previews are not updated because they are pooled from quicklook plugins in the Finder
     // In order to update them I need to implement QuickLook plugin. Later... :(
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-        timestamp("notifyFinder");
+//      timestamp("notifyFinder");
         NSString* src =
         @"tell application \"Finder\"\n"
-        "  tell desktop to update items with necessity\n"
+        "  try\n"
+        "    tell desktop to update items with necessity\n"
+        "  end try\n"
         "  set ws to windows\n"
         "  repeat with w in ws\n"
         "    try\n"
@@ -436,146 +437,10 @@ static void notifyFinder() {
         NSDictionary *errors = null;
         NSAppleEventDescriptor *descriptor = [script executeAndReturnError: &errors];
         if (errors != null || descriptor == null) {
-            trace("errors=%@", errors);
+            console("applescript errors=%@", errors);
         }
-        // quit and relaunch???
-        timestamp("notifyFinder");
+//      timestamp("notifyFinder"); // ~ < 200ms
     });
-}
-
-static void notifyFinder1() { // TODO: move to background thread
-    timestamp("notifyFinder");
-    NSString* src =
-    @"tell application \"Finder\"\n"
-    "  tell desktop to update items with necessity\n"
-    "  set ws to windows\n"
-    "  repeat with w in ws\n"
-    "    try\n"
-    "      if (current view of w) is icon view then\n"
-    "        set b to get (shows icon preview of icon view options of w)\n"
-    "        set (shows icon preview of icon view options of w) to (not b)\n"
-    "        set (shows icon preview of icon view options of w) to b\n"
-    "      end if\n"
-    "      tell w to update items with necessity\n"
-    "    end try\n"
-    "  end repeat\n"
-    "end tell";
-    NSAppleScript *script = [[NSAppleScript alloc] initWithSource: src];
-    NSDictionary *errors = null;
-    NSAppleEventDescriptor *descriptor = [script executeAndReturnError: &errors];
-    if (errors != null || descriptor == null) {
-        trace("errors=%@", errors);
-    }
-    // quit and relaunch???
-    timestamp("notifyFinder");
-}
-
-
-
-static void notifyFinder2() { // TODO: move to background thread
-    timestamp("notifyFinder");
-    NSString* src =
-    @"tell application \"Finder\"\n"
-    "  set fs to every file in desktop as alias list\n"
-    "  repeat with i from 1 to number of items in fs\n"
-    "    try\n"
-    "      set f to (item i of fs)\n"
-    "      get label index of file f\n"
-    "      set c to result\n"
-    "      set label index of file f to \"1\"\n"
-    "      set label index of file f to \"0\"\n"
-    "      set label index of file f to c\n"
-    "    end try\n"
-    "  end repeat\n"
-    "  set ws to windows\n"
-    "  repeat with w in ws\n"
-    "    set t to target of w\n"
-    "    set fs to every file in t as alias list\n"
-    "    repeat with i from 1 to number of items in fs\n"
-    "      try\n"
-    "        set f to (item i of fs)\n"
-    "        get label index of file f\n"
-    "        set c to result\n"
-    "        set label index of file f to \"1\"\n"
-    "        set label index of file f to \"0\"\n"
-    "        set label index of file f to c\n"
-    "      end try\n"
-    "    end repeat\n"
-    "    tell w to update items with necessity\n"
-    "  end repeat\n"
-    "end tell";
-    NSAppleScript *script = [[NSAppleScript alloc] initWithSource: src];
-    NSDictionary *errors = null;
-    NSAppleEventDescriptor *descriptor = [script executeAndReturnError: &errors];
-    if (errors != null || descriptor == null) {
-         trace("errors=%@", errors);
-    }
-    // quit and relaunch???
-    timestamp("notifyFinder");
-}
-
-
-static void notifyFinder3() { // TODO: move to background thread
-    timestamp("notifyFinder");
-    int i = 1;
-    NSDictionary *errors = null;
-    NSAppleEventDescriptor *descriptor = null;    for (;;) {
-        NSString* src = [NSString stringWithFormat: @"tell application \"Finder\"\n"
-                         "  return POSIX path of (target of window %d as alias)\n"
-                         "end tell", i];
-        NSAppleScript *script = [[NSAppleScript alloc] initWithSource: src];
-        errors = null;
-        descriptor = null;
-/*
-        *descriptor = [script executeAndReturnError: &errors];
-
-        if (errors != null || descriptor == null) {
-            break; // There is no opened window or an error occured
-        } else {
-            // what was retrieved by the script
-            NSString* path = [descriptor stringValue];
-            NSString* fspath = [NSString stringWithFileSystemRepresentation: path.fileSystemRepresentation];
-            trace("window %@", fspath);
-            [NSWorkspace.sharedWorkspace noteFileSystemChanged: fspath];
-        }
-*/
-        src = [NSString stringWithFormat:
-               @"tell application \"Finder\"\n"
-               "  set t to window %d target\n"
-               "  repeat\n"
-               "    try\n"
-               "      update every item in t\n"
-               "      set t to t's parent\n" // go one level up
-               "      on error\n"            // e.g. when you reach root
-               "         exit repeat\n"
-               "    end try\n"
-               "  end repeat\n"
-               "end tell", i];
-        errors = null;
-        descriptor = [script executeAndReturnError: &errors];
-        if (errors != null || descriptor == null) {
-            trace("errors=%@", errors);
-            break; // error occured
-        }
-        i++;
-    }
-/*
-    NSString* src =
-       @"tell application \"Finder\"\n"
-        "  repeat with w in every Finder window\n"
-        "    try\n"
-        "      update w with necessity\n"
-        "    end try\n"
-        "  end repeat\n"
-        "end tell";
-    NSAppleScript *script = [[NSAppleScript alloc] initWithSource: src];
-    errors = null;
-    descriptor = [script executeAndReturnError: &errors];
-    if (errors != null || descriptor == null) {
-        trace("errors=%@", errors);
-    }
-*/  // quit and relaunch???
-    timestamp("notifyFinder");
 }
 
 static NSString* getDescription(NSArray* exts) {
@@ -667,55 +532,5 @@ static NSDictionary* getAppDetails(NSString* bi) {
     }
     return null;
 }
-
-
-
-
-/*
- NSDictionary* ziputis = ext2uti[@"zip"];
- NSArray* utis = ziputis.allKeys;
- [self alwaysOpenFile];
-
- for (NSString* uti in utis) {
-    CFStringRef ct = (__bridge CFStringRef)uti;
-    CFStringRef id = (__bridge CFStringRef)(NSBundle.mainBundle.bundleIdentifier);
-    OSStatus r = noErr;
-    r = LSSetHandlerOptionsForContentType(ct, kLSHandlerOptionsIgnoreCreator);
-    // trace("LSSetHandlerOptionsForContentType %@ %d", uti, r);
-    // kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell | kLSRolesAll;
-    int roles = kLSRolesNone | kLSRolesViewer | kLSRolesEditor | kLSRolesShell;
-    r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
-    // trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
-    roles = kLSRolesAll;
-    r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
-    // trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
-    roles = kLSRolesEditor;
-    r = LSSetDefaultRoleHandlerForContentType(ct, roles, id); // Finder.app will update items icons when the app Quits
-    // trace("LSSetDefaultRoleHandlerForContentType %@ %d", ct, r);
-
-    CFStringRef drh = LSCopyDefaultRoleHandlerForContentType(ct, kLSRolesNone);
-    NSString* bi = (__bridge NSString *)(drh);
-    NSURL* appURL = [NSWorkspace.sharedWorkspace URLForApplicationWithBundleIdentifier: bi];
-    trace("LSCopyDefaultRoleHandlerForContentType=%@ URLForApplicationWithBundleIdentifier=%@", drh, appURL);
-    CFRelease(drh);
-
-    NSArray* desktop = NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSAllDomainsMask, true);
-    [NSWorkspace.sharedWorkspace noteFileSystemChanged: desktop[0]];
-    NSString* fullPath = @"/Users/leo/Desktop/quincy-absolutenoobcocoacheckboxes-fb3537315428.zip";
-    [NSWorkspace.sharedWorkspace noteFileSystemChanged: fullPath];
-
-    NSFileManager* fm = NSFileManager.defaultManager;
-    NSError* err = null;
-    NSDictionary* attrs = [fm attributesOfItemAtPath: fullPath error: &err];
-    [fm setAttributes: attrs ofItemAtPath: fullPath error: &err];
-
-    NSString* appName;
-    NSString* type;
-    BOOL b = [NSWorkspace.sharedWorkspace  getInfoForFile: fullPath application: &appName type: &type];
-    trace("getInfoForFile=%d %@ %@", b, type, appName);
-}
-
-*/
-
 
 @end

@@ -126,14 +126,15 @@ CGFloat labelNoteAndExtra(NSView* parent, CGFloat y, NSString* label, NSString* 
     nt.font = _font;
     nt.frame = NSMakeRect(middle + 20, y - 1, parent.frame.size.width - middle - margin, h);
     addChild(parent, nt);
+    y -= h * 2.0;
     if (extra != null && extra.length > 0) {
-        y -= h * 1.5;
         y = extraText(parent, lb.frame.origin.y, h, extra);
     }
     return y;
 }
 
-CGFloat checkBox(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra, NSString* prefs) {
+NSButton* createCheckBox(NSView* parent, CGFloat* Y, NSString* label, NSString* checkbox, NSString* extra, NSString* prefs) {
+    CGFloat y = *Y;
     NSText* lb = createLabel(parent, y, label);
     CGFloat h = lb.frame.size.height;
     NSButton* cbx = ZGKeyButton.new;
@@ -152,17 +153,23 @@ CGFloat checkBox(NSView* parent, CGFloat y, NSString* label, NSString* checkbox,
     if (extra != null && extra.length > 0) {
         y = extraText(parent, cbx.frame.origin.y, h, extra);
     }
+    *Y = y;
+    return cbx;
+}
+
+CGFloat checkBox(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra, NSString* prefs) {
+    createCheckBox(parent, &y, label, checkbox, extra, prefs);
     return y;
 }
 
-CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, NSString* extra, id target, SEL sel) {
+CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* title, NSString* after, NSString* extra, id target, SEL sel) {
     NSText* lb = createLabel(parent, y, label);
     CGFloat h = lb.frame.size.height;
     NSButton* btn = NSButton.new;
     btn.autoresizingMask = NSViewMinYMargin;
     btn.font = _font;
     btn.buttonType = NSMomentaryPushInButton;
-    btn.title = checkbox;
+    btn.title = title;
     btn.frame = NSMakeRect(middle + 24, y - 6, width, h);
     NSButtonCell* c = btn.cell;
     c.wraps = false;
@@ -172,6 +179,13 @@ CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* checkbox, N
     [btn sizeToFit];
     btn.target = target;
     btn.action = sel;
+    if (after != null && after.length > 0) {
+        NSTextView* trailing = createLabel(parent, y, after);
+        trailing.alignment = NSLeftTextAlignment;
+        CGFloat x = btn.frame.origin.x + btn.frame.size.width;
+        CGFloat w = width - margin - x;
+        trailing.frame = NSMakeRect(x, y - h, w, trailing.frame.size.height);
+    }
     y -= btn.frame.size.height * 1.5;
     if (extra != null && extra.length > 0) {
         y = extraText(parent, btn.frame.origin.y, h, extra);

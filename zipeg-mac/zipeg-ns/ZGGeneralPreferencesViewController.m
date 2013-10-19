@@ -37,8 +37,7 @@
                      @"com.zipeg.preferences.showPasswords");
         y = radioButtons(v, y, @"What to unpack:", @[@" Whole Archive", @" Selection", @" Ask"],
                          @"com.zipeg.preferences.unpackSelection");
-        y = button(v, y - 4, @"Reset to: ", @"Defaults ",
-                     @"Resets all preferences to their original ‘Factory Defaults’ values.",
+        y = button(v, y - 4, @"Reset: ", @"Defaults ", @" to original ‘Factory Settings’ values.", @"",
                      self, @selector(resetToDefaults));
         self.view = v;
     }
