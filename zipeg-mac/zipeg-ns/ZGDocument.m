@@ -139,7 +139,6 @@
 @property ZGOutlineViewDataSource* outlineViewDataSource;
 @property ZGTableViewDelegate* tableViewDelegate;
 @property ZGTableViewDataSource* tableViewDatatSource;
-@property ZGSplitViewDelegate* splitViewDelegate;
 @property NSColor* searchTextColor;
 @property NSOperationQueue* operationQueue;
 @property CFStringEncoding encoding;
@@ -180,16 +179,16 @@
 
 @end
 
-@interface OpenArchiveOperation : ZGOperation {
+@interface ZGOpenArchiveOperation : ZGOperation {
     ZGDocument* __weak _document;
 }
 - (id)initWithDocument: (ZGDocument*) document;
 @end
 
-@implementation OpenArchiveOperation
+@implementation ZGOpenArchiveOperation
 
 - (id) initWithDocument: (ZGDocument*) doc {
-    self = [super init];
+    self = super.init;
     if (self != null) {
         alloc_count(self);
         _document = doc;
@@ -207,7 +206,7 @@
 
 @end
 
-@interface SearchArchiveOperation : ZGOperation {
+@interface ZGSearchArchiveOperation : ZGOperation {
     ZGDocument* __weak _document;
     NSString* _search;
     void (^_block)(BOOL b);
@@ -215,10 +214,10 @@
 - (id)initWithDocument: (ZGDocument*) document searchString: (NSString*) s done: (void(^)(BOOL)) block;
 @end
 
-@implementation SearchArchiveOperation
+@implementation ZGSearchArchiveOperation
 
 - (id) initWithDocument: (ZGDocument*) doc searchString: (NSString*) s done: (void(^)(BOOL)) block {
-    self = [super init];
+    self = super.init;
     if (self != null) {
         alloc_count(self);
         _document = doc;
@@ -238,8 +237,7 @@
 
 @end
 
-
-@interface ExtractItemsOperation : ZGOperation {
+@interface ZGExtractItemsOperation : ZGOperation {
     ZGDocument* __weak _document;
     NSArray* _items;
     NSURL* _url;
@@ -249,10 +247,10 @@
 - (BOOL) isDnD;
 @end
 
-@implementation ExtractItemsOperation
+@implementation ZGExtractItemsOperation
 
 - (id) initWithDocument: (ZGDocument*) doc items: (NSArray*) items to: (NSURL*) url DnD: (BOOL) dnd {
-    self = [super init];
+    self = super.init;
     if (self != null) {
         alloc_count(self);
         _document = doc;
@@ -283,7 +281,7 @@ enum { // PreviewItemOperation Stages:
     kPreviewQL = 3     // use QuickLook to load image icon
 };
 
-@interface PreviewItemOperation : ZGOperation {
+@interface ZGPreviewItemOperation : ZGOperation {
     ZGDocument* __weak _document;
     NSObject<ZGItemProtocol>* _item;
     NSURL* _url;
@@ -293,10 +291,10 @@ enum { // PreviewItemOperation Stages:
 - (id) initWithDocument: (ZGDocument*) doc item: (NSObject<ZGItemProtocol>*) item stage: (int) stage fileDescriptor: (int) fd to: (NSURL*) url;
 @end
 
-@implementation PreviewItemOperation
+@implementation ZGPreviewItemOperation
 
 - (id) initWithDocument: (ZGDocument*) doc item: (NSObject<ZGItemProtocol>*) item stage: (int) stage fileDescriptor: (int) fd to: (NSURL*) url {
-    self = [super init];
+    self = super.init;
     if (self != null) {
         alloc_count(self);
         _document = doc;
@@ -382,6 +380,15 @@ enum { // PreviewItemOperation Stages:
 - (void) dealloc {
     dealloc_count(self);
     [NSNotificationCenter.defaultCenter removeObserver: self];
+    assert(_lastFirstResponder == null);
+    assert(_outlineView == null);
+    assert(_tableView == null);
+    assert(_splitView == null);
+    assert(_contentView == null);
+    assert(_toolbar == null);
+    assert(_window == null);
+    assert(_archive == null);
+    assert(_root == null);
     [ZGApp deferedTraceAllocs];
 }
 
@@ -428,11 +435,12 @@ enum { // PreviewItemOperation Stages:
                 _outlineView.hidden = true;
                 [_outlineView removeFromSuperview];
                 _splitView.subviews = @[_splitView.subviews[1], _splitView.subviews[2]];
-                [_splitViewDelegate setWeight: 0.8 atIndex: 0];
-                [_splitViewDelegate setWeight: 0.2 atIndex: 1];
-                [_splitViewDelegate setMinimumSize: (kWindowMinWidth - 100) atIndex: 0];
-                [_splitViewDelegate setMinimumSize:  93 atIndex: 1];
-                [_splitViewDelegate layout: _splitView];
+                ZGSplitViewDelegate* sd = _splitView.delegate;
+                [sd setWeight: 0.8 atIndex: 0];
+                [sd setWeight: 0.2 atIndex: 1];
+                [sd setMinimumSize: (kWindowMinWidth - 100) atIndex: 0];
+                [sd setMinimumSize:  93 atIndex: 1];
+                [sd layout: _splitView];
             }
         }
         if (_tableViewDatatSource == null) {
@@ -647,14 +655,14 @@ static NSTableView* createTableView(NSRect r) {
                             createScrollView(bounds2, _tableView),
                             _preview];
     assert(_splitView != null);
-    _splitViewDelegate = [ZGSplitViewDelegate.alloc initWithDocument: self];
-    _splitView.delegate = _splitViewDelegate;
-    [_splitViewDelegate setWeight: 0.3 atIndex: 0];
-    [_splitViewDelegate setWeight: 0.6 atIndex: 1];
-    [_splitViewDelegate setWeight: 0.1 atIndex: 2];
-    [_splitViewDelegate setMinimumSize:  93 atIndex: 0];
-    [_splitViewDelegate setMinimumSize: (kWindowMinWidth - 200) atIndex: 1];
-    [_splitViewDelegate setMinimumSize:  93 atIndex: 2];
+    ZGSplitViewDelegate* sd = [ZGSplitViewDelegate.alloc initWithDocument: self];
+    _splitView.delegate = sd;
+    [sd setWeight: 0.3 atIndex: 0];
+    [sd setWeight: 0.6 atIndex: 1];
+    [sd setWeight: 0.1 atIndex: 2];
+    [sd setMinimumSize:  93 atIndex: 0];
+    [sd setMinimumSize: (kWindowMinWidth - 200) atIndex: 1];
+    [sd setMinimumSize:  93 atIndex: 2];
 
     _splitView.hidden = true;
     _heroView = [ZGHeroView.alloc initWithDocument: self andFrame: _contentView.bounds];
@@ -703,7 +711,7 @@ static NSTableView* createTableView(NSRect r) {
             [self scheduleAlerts];
             _alerts.topText = [NSString stringWithFormat: @"Opening: %@", _url.path.lastPathComponent];
             _timeToShowHeroView = nanotime() + 500 * 1000ULL * 1000ULL; // 0.5 sec
-            OpenArchiveOperation *operation = [OpenArchiveOperation.alloc initWithDocument: self];
+            ZGOpenArchiveOperation *operation = [ZGOpenArchiveOperation.alloc initWithDocument: self];
             _openOpCount++;
             [_operationQueue addOperation: operation];
         }
@@ -993,6 +1001,9 @@ static NSTableView* createTableView(NSRect r) {
         _tableViewDatatSource = null;
         _tableViewDelegate = null;
         _destination = null;
+        _lastFirstResponder = null;
+        _contentView = null;
+        _window = null;
         if (_archive != null) {
             [_archive close];
             _archive = null;
@@ -1356,7 +1367,7 @@ static NSString* nextPathname(NSString* path) {
     // trace("_finalDestination=%@", _finalDestination);
     // trace("_trashedDestination=%@", _trashedDestination);
     // trace("_url=%@", url.debugDescription);
-    ExtractItemsOperation* operation = [ExtractItemsOperation.alloc
+    ZGExtractItemsOperation* operation = [ZGExtractItemsOperation.alloc
                                         initWithDocument: self
                                         items: items
                                         to: url
@@ -1392,7 +1403,7 @@ static NSString* nextPathname(NSString* path) {
               fileDescriptor: (int) fd
                           to: (NSURL*) url
                     priority: (NSOperationQueuePriority) priority {
-    PreviewItemOperation* operation = [PreviewItemOperation.alloc
+    ZGPreviewItemOperation* operation = [ZGPreviewItemOperation.alloc
                                         initWithDocument: self
                                         item: item
                                        stage: stage
@@ -1600,7 +1611,7 @@ static NSString* nextPathname(NSString* path) {
                 from: (const char*) fromName time: (int64_t) fromTime size: (int64_t) fromSize
                   to: (const char*) toName time: (int64_t) toTime size: (int64_t) toSize {
     assert(![NSThread isMainThread]);
-    if ([op isKindOfClass: ExtractItemsOperation.class] && ((ExtractItemsOperation*)op).isDnD) {
+    if ([op isKindOfClass: ZGExtractItemsOperation.class] && ((ZGExtractItemsOperation*)op).isDnD) {
         return kKeepBothToAll;
     }
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
@@ -1753,7 +1764,8 @@ static NSString* multipartBasename(NSString* s) {
             [self reloadData];
             _heroView.hidden = true;
             _timeToShowHeroView = 0;
-            [_splitViewDelegate layout: _splitView];
+            ZGSplitViewDelegate* sd = _splitView.delegate;
+            [sd layout: _splitView];
             _splitView.hidden = false;
             // TODO: or table view if outline view is hidden
             [[self.windowControllers[0] window] makeFirstResponder: _outlineView];
@@ -1776,7 +1788,7 @@ static NSString* multipartBasename(NSString* s) {
 - (NSString*) askPassword: (ZGOperation*) op {
     assert(![NSThread isMainThread]);
     NSString* __block password = @"";
-    if (![op isKindOfClass:PreviewItemOperation.class]) {
+    if (![op isKindOfClass: ZGPreviewItemOperation.class]) {
         dispatch_semaphore_t sema = dispatch_semaphore_create(0);
         dispatch_async(dispatch_get_main_queue(), ^{
             assert([NSThread isMainThread]);
@@ -1821,7 +1833,7 @@ static NSString* multipartBasename(NSString* s) {
 - (BOOL) askCancel: (ZGOperation*) op {
     assert(![NSThread isMainThread]);
     BOOL __block answer = false; // TODO: Should it be true for PreviewItemOperation?
-    if (![op isKindOfClass:PreviewItemOperation.class]) {
+    if (![op isKindOfClass: ZGPreviewItemOperation.class]) {
         dispatch_semaphore_t sema = dispatch_semaphore_create(0);
         dispatch_async(dispatch_get_main_queue(), ^{
             assert([NSThread isMainThread]);
@@ -1850,7 +1862,7 @@ static NSString* multipartBasename(NSString* s) {
 - (BOOL) askToContinue: (ZGOperation*) op path: (NSString*) path error: (NSString*) e {
     assert(![NSThread isMainThread]);
     BOOL __block keepGoing = false;
-    if (![op isKindOfClass:PreviewItemOperation.class]) {
+    if (![op isKindOfClass: ZGPreviewItemOperation.class]) {
         dispatch_semaphore_t sema = dispatch_semaphore_create(0);
         if (path == null || path.length == 0) {
             path = _archive.root.name;
@@ -1888,7 +1900,7 @@ static NSString* multipartBasename(NSString* s) {
 
 - (BOOL) progress: (ZGOperation*) op pos: (int64_t) pos ofTotal: (int64_t) total {
     assert(![NSThread isMainThread]);
-    if (![op isKindOfClass:PreviewItemOperation.class]) {
+    if (![op isKindOfClass: ZGPreviewItemOperation.class]) {
         // trace(@"%llu of %llu", pos, total);
         [self checkTimeToShowHeroView];
         if (total > 0 && 0 <= pos && pos <= total) {
@@ -1902,7 +1914,7 @@ static NSString* multipartBasename(NSString* s) {
 
 - (BOOL) progressFiles: (ZGOperation*) op fileno: (int64_t) fileno ofTotal: (int64_t) totalNumberOfFiles {
     assert(![NSThread isMainThread]);
-    if (![op isKindOfClass:PreviewItemOperation.class]) {
+    if (![op isKindOfClass: ZGPreviewItemOperation.class]) {
         [self checkTimeToShowHeroView];
         if (totalNumberOfFiles > 0 && 0 <= fileno && fileno <= totalNumberOfFiles) {
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -1919,7 +1931,7 @@ static NSString* multipartBasename(NSString* s) {
         return;
     }
     ZGDocument* __block __weak that = self;
-    SearchArchiveOperation* op = [SearchArchiveOperation.alloc
+    ZGSearchArchiveOperation* op = [ZGSearchArchiveOperation.alloc
       initWithDocument: self searchString: s
         done: (^(BOOL found){
             assert([NSThread isMainThread]);

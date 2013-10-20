@@ -184,6 +184,7 @@ static void loadIcons() {
         r = [self.delegate applicationShouldTerminate: self];
     }
     if (r == NSTerminateNow) {
+        self.delegate = null;
         [ZGApp cleanup: true];
         [self exit];
         [super terminate: sender];

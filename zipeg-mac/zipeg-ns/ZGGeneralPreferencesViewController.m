@@ -2,7 +2,7 @@
 #import "ZGAppDelegate.h"
 
 @interface ZGGeneralPreferencesViewController() {
-    id userDefaultsObserver;
+    __weak id userDefaultsObserver;
 }
 @end
 
@@ -72,7 +72,11 @@
 
 - (void) dealloc {
     dealloc_count(self);
-    removeObserver(userDefaultsObserver);
+    assert(userDefaultsObserver == null);
+}
+
+- (void) viewDidDisappear {
+    userDefaultsObserver = removeObserver(userDefaultsObserver);
 }
 
 - (NSString*) ident {

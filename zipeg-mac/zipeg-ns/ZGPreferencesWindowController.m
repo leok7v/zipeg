@@ -78,14 +78,20 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         _windowDidResizeObserver = addObserver(NSWindowDidResizeNotification, self.window, ^(NSNotification* n) {
             [self windowDidResize: n];
         });
-        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, self.window,
-                                               ^(NSNotification* n) {
-                                                   [self clearResponderChain];
-                                                   _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
-                                                   _windowDidMoveObserver = removeObserver(_windowDidMoveObserver);
-                                                   _windowDidResizeObserver = removeObserver(_windowDidResizeObserver);
-                                                   [NSNotificationCenter.defaultCenter removeObserver: self];
-                                               });
+        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification,
+                                               self.window,
+            ^(NSNotification* n) {
+                for (NSViewController <ZGPreferencesViewControllerProtocol>* c in _viewControllers) {
+                    if ([c respondsToSelector: @selector(viewDidDisappear)]) {
+                        [c viewDidDisappear];
+                    }
+                }
+                [self clearResponderChain];
+                _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+                _windowDidMoveObserver = removeObserver(_windowDidMoveObserver);
+                _windowDidResizeObserver = removeObserver(_windowDidResizeObserver);
+                [NSNotificationCenter.defaultCenter removeObserver: self];
+            });
     }
     return self;
 }

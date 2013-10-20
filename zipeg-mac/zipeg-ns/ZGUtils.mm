@@ -46,7 +46,7 @@ void traceObservers() {
         NSLog(@"observer[%@]=%@", n, observer);
     }
     if (observers.count == 0) {
-        NSLog(@"on observers");
+        NSLog(@"no observers left behind");
     }
 }
 
