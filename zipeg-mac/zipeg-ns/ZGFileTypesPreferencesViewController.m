@@ -126,9 +126,7 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
             [menus addObject: NSMenu.new];
         }
         _menus = menus;
-        NSDictionary* s = [NSUserDefaults.standardUserDefaults dictionaryForKey: @"com.zipeg.filetypes"];
-        [NSUserDefaults.standardUserDefaults setObject: s forKey: @"com.zipeg.filetypes"];
-//???
+
         NSView* v = NSView.new;
         v.autoresizesSubviews = true;
         v.autoresizingMask = NSViewHeightSizable | NSViewMinYMargin;

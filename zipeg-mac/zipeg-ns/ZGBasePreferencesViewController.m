@@ -58,6 +58,19 @@ static NSString* _enameUTF8;
              };
 }
 
+- (id) init {
+    self = super.init;
+    if (self != null) {
+
+    }
+    return self;
+}
+
+
+- (void) dealloc {
+    trace("");
+}
+
 - (NSString*) ident {
     @throw @"abstract";
 }

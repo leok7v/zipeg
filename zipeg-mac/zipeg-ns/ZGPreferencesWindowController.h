@@ -11,12 +11,8 @@
 @property (nonatomic, readonly) NSViewController <ZGPreferencesViewControllerProtocol>* selectedViewController;
 @property (nonatomic, readonly) NSString* title;
 
-- (id) initWithViewControllers: (NSArray*) viewControllers;
 - (id) initWithViewControllers: (NSArray*) viewControllers title:(NSString*) title;
 
 - (void) selectControllerAtIndex: (NSUInteger) controllerIndex;
-
-- (IBAction) goNextTab: (id) sender;
-- (IBAction) goPreviousTab: (id) sender;
 
 @end

@@ -105,7 +105,7 @@ static NSSearchPathDirectory dirs[] = {
         _font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
         _label = createLabel(4, @" ", _font, r); // trailing space is important
         _ask = createInplaceButton(@[@"ask to ", @"always "], _font, r, _label.frame, self);
-        _selected = createInplaceButton(@[@"unpack selected ", @"unpack all "], _font, r, _ask.frame, self);
+        _selected = createInplaceButton(@[@"whole ", @"selected ", @"ask "], _font, r, _ask.frame, self);
         _to = createButton(_selected.frame.origin.x + _selected.frame.size.width,
                            @" files to the folder:", _font, r, NSMomentaryPushInButton);
         _to.action = @selector(openDisclosure:);
@@ -131,6 +131,11 @@ static NSSearchPathDirectory dirs[] = {
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
                 _destinationObserver = removeObserver(_destinationObserver);
             });
+
+        [_selected bind: @"selectedIndex" toObject: NSUserDefaultsController.sharedUserDefaultsController
+     withKeyPath: [NSString stringWithFormat: @"values.%@", @"com.zipeg.preferences.unpackSelection"]
+         options: @{@"NSContinuouslyUpdatesValue": @true}];
+
     }
     return self;
 }
@@ -138,6 +143,8 @@ static NSSearchPathDirectory dirs[] = {
 - (void) dealloc {
     dealloc_count(self);
     [_pathControl removeObserver: self forKeyPath: @"URL"];
+    [_selected unbind: @"com.zipeg.preferences.unpackSelection"];
+
     _destinationObserver = removeObserver(_destinationObserver);
     _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
     _pathControl.target = null;
@@ -159,7 +166,7 @@ static NSSearchPathDirectory dirs[] = {
         NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
         NSNumber* ask = [ud objectForKey: @"zipeg.destination.ask"];
         [_ask selectItemWithTag: ask == null ? 0 : ask.intValue];
-        NSNumber* selected = [ud objectForKey: @"zipeg.destination.selected"];
+        NSNumber* selected = [ud objectForKey: @"com.zipeg.preferences.unpackSelection"];
         [_selected  selectItemWithTag: selected == null ? 0 : selected.intValue];
         NSNumber* reveal = [ud objectForKey: @"zipeg.destination.reveal"];
         [_reveal selectItemWithTag: reveal == null ? 0 : reveal.intValue];
@@ -184,7 +191,7 @@ static NSSearchPathDirectory dirs[] = {
     if (_notify_count == 0) {
         NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
         [ud setObject: @(_ask.selectedItem.tag) forKey: @"zipeg.destination.ask"];
-        [ud setObject: @(_selected.selectedItem.tag) forKey: @"zipeg.destination.selected"];
+        [ud setObject: @(_selected.selectedItem.tag) forKey: @"com.zipeg.preferences.unpackSelection"];
         [ud setObject: @(_reveal.selectedItem.tag) forKey: @"zipeg.destination.reveal"];
         [ud setObject: [_pathControl.URL absoluteString] forKey: @"zipeg.destination.url"];
         [ud synchronize];

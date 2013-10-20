@@ -17,6 +17,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     NSViewController <ZGPreferencesViewControllerProtocol>* _selectedViewController;
     id __weak _windowDidMoveObserver;
     id __weak _windowDidResizeObserver;
+    id __weak _windowWillCloseObserver;
 }
 
 - (NSViewController <ZGPreferencesViewControllerProtocol>*) viewControllerForIdentifier: (NSString*) identifier;
@@ -32,12 +33,8 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 @synthesize selectedViewController = _selectedViewController;
 @synthesize title = _title;
 
-- (id) initWithViewControllers: (NSArray*) viewControllers {
-    return [self initWithViewControllers: viewControllers title: null];
-}
-
 - (id) initWithViewControllers: (NSArray*) viewControllers title: (NSString*) title {
-    self = [super init];
+    self = super.init;
     if (self != null) {
         alloc_count(self);
         _viewControllers = viewControllers;
@@ -81,15 +78,20 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         _windowDidResizeObserver = addObserver(NSWindowDidResizeNotification, self.window, ^(NSNotification* n) {
             [self windowDidResize: n];
         });
+        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, self.window,
+                                               ^(NSNotification* n) {
+                                                   [self clearResponderChain];
+                                                   _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+                                                   _windowDidMoveObserver = removeObserver(_windowDidMoveObserver);
+                                                   _windowDidResizeObserver = removeObserver(_windowDidResizeObserver);
+                                                   [NSNotificationCenter.defaultCenter removeObserver: self];
+                                               });
     }
     return self;
 }
 
 - (void) dealloc {
     dealloc_count(self);
-    _windowDidMoveObserver = removeObserver(_windowDidMoveObserver);
-    _windowDidResizeObserver = removeObserver(_windowDidResizeObserver);
-    [NSNotificationCenter.defaultCenter removeObserver: self];
     self.window.delegate = null;
     _viewControllers = null;
     _selectedViewController = null;
@@ -282,24 +284,6 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 - (void) selectControllerAtIndex: (NSUInteger) ix {
     if (NSLocationInRange(ix, NSMakeRange(0, _viewControllers.count)))
         self.selectedViewController = self.viewControllers[ix];
-}
-
-- (IBAction) goNextTab: (id) sender {
-    NSUInteger ix = self.indexOfSelectedController;
-    NSUInteger n = _viewControllers.count;
-    do {
-        ix = (ix + 1) % n;
-    } while (_viewControllers[ix] == null);
-    [self selectControllerAtIndex: ix];
-}
-
-- (IBAction) goPreviousTab: (id) sender {
-    NSUInteger ix = self.indexOfSelectedController;
-    NSUInteger n = _viewControllers.count;
-    do {
-        ix = (ix + n - 1) % n;
-    } while (_viewControllers[ix] == null);
-    [self selectControllerAtIndex: ix];
 }
 
 @end

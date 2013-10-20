@@ -12,9 +12,36 @@
 @interface ZGAppDelegate() {
     ZGPreferencesWindowController* _preferencesWindowController;
     BOOL _applicationHasStarted;
+    id __weak _windowWillCloseObserver;
 }
 // TODO: remove me
 @property (nonatomic) NSInteger focusedAdvancedControlIndex;
+@end
+
+@interface ZGTestPref  : NSViewController <ZGPreferencesViewControllerProtocol>
+@end
+
+@implementation ZGTestPref
+
+- (id) init {
+    self = super.init;
+    self.view = NSView.new;
+    self.view.frame = NSMakeRect(100, 100, 200, 200);
+    return self;
+}
+
+- (NSString*) ident {
+    return @"AdvancedPreferences";
+}
+
+- (NSImage *) image {
+    return [NSImage imageNamed: NSImageNameAdvanced];
+}
+
+- (NSString *) label {
+    return NSLocalizedString(@"Test", @"Zipeg Test Preferences");
+}
+
 @end
 
 @implementation ZGAppDelegate
@@ -51,13 +78,24 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
 
 - (IBAction) preferences: (id) sender {
     if (_preferencesWindowController == null) {
+/*
         NSArray* controllers = @[ZGGeneralPreferencesViewController.new,
                                  ZGFileTypesPreferencesViewController.new,
                                  ZGAdvancedPreferencesViewController.new];
+*/
+        NSArray* controllers = @[ZGTestPref.new];
         _preferencesWindowController = [ZGPreferencesWindowController.alloc initWithViewControllers: controllers title: @""];
     }
     if (_preferencesWindowController != null) {
         [_preferencesWindowController showWindow: self];
+        trace("%@", _preferencesWindowController.window);
+        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _preferencesWindowController.window,
+            ^(NSNotification* n) {
+                _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+                trace("%@", _preferencesWindowController.window);
+                _preferencesWindowController.window = null;
+                _preferencesWindowController = null;
+            });
     }
 }
 
