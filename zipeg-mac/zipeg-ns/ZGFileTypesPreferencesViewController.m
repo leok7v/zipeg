@@ -214,14 +214,17 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
 - (void) resize: (BOOL) animate {
     NSWindow* w = self.view.window;
     NSRect f = w.frame;
+    f.origin.y += f.size.height;
     NSNumber* all = [NSUserDefaults.standardUserDefaults objectForKey: @"com.zipeg.preferences.showAllUTIs"];
     if (!all.boolValue) {
         _rows = ROWS;
         f.size.height = _minHeight + 80;
+        f.origin.y -= f.size.height;
         [w setFrame: f display: true animate: animate];
     } else {
         _rows = (int)exts.count;
         f.size.height = _maxHeight + 80;
+        f.origin.y -= f.size.height;
         [w setFrame: f display: true animate: animate];
     }
     [_tableView reloadData];
