@@ -1,5 +1,6 @@
 #import "ZGApp.h"
 #import "ZGDocument.h"
+#import "ZGLocalize.h"
 
 static NSWindow* __weak sheet;
 static NSWindow* __weak window;
@@ -29,6 +30,7 @@ static NSWindow* __weak window;
 + (void) initialize {
     [ZGApp registerApp: false];
     [ZGApp cleanup: false];
+//  [ZGLocalize collect];
 }
 
 + (void) registerApp: (BOOL) force {

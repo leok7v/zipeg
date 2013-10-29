@@ -79,9 +79,14 @@ static NSSearchPathDirectory dirs[] = {
     NSPopUpButton* _reveal;
     NSPopUpButton* _disclosure;
     NSPathControl* _pathControl;
+    NSImage* _nextToArchiveImage;
+    NSImage* _selectDestinationImage;
     NSPathComponentCell* _nextToArchivePathComponentCell;
+    NSPathComponentCell* _selectDestinationPathComponentCell;
     NSMenuItem* _nextToArchiveMenuItem;
+    NSMenuItem* _selectDestinationMenuItem;
     NSURL* _nextToArchiveURL;
+    NSURL* _selectDestinationURL;
     // TODO: all observers must be weak because system is holding reference till we call remove... right?
     id __weak _destinationObserver;
     id __weak _windowWillCloseObserver;
@@ -93,24 +98,35 @@ static NSSearchPathDirectory dirs[] = {
     if (self) {
         alloc_count(self);
         _document = doc;
-        _nextToArchiveURL = [NSURL URLWithString: @"http://www.zipeg.com"];
-        _nextToArchivePathComponentCell = [NSPathComponentCell new];
-        _nextToArchivePathComponentCell.image = ZGApp.appIcon16x16;
-        _nextToArchivePathComponentCell.URL   = _nextToArchiveURL;
-        _nextToArchivePathComponentCell.title = @"next to archive";
-        _nextToArchivePathComponentCell.state = NSOffState;
-        _nextToArchivePathComponentCell.font  = _font;
+        _nextToArchiveURL = [NSURL URLWithString: @"http://www.zipeg.com/faq#nextToArchive"];
+        _selectDestinationURL = [NSURL URLWithString: @"http://www.zipeg.com/faq#selectDestination"];
+        _selectDestinationImage = [NSImage imageNamed: NSImageNameRevealFreestandingTemplate];
+        _selectDestinationImage.size = NSMakeSize(16, 16);
+        _nextToArchiveImage = ZGApp.appIcon16x16;
+        _nextToArchivePathComponentCell = createPathComponentCell(
+            @"next to archive", _nextToArchiveURL, _nextToArchiveImage, _font);
+        _selectDestinationPathComponentCell = createPathComponentCell(
+            @"always choose", _selectDestinationURL, _selectDestinationImage, _font);
+        _nextToArchiveMenuItem = [self menuItemForPathComponentCell: _nextToArchivePathComponentCell
+                                                             action: @selector(nextToArchive:)];
+        _selectDestinationMenuItem = [self menuItemForPathComponentCell: _selectDestinationPathComponentCell
+                                                             action: @selector(selectDestination:)];
         self.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
         self.autoresizesSubviews = true;
         _font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
         _label = createLabel(4, @" ", _font, r); // trailing space is important
         _ask = createInplaceButton(@[@"ask to ", @"always "], _font, r, _label.frame, self);
-        _selected = createInplaceButton(@[@"whole ", @"selected ", @"ask "], _font, r, _ask.frame, self);
+        _selected = createInplaceButton(@[@"all ", @"selected ", @"all or selected "], _font, r, _ask.frame, self);
         _to = createButton(_selected.frame.origin.x + _selected.frame.size.width,
-                           @" files to the folder:", _font, r, NSMomentaryPushInButton);
+                           @" items to the folder:", _font, r, NSMomentaryPushInButton);
         _to.action = @selector(openDisclosure:);
         _to.target = self;
         _disclosure = createDirsButton(@"M", _font, r, _to.frame);
+
+        [_disclosure.menu addItem: NSMenuItem.separatorItem];
+        [_disclosure.menu addItem: _nextToArchiveMenuItem];
+        [_disclosure.menu addItem: _selectDestinationMenuItem];
+
         _pathControl = createPathControl(_font, r, _disclosure.frame);
         _reveal = createInplaceButton(@[ @" and show in Finder ", @"  but don't show " ],
                                   _font, r, _pathControl.frame, self);
@@ -131,10 +147,11 @@ static NSSearchPathDirectory dirs[] = {
                 _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
                 _destinationObserver = removeObserver(_destinationObserver);
             });
-
-        [_selected bind: @"selectedIndex" toObject: NSUserDefaultsController.sharedUserDefaultsController
-     withKeyPath: [NSString stringWithFormat: @"values.%@", @"com.zipeg.preferences.unpackSelection"]
-         options: @{@"NSContinuouslyUpdatesValue": @true}];
+        // no need to unbind - it's done automatically by NSAutoUnbinder
+        [_selected bind: @"selectedIndex"
+               toObject: NSUserDefaultsController.sharedUserDefaultsController
+            withKeyPath: [NSString stringWithFormat: @"values.%@", @"com.zipeg.preferences.unpackSelection"]
+                options: @{@"NSContinuouslyUpdatesValue": @true}];
 
     }
     return self;
@@ -204,6 +221,26 @@ static NSSearchPathDirectory dirs[] = {
     }
 }
 
+static NSPathComponentCell* createPathComponentCell(NSString* title, NSURL* url, NSImage* icon, NSFont* font) {
+    NSPathComponentCell* c = [NSPathComponentCell new];
+    c.image = icon;
+    c.URL   = url;
+    c.title = title;
+    c.state = NSOffState;
+    c.font  = font;
+    return c;
+}
+
+- (NSMenuItem*) menuItemForPathComponentCell: (NSPathComponentCell*) cell action: (SEL) sel {
+    NSMenuItem* mi = NSMenuItem.new;
+    mi.action = sel;
+    mi.target = self;
+    mi.image = cell.image;
+    mi.title = cell.title;
+    return mi;
+}
+
+
 - (BOOL) isAsking {
     return _ask.selectedItem.tag == 0;
 }
@@ -222,6 +259,10 @@ static NSSearchPathDirectory dirs[] = {
 
 - (BOOL) isNextToArchive {
     return isEqual(_pathControl.URL, _nextToArchiveURL);
+}
+
+- (BOOL) isSelectDestination {
+    return isEqual(_pathControl.URL, _selectDestinationURL);
 }
 
 - (NSURL*) URL {
@@ -267,8 +308,8 @@ static NSSearchPathDirectory dirs[] = {
 - (void) pathControlSizeToFit {
     [_pathControl sizeToFit];
     NSDictionary* a = @{NSFontAttributeName: _font};
-    NSString* label = _pathControl.URL.path.lastPathComponent;
-    int w = [label sizeWithAttributes: a].width;
+    NSString* title = systemPathTitle(_pathControl.URL.path);
+    int w = [title sizeWithAttributes: a].width;
     NSRect r = _pathControl.frame;
     if (w > r.size.width) {
         r.size.width = w;
@@ -403,6 +444,11 @@ static NSPopUpButton* createInplaceButton(NSArray* texts, NSFont* font, NSRect r
     return btn;
 }
 
+static NSString* systemPathTitle(NSString* path) {
+    NSString* title = [NSFileManager.defaultManager displayNameAtPath: path];
+    return title == null || title.length == 0 ? path.lastPathComponent : title;
+}
+
 static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, NSRect lr) {
     NSRect br = r;
     br.origin.x = lr.origin.x + lr.size.width;
@@ -423,7 +469,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     NSURL* u = [NSURL fileURLWithPath: NSHomeDirectory() isDirectory: true];
     NSImage* image = [NSWorkspace.sharedWorkspace iconForFile: u.path];
     image.size = NSMakeSize(16, 16);
-    insertMenuItem(btn.menu, u.path.lastPathComponent, image, -1); // Home
+    insertMenuItem(btn.menu, systemPathTitle(u.path), image, -1); // Home
     for (int i = 0; i < countof(dirs); i++) {
         NSArray* path = NSSearchPathForDirectoriesInDomains(dirs[i], NSAllDomainsMask, true);
         if (path.count > 0 && [path[0] isKindOfClass: NSString.class]) {
@@ -431,10 +477,9 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
             NSString* p = [u path];
             NSImage *image = [NSWorkspace.sharedWorkspace iconForFile: p];
             image.size = NSMakeSize(16, 16);
-            insertMenuItem(btn.menu, p.lastPathComponent, image, i);
+            insertMenuItem(btn.menu, systemPathTitle(p), image, i);
         }
     }
-    insertMenuItem(btn.menu, @"next to archive", ZGApp.appIcon16x16, countof(dirs));
     return btn;
 }
 
@@ -465,7 +510,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     op.resolvesAliases = true;
     op.canCreateDirectories = true;
     op.title = NSLocalizedString(@"Zipeg: Choose a folder to unpack to", @"");
-    op.prompt = NSLocalizedString(@"Choose", @""); // this is localized by OS X to .ru
+    op.prompt = NSLocalizedString(@"Choose", @""); // this is localized by OS X to default locale (e.g. .ru)
 }
 
 - (void) revealInFinder: (id) sender {
@@ -493,32 +538,44 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
     }
 }
 
-- (void) pathControl: (NSPathControl*) pc willPopUpMenu: (NSMenu*) m {
-    if (_nextToArchiveMenuItem == null) {
-        NSString* title = NSLocalizedString(@"next to archive", @"");
-        NSMenuItem* mi = [NSMenuItem.alloc initWithTitle:title action: @selector(nextToArchive:) keyEquivalent:@""];
-        mi.target = self;
-        mi.image = ZGApp.appIcon16x16;
-        _nextToArchiveMenuItem = mi;
+- (void) selectDestination: (id) sender {
+    if (!self.isSelectDestination) {
+        self.pathControlURL = _selectDestinationURL;
+        _pathControl.pathComponentCells = @[_selectDestinationPathComponentCell];
+        [self pathControlSizeToFit];
     }
-    BOOL found = false;
-    // containsObject does not work on itemArray:
+}
+
+- (void) pathControl: (NSPathControl*) pc willPopUpMenu: (NSMenu*) m {
+    // -selectDestination: or -nextToArchive would add the URL to pathControl and
+    // it will appear in the menu. We do not want to add it twice.
+    BOOL foundNTA = false;
+    BOOL foundSD = false;
     for (NSMenuItem* mi in m.itemArray) {
-        found = isEqual(mi.title, _nextToArchiveMenuItem.title);
-        if (found) {
+        foundNTA = isEqual(mi.title, _nextToArchiveMenuItem.title);
+        foundSD = isEqual(mi.title, _selectDestinationMenuItem.title);
+        if (foundNTA && foundSD) {
             break;
         }
     }
-    if (!found) {
+    if (!foundNTA && !foundSD) {
         [m addItem: NSMenuItem.separatorItem];
-        [m addItem: _nextToArchiveMenuItem];
     }
-    NSString* title = NSLocalizedString(@"Show in Finder", @"");
-    NSMenuItem* mi = [NSMenuItem.alloc initWithTitle:title action: @selector(revealInFinder:) keyEquivalent:@""];
-    mi.target = self;
-    [m addItem: NSMenuItem.separatorItem];
-    [m addItem: mi];
-    _nextToArchiveMenuItem.state = NSOffState;
+    if (!foundNTA) { // make a copy because menu item cannot be inserted into 2 menus at once
+        _nextToArchiveMenuItem.state = NSOffState;
+        [m addItem: _nextToArchiveMenuItem.copy];
+    }
+    if (!foundSD) {
+        _selectDestinationMenuItem.state = NSOffState;
+        [m addItem: _selectDestinationMenuItem.copy];
+    }
+    if (!foundSD) { // if "select destination" is choosen nothing to reveal in Finder
+        NSString* title = NSLocalizedString(@"Show in Finder", @"");
+        NSMenuItem* mi = [NSMenuItem.alloc initWithTitle:title action: @selector(revealInFinder:) keyEquivalent:@""];
+        mi.target = self;
+        [m addItem: NSMenuItem.separatorItem];
+        [m addItem: mi];
+    }
 }
 
 - (NSDragOperation) pathControl: (NSPathControl*) pc validateDrop: (id<NSDraggingInfo>) info {
