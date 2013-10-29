@@ -337,6 +337,7 @@
 		B39F3E4D17D0C4F000254ACB /* ZGAdvancedPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4A17D0C4EF00254ACB /* ZGAdvancedPreferencesViewController.m */; };
 		B39F3E4E17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */; };
 		B3A86285182076BC005586F6 /* ZGLocalize.m in Sources */ = {isa = PBXBuildFile; fileRef = B3A86284182076BC005586F6 /* ZGLocalize.m */; };
+		B3A8628818207894005586F6 /* ZGTask.m in Sources */ = {isa = PBXBuildFile; fileRef = B3A8628718207894005586F6 /* ZGTask.m */; };
 		B3AF41E217DA55E900658672 /* ZGFileTypesPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */; };
 		B3B444B417BA41F4008D88A3 /* ZGAlerts.m in Sources */ = {isa = PBXBuildFile; fileRef = B3B444B317BA41F4008D88A3 /* ZGAlerts.m */; };
 		B3B444B717BA6088008D88A3 /* stop-n-32x32@2.png in Resources */ = {isa = PBXBuildFile; fileRef = B3B444B517BA6088008D88A3 /* stop-n-32x32@2.png */; };
@@ -1139,6 +1140,8 @@
 		B39F3E4C17D0C4F000254ACB /* ZGGeneralPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGGeneralPreferencesViewController.m; sourceTree = "<group>"; };
 		B3A86283182076BC005586F6 /* ZGLocalize.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGLocalize.h; sourceTree = "<group>"; };
 		B3A86284182076BC005586F6 /* ZGLocalize.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGLocalize.m; sourceTree = "<group>"; };
+		B3A8628618207894005586F6 /* ZGTask.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGTask.h; sourceTree = "<group>"; };
+		B3A8628718207894005586F6 /* ZGTask.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGTask.m; sourceTree = "<group>"; };
 		B3AF41E017DA55E900658672 /* ZGFileTypesPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGFileTypesPreferencesViewController.h; sourceTree = "<group>"; };
 		B3AF41E117DA55E900658672 /* ZGFileTypesPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGFileTypesPreferencesViewController.m; sourceTree = "<group>"; };
 		B3B444B217BA41F4008D88A3 /* ZGAlerts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGAlerts.h; sourceTree = "<group>"; };
@@ -2166,6 +2169,8 @@
 				B37E555717928A3700E54693 /* ZGAppDelegate.m */,
 				B3D1BE5D17973662007BE5E7 /* MacMem.h */,
 				B3D1BE5E1797366E007BE5E7 /* MacMem.m */,
+				B3A8628618207894005586F6 /* ZGTask.h */,
+				B3A8628718207894005586F6 /* ZGTask.m */,
 				B32FF53117933C6B0083146C /* ZGItemProtocol.h */,
 				B3E87DA717A922CE00B246B8 /* ZGGenericItem.h */,
 				B3E87DA817A922CE00B246B8 /* ZGGenericItem.m */,
@@ -2667,6 +2672,7 @@
 				B308535917D035E10099F6DA /* NsisIn.cpp in Sources */,
 				B308535A17D035E10099F6DA /* NsisRegister.cpp in Sources */,
 				B308535B17D035E10099F6DA /* NtfsHandler.cpp in Sources */,
+				B3A8628818207894005586F6 /* ZGTask.m in Sources */,
 				B308535C17D035E10099F6DA /* PeHandler.cpp in Sources */,
 				B308535D17D035E10099F6DA /* PpmdHandler.cpp in Sources */,
 				B308535E17D035E10099F6DA /* RarHandler.cpp in Sources */,

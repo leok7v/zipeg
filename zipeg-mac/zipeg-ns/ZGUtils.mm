@@ -92,7 +92,7 @@ void trace_allocs() {
             const char* k = mem.keyAt(i);
             if (k != null) {
                 int64_t v = mem.get(k);
-                if (v != NOT_A_VALUE) {
+                if (v != NOT_A_VALUE && v != 0) {
                     NSLog(@"%s %lld", k, v);
                 }
             }

@@ -69,6 +69,7 @@ static NSWindow* __weak window;
 }
 
 - (void) exit  {
+    NSLog(@"\n\n*** ZGApp exit ***\n");
     traceObservers();
     trace_allocs();
 }
@@ -76,9 +77,9 @@ static NSWindow* __weak window;
 - (NSInteger) runModalForWindow: (NSWindow*) s {
     if (s == sheet) { // this is a bit of a hack but it works
         [self beginSheet: s
-          modalForWindow:(NSWindow*) window
-           modalDelegate:self
-          didEndSelector:@selector(didEndSelector:) contextInfo: null];
+          modalForWindow: (NSWindow*) window
+           modalDelegate: self
+          didEndSelector: @selector(didEndSelector:) contextInfo: null];
         NSInteger r = [super runModalForWindow: s];
         [NSApp endSheet: s];
         return r;
@@ -182,7 +183,7 @@ static void loadIcons() {
 
 - (void) terminate: (id) sender {
     NSApplicationTerminateReply r = NSTerminateNow;
-    if (self.delegate) {
+    if (self.delegate != null) {
         r = [self.delegate applicationShouldTerminate: self];
     }
     if (r == NSTerminateNow) {
