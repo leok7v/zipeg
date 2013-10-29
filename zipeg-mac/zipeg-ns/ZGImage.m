@@ -113,7 +113,7 @@ static NSDictionary* sHints;
             x = x * size / max;
             y = y * size / max;
             NSRect r = NSMakeRect(x, y, self.size.width * size / max, self.size.height * size / max);
-            [self drawInRect: r];
+            [self draw: r];
             [m unlockFocus];
             [NSGraphicsContext.currentContext restoreGraphicsState];
         }
@@ -159,7 +159,13 @@ static NSDictionary* sHints;
     [self drawAtPoint: p fromRect: r operation: op fraction: alpha];
 }
 
-- (void) drawInRect: (NSRect) d {
+
+/* 
+ // This is exactly equivalent to calling -[image drawInRect:rect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1 respectFlipped:YES hints:nil].
+- (void)drawInRect:(NSRect)rect NS_AVAILABLE_MAC(10_9);
+ */
+
+- (void) draw: (NSRect) d { // used to be -drawInRect: but Apple implemented it in 10.9 :(
     [self drawInRect: d fromRect: NSZeroRect];
 }
 

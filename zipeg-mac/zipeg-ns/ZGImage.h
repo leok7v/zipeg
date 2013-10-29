@@ -13,7 +13,7 @@
 - (void) drawAtPoint: (NSPoint) p fromRect: (NSRect) r operation: (NSCompositingOperation) op;
 - (void) drawAtPoint: (NSPoint) p fromRect: (NSRect) r operation: (NSCompositingOperation) op opacity: (CGFloat) alpha;
 
-- (void) drawInRect: (NSRect) d;
+- (void) draw: (NSRect) d;
 - (void) drawInRect: (NSRect) d fromRect: (NSRect) r;
 - (void) drawInRect: (NSRect) d fromRect: (NSRect) r operation: (NSCompositingOperation) op;
 - (void) drawInRect: (NSRect) d fromRect: (NSRect) r operation: (NSCompositingOperation) op opacity: (CGFloat) alpha;
