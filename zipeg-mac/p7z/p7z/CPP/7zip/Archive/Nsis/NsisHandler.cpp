@@ -172,12 +172,16 @@ bool CHandler::GetUncompressedSize(int index, UInt32 &size)
 {
   size = 0;
   const CItem &item = _archive.Items[index];
-  if (item.SizeIsDefined)
+  if (item.SizeIsDefined) {
+     // printf("%s %d defined\n", (const char*)item.NameA, item.Size);
      size = item.Size;
-  else if (_archive.IsSolid && item.EstimatedSizeIsDefined)
+  } else if (item.EstimatedSizeIsDefined) { // LK: _archive.IsSolid && item.EstimatedSizeIsDefined
+     // printf("%s %d [Size=%d] EstimatedSizeIsDefined\n", (const char*)item.NameA, item.EstimatedSize, item.Size);
      size  = item.EstimatedSize;
-  else
+  } else {
+    // printf("%s EstimatedSize=%d Size=%d item.EstimatedSizeIsDefined=%d _archive.IsSolid=%d undefined\n", (const char*)item.NameA, item.EstimatedSize, item.Size, item.EstimatedSizeIsDefined, _archive.IsSolid);
     return false;
+  }
   return true;
 }
 
@@ -185,10 +189,10 @@ bool CHandler::GetCompressedSize(int index, UInt32 &size)
 {
   size = 0;
   const CItem &item = _archive.Items[index];
-  if (item.CompressedSizeIsDefined)
+  if (item.CompressedSizeIsDefined) {
     size = item.CompressedSize;
-  else
-  {
+    // printf("%s %d defined (compressed)\n", (const char*)item.NameA, item.CompressedSize );
+  } else {
     if (_archive.IsSolid)
     {
       if (index == 0)
@@ -198,10 +202,16 @@ bool CHandler::GetCompressedSize(int index, UInt32 &size)
     }
     else
     {
-      if (!item.IsCompressed)
+      if (!item.IsCompressed) {
         size = item.Size;
-      else
+        if (size == 0) {
+          this->GetUncompressedSize(index, size);
+        }
+        // printf("%s %d IsComressed=false (compressed)\n", (const char*)item.NameA, item.Size);
+      } else {
+        // printf("%s size=%d csize=%d esize=%d (compressed undefined)\n", (const char*)item.NameA, item.Size, item.CompressedSize, item.EstimatedSize);
         return false;
+      }
     }
   }
   return true;

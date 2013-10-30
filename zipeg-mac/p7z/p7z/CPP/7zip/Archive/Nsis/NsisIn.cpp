@@ -1167,6 +1167,7 @@ HRESULT CInArchive::ReadEntries(const CBlockHeader &bh)
         {
           item.EstimatedSizeIsDefined = true;
           item.EstimatedSize = nextPos - curPos;
+          // printf("item.EstimatedSize := %d defined %s\n", item.EstimatedSize, (const char*)item.NameA);
           break;
         }
       }
