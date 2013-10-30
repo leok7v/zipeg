@@ -372,7 +372,7 @@ static void reportProgress(ZG7zip* z, int ix) {
             // archives without entries for the folders do exist
             // create "synthetic" parent for such folder with -1 as an index
             if (p == null) {
-                trace(@"creating synthetic parent for %@", parentComponents);
+                // trace(@"creating synthetic parent for %@", parentComponents);
                 NSString* last = parentComponents.lastPathComponent;
                 p = [ZG7zipItem.alloc initWith: self name: last index: -1 isLeaf: false];
                 if (p == null) {

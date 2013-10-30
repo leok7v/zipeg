@@ -34,7 +34,7 @@ static NSWindow* __weak window;
 }
 
 + (void) registerApp: (BOOL) force {
-    timestamp("LSRegisterFSRef");
+    // timestamp("LSRegisterFSRef");
     FSRef fsref = {0};
     OSStatus oss = FSPathMakeRef((const UInt8*)NSBundle.mainBundle.bundlePath.fileSystemRepresentation, &fsref, NULL);
     if (oss != noErr) {
@@ -44,7 +44,7 @@ static NSWindow* __weak window;
     if (oss != noErr) {
         console(@"LSRegisterFSRef = %d error", oss);
     }
-    timestamp("LSRegisterFSRef");
+    // timestamp("LSRegisterFSRef");
 }
 
 - (id) init {
