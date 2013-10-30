@@ -669,7 +669,7 @@ bool P7Z::iterateItems(int from, int to) { // [from..to[
         VARTYPE vt;
         for (int i = 0; i < np && b; i++) {
             values[i] = new Value();
-            s[i] = new UString();
+            s[i] = new UString(); // will be used below inside N(properties) X N(items) loop
             b = values[i] != null && s[i] != null;
             if (b) {
                 if (a.GetPropertyInfo(i, &name, &propId, &vt) != S_OK) {

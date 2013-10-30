@@ -699,13 +699,13 @@ static NSString* starifyMultipartFilename(NSString* s) {
         if (b) {
             _numberOfItems = a->getNumberOfItems();
             _properties = a->getNumberOfProperties();
-            _isFilteredOut = [ZGBitset bitsetWithCapacity:_numberOfItems];
-            _isFolders = [ZGBitset bitsetWithCapacity:_numberOfItems];
-            _isLeafFolders = [ZGBitset bitsetWithCapacity:_numberOfItems];
-            _items = [NSMutableDictionary dictionaryWithCapacity:_numberOfItems * 3 / 2];
-            _paths = [NSMutableArray arrayWithCapacity:_numberOfItems];
-            _props = [NSMutableArray arrayWithCapacity:_numberOfItems];
-            _pnames = [NSMutableArray arrayWithCapacity:_properties];
+            _isFilteredOut = [ZGBitset bitsetWithCapacity: _numberOfItems];
+            _isFolders = [ZGBitset bitsetWithCapacity: _numberOfItems];
+            _isLeafFolders = [ZGBitset bitsetWithCapacity: _numberOfItems];
+            _items = [NSMutableDictionary dictionaryWithCapacity: _numberOfItems * 3 / 2];
+            _paths = [NSMutableArray arrayWithCapacity: _numberOfItems];
+            _props = [NSMutableArray arrayWithCapacity: _numberOfItems];
+            _pnames = [NSMutableArray arrayWithCapacity: _properties];
             if (!_isFolders || !_isLeafFolders || !_isFilteredOut || !_items || !_paths || !_pnames || !_props) {
                 a->close();
                 *err = ZGOutOfMemoryError();
@@ -841,7 +841,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
 /*  // KEEP this code around, uncommenting it is handy to archive problems debugging
     if (itemIndex < 10) {
         NSMutableString* s = [NSMutableString new];
-        for (int i = 0; i < properties; i++) {
+        for (int i = 0; i < _properties; i++) {
             if (![_pnames[i] isEqualToString:@"Path"]) {
                 NSObject* va = dic[_pnames[i]];
                 if (va != null) {
