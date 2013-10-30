@@ -252,8 +252,6 @@ static NSMenu* createSearchMenu() {
                                              null);
         NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
         sc.target = self;
-        NSNumber* style = [NSUserDefaults.standardUserDefaults objectForKey: @"com.zipeg.preferences.outline.view.style"];
-        trace("%@", style);
         [sc bind: @"selectedIndex" toObject: NSUserDefaultsController.sharedUserDefaultsController
                         withKeyPath: @"values.com.zipeg.preferences.outline.view.style"
                             options: @{@"NSContinuouslyUpdatesValue": @true}];
@@ -273,18 +271,6 @@ static NSMenu* createSearchMenu() {
 	ti = null;
     }
     return ti;
-}
-
-// TODO: remove me
-- (void) viewStyleClicked: (id) sender {
-/*
-    NSSegmentedControl* sc = sender;
-    int ss = (int)sc.selectedSegment;
-    // _document.viewStyle = ss; // no longer needed - document is listening to the notification
-    // trace(@"selectedItem %@ %d", sender, ss);
-    NSNumber* style = [NSUserDefaults.standardUserDefaults objectForKey: @"com.zipeg.preferences.outline.view.style"];
-    trace("%@", style);
-*/
 }
 
 - (void) navigationClicked: (id) sender {

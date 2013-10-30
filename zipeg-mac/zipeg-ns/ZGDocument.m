@@ -727,12 +727,9 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (void) userDefaultsDidChange: (NSNotification*) n {
-//  NSUserDefaults* ud = (NSUserDefaults*)n.object;
-//  NSDictionary* d = ud.dictionaryRepresentation;
     NSNumber* style = [NSUserDefaults.standardUserDefaults objectForKey: @"com.zipeg.preferences.outline.view.style"];
-    trace("com.zipeg.preferences.outline.view.style=%@", style);
-    if (style != null) {
-          self.viewStyle = style.integerValue;
+    if (style != null && style.intValue != self.viewStyle) {
+          self.viewStyle = style.intValue;
     }
 }
 
