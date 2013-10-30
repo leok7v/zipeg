@@ -11,7 +11,7 @@
     enum {
         ROWS = 6,
         _minHeight = 260,
-        _maxHeight = 850
+        _maxHeight = 870
     };
 }
 @end
@@ -64,7 +64,8 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
       @"exe",    @[@"com.microsoft.windows-executable"],
       @"dll",    @[@"com.microsoft.windows-dynamic-link-library"],
       @"rpm",    @[@"com.redhat.rpm-archive"],
-      @"xar",    @[@"com.apple.xar-archive"],
+      @"hfs",    @[@"com.apple.disk-image-hfs"],
+      @"xar",    @[@"com.apple.xar-archive"]
     ];
     NSMutableDictionary* e2u = [NSMutableDictionary dictionaryWithCapacity: a.count];
     for (int i = 0; i < a.count; i += 2) {
@@ -101,11 +102,12 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
       @[@"cbr"],
       @[@"cbz"],
       @[@"cpio"],
-      @[ @"msi"],
+      @[@"msi"],
       @[@"deb"],
 //    @[@"dmg"],  // to change association of .dmg is BAD idea... because of Apple install app workflow
       @[@"img"],
       @[@"iso"],
+      @[@"hfs"],
       @[@"lzma", @"lzma86"],
       @[@"cab"],
       @[@"chm"],

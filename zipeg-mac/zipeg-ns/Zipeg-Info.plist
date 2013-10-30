@@ -984,6 +984,28 @@
 			<key>NSDocumentClass</key>
 			<string>ZGDocument</string>
 		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>hfs</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>zipeg-archive</string>
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>application/x-hfs</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>Hierarchical File System</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.apple.disk-image-hfs</string>
+			</array>
+			<key>NSDocumentClass</key>
+			<string>ZGDocument</string>
+		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
@@ -1053,6 +1075,30 @@
 					<string>application/zip</string>
 					<string>application/x-zip</string>
 					<string>application/x-zip-compressed</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Hierarchical File System</string>
+			<key>UTTypeIconFile</key>
+			<string>zipeg-archive</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.apple.disk-image-hfs</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>hfs</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/x-hfs</string>
 				</array>
 			</dict>
 		</dict>
