@@ -90,10 +90,31 @@
 }
 
 - (NSSize) cellSize {
+    NSString* s = self.attributedStringValue.string;
+    if ([s indexOf:@"\n"] >= 0 || [s indexOf:@"\r"] >= 0) {
+        // see: 0.hfs inside GoogleNotifier_1.10.7.dmg
+        // ".HFS+ Private Directory Data\n" and "".HFS+ Private Directory Data\n"
+        NSMutableAttributedString* as = [NSMutableAttributedString.new initWithAttributedString: self.attributedStringValue];
+        [as.mutableString replaceOccurrencesOfString: @"\n"
+                                          withString: @""
+                                             options: NSLiteralSearch
+                                               range: NSMakeRange(0, as.string.length)];
+        [as.mutableString replaceOccurrencesOfString: @"\r"
+                                          withString: @""
+                                             options: NSLiteralSearch
+                                               range: NSMakeRange(0, as.string.length)];
+        self.attributedStringValue = as;
+    }
     NSSize cs = [super cellSize];
     NSSize ts = [self.attributedStringValue size];
     cs.width = MAX(cs.width, ts.width + kTextOriginXOffset);
     cs.width += self.image.size.width + kImageOriginXOffset;
+/*
+    if (cs.height != 16) {
+        trace("\"%@\" %@", self.stringValue, NSStringFromSize(ts));
+        trace("%@", self.attributedStringValue);
+    }
+*/
     return cs;
 }
 
