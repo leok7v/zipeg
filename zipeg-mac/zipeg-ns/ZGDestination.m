@@ -115,20 +115,20 @@ static NSSearchPathDirectory dirs[] = {
         self.autoresizesSubviews = true;
         _font = [NSFont systemFontOfSize: NSFont.smallSystemFontSize - 1];
         _label = createLabel(4, @" ", _font, r); // trailing space is important
-        _ask = createInplaceButton(@[@"ask to ", @"always "], _font, r, _label.frame, self);
+        _ask = createInplaceButton(@[@"ask to unpack ", @"always unpack "], _font, r, _label.frame, self);
         _selected = createInplaceButton(@[@"all ", @"selected ", @"all or selected "], _font, r, _ask.frame, self);
         _to = createButton(_selected.frame.origin.x + _selected.frame.size.width,
                            @" items to the folder:", _font, r, NSMomentaryPushInButton);
         _to.action = @selector(openDisclosure:);
         _to.target = self;
-        _disclosure = createDirsButton(@"M", _font, r, _to.frame);
+        _disclosure = createDirsButton(@" X ", _font, r, _to.frame);
 
         [_disclosure.menu addItem: NSMenuItem.separatorItem];
         [_disclosure.menu addItem: _nextToArchiveMenuItem];
         [_disclosure.menu addItem: _selectDestinationMenuItem];
 
         _pathControl = createPathControl(_font, r, _disclosure.frame);
-        _reveal = createInplaceButton(@[ @" and show in Finder ", @"  but don't show " ],
+        _reveal = createInplaceButton(@[ @" and show in Finder ", @"don't show in Finder " ],
                                   _font, r, _pathControl.frame, self);
         _pathControl.action = @selector(pathControlSingleClick:);
         _pathControl.target = self;
@@ -139,7 +139,7 @@ static NSSearchPathDirectory dirs[] = {
         [_pathControl addObserver: self forKeyPath: @"URL" options: 0 context: null];
         self.subviews = @[_label, _selected, _ask, _to, _disclosure, _pathControl, _reveal];
         [self readUserDefaults];
-        _destinationObserver = addObserver(@"zipeg.destination.update", null, ^(NSNotification* n){
+        _destinationObserver = addObserver(@"com.zipeg.preferences.destination.update", null, ^(NSNotification* n){
             [self readUserDefaults];
         });
         _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _window,
@@ -181,13 +181,13 @@ static NSSearchPathDirectory dirs[] = {
         // trace(@"observed readUserDefaults %@", _document.window.title);
         _notify_count++;
         NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
-        NSNumber* ask = [ud objectForKey: @"zipeg.destination.ask"];
+        NSNumber* ask = [ud objectForKey: @"com.zipeg.preferences.ask.to.unpack"];
         [_ask selectItemWithTag: ask == null ? 0 : ask.intValue];
         NSNumber* selected = [ud objectForKey: @"com.zipeg.preferences.unpackSelection"];
         [_selected  selectItemWithTag: selected == null ? 0 : selected.intValue];
-        NSNumber* reveal = [ud objectForKey: @"zipeg.destination.reveal"];
+        NSNumber* reveal = [ud objectForKey: @"com.zipeg.preferences.destination.reveal"];
         [_reveal selectItemWithTag: reveal == null ? 0 : reveal.intValue];
-        NSString* s = [ud objectForKey: @"zipeg.destination.url"];
+        NSString* s = [ud objectForKey: @"com.zipeg.preferences.destination.url"];
         if (s != null) {
             NSURL* url = [NSURL URLWithString: s];
             if (isEqual(url, _nextToArchiveURL)) {
@@ -207,14 +207,14 @@ static NSSearchPathDirectory dirs[] = {
 - (void) writeUserDefaults {
     if (_notify_count == 0) {
         NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
-        [ud setObject: @(_ask.selectedItem.tag) forKey: @"zipeg.destination.ask"];
+        [ud setObject: @(_ask.selectedItem.tag) forKey: @"com.zipeg.preferences.ask.to.unpack"];
         [ud setObject: @(_selected.selectedItem.tag) forKey: @"com.zipeg.preferences.unpackSelection"];
-        [ud setObject: @(_reveal.selectedItem.tag) forKey: @"zipeg.destination.reveal"];
-        [ud setObject: [_pathControl.URL absoluteString] forKey: @"zipeg.destination.url"];
+        [ud setObject: @(_reveal.selectedItem.tag) forKey: @"com.zipeg.preferences.destination.reveal"];
+        [ud setObject: [_pathControl.URL absoluteString] forKey: @"com.zipeg.preferences.destination.url"];
         [ud synchronize];
         _notify_count++;
         // trace(@"post writeUserDefaults %@", _document.window.title);
-        [NSNotificationCenter.defaultCenter postNotificationName: @"zipeg.destination.update" object: null];
+        [NSNotificationCenter.defaultCenter postNotificationName: @"com.zipeg.preferences.destination.update" object: null];
         _notify_count--;
     } else {
         // we are already observing ours or somebody-elses changes - do nothing
@@ -370,7 +370,6 @@ static NSButton* createButton(int x, NSString* text, NSFont* font, NSRect r, NSB
     bc.showsStateBy = NSNoCellMask;
     bc.controlTint = NSClearControlTint;
     bc.font = font;
-    bc.bordered = false;
     btn.frameSize = [btn.attributedStringValue size];
     [btn sizeToFit];
     return btn;
@@ -569,7 +568,7 @@ static NSPopUpButton* createDirsButton(NSString* label, NSFont* font, NSRect r, 
         _selectDestinationMenuItem.state = NSOffState;
         [m addItem: _selectDestinationMenuItem.copy];
     }
-    if (!foundSD) { // if "select destination" is choosen nothing to reveal in Finder
+    if (!foundSD && !foundNTA) { // if "select destination" is choosen nothing to reveal in Finder
         NSString* title = NSLocalizedString(@"Show in Finder", @"");
         NSMenuItem* mi = [NSMenuItem.alloc initWithTitle:title action: @selector(revealInFinder:) keyEquivalent:@""];
         mi.target = self;

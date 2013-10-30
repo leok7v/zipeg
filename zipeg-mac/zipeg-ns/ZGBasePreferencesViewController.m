@@ -54,7 +54,9 @@ static NSString* _enameUTF8;
              @"com.zipeg.preferences.sortCaseSensitive": @false,
              @"com.zipeg.preferences.sortFoldersFirst": @true,
              @"com.zipeg.preferences.useTrashBin": @true,
-             @"com.zipeg.preferences.encoding": _enameUTF8
+             @"com.zipeg.preferences.encoding": _enameUTF8,
+             @"com.zipeg.preferences.simplifiedToolbar": @false,
+             @"com.zipeg.preferences.ask.to.unpack": @true
              };
 }
 
@@ -184,7 +186,7 @@ CGFloat button(NSView* parent, CGFloat y, NSString* label, NSString* title, NSSt
         trailing.alignment = NSLeftTextAlignment;
         CGFloat x = btn.frame.origin.x + btn.frame.size.width;
         CGFloat w = width - margin - x;
-        trailing.frame = NSMakeRect(x, y - h, w, trailing.frame.size.height);
+        trailing.frame = NSMakeRect(x, y, w, h);
     }
     y -= btn.frame.size.height * 1.5;
     if (extra != null && extra.length > 0) {

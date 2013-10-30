@@ -49,7 +49,7 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
         y = comboBox(v, y, @"Default Encoding:", keys, w * 3 / 4, @"com.zipeg.preferences.encoding");
         y = checkBox(v, y, @"Delete items:", @" using Trash Bin",
                      @"DANGER: !!! ☠ if you uncheck this option you will accept full responsibility "
-                     @"of losing data when the items are irrecoverably deleted ☠ !!!",
+                     @"for possible data loss when the items are irrecoverably deleted ☠ !!!",
                      @"com.zipeg.preferences.useTrashBin");
         self.view = v;
     }

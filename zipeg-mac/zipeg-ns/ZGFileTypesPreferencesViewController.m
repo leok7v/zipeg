@@ -172,7 +172,7 @@ static NSArray* exts; // in UI order @[..., @[@"rar", @"r00"], ...]
         NSFont* font = ZGBasePreferencesViewController.font;
         CGFloat h = font.boundingRectForFont.size.height;
         CGFloat y = v.frame.size.height - h;
-        y = button(v, y, @"", @"All ", @"set Zipeg for these filetypes", @"", self, @selector(allTypes));
+        y = button(v, y, @" ", @"Set ", @"Zipeg as default handler for all", @"", self, @selector(allTypes));
         y += h * 0.25;
         _more = createCheckBox(v, &y, @"Show ", @" more file types in the scrollable list below",
                                @"Open files of following types with selected application:", @"com.zipeg.preferences.showAllUTIs");
