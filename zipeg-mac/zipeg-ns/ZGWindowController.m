@@ -37,7 +37,7 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
         if (window.frame.size.width < window.minSize.width || window.frame.size.height < window.minSize.height) {
             [window setFrame: NSMakeRect(0, 0, window.minSize.width, window.minSize.height) display: true animate: false];
         }
-        [window addObserver:self forKeyPath:@"firstResponder" options: 0 context: null];
+        [window addObserver:self forKeyPath: @"firstResponder" options: 0 context: null];
         [NSNotificationCenter.defaultCenter addObserver:self
                                                selector:@selector(windowDidBecomeKey:)
                                                    name:NSWindowDidBecomeKeyNotification
@@ -84,7 +84,7 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
 }
 
 - (void) windowWillClose: (NSNotification*) notification {
-    [self.window removeObserver:self forKeyPath:@"firstResponder"];
+    [self.window removeObserver:self forKeyPath: @"firstResponder"];
 //  dumpAllViews();
 }
 

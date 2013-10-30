@@ -106,6 +106,7 @@
     id _windowWillCloseObserver;
     id _clipViewFrameDidChangeObserver;
     id _clipViewBoundsDidChangeObserver;
+    id _userDefaultsObserver;
     NSTableViewSelectionHighlightStyle _highlightStyle;
     BOOL _isNew;
     uint64_t _timeToShowHeroView;
@@ -689,11 +690,18 @@ static NSTableView* createTableView(NSRect r) {
     };
     _clipViewBoundsDidChangeObserver = addObserver(NSViewBoundsDidChangeNotification, clipView, sizeToContent);
     _clipViewFrameDidChangeObserver = addObserver(NSViewFrameDidChangeNotification, clipView, sizeToContent);
+
+    _userDefaultsObserver = addObserver(NSUserDefaultsDidChangeNotification, null,
+                                       ^(NSNotification* n) {
+                                           [self userDefaultsDidChange: n];
+                                       });
+
     _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, _window,
         ^(NSNotification* n) {
             _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
             _clipViewBoundsDidChangeObserver = removeObserver(_clipViewBoundsDidChangeObserver);
             _clipViewFrameDidChangeObserver = removeObserver(_clipViewFrameDidChangeObserver);
+            _userDefaultsObserver = removeObserver(_userDefaultsObserver);
         }
     );
     ZGBackPanel* background = [ZGBackPanel.alloc initWithDocument: self andFrame: _contentView.frame];
@@ -715,6 +723,16 @@ static NSTableView* createTableView(NSRect r) {
             _openOpCount++;
             [_operationQueue addOperation: operation];
         }
+    }
+}
+
+- (void) userDefaultsDidChange: (NSNotification*) n {
+//  NSUserDefaults* ud = (NSUserDefaults*)n.object;
+//  NSDictionary* d = ud.dictionaryRepresentation;
+    NSNumber* style = [NSUserDefaults.standardUserDefaults objectForKey: @"com.zipeg.preferences.outline.view.style"];
+    trace("com.zipeg.preferences.outline.view.style=%@", style);
+    if (style != null) {
+          self.viewStyle = style.integerValue;
     }
 }
 

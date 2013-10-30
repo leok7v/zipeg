@@ -39,7 +39,7 @@ static NSDictionary* _e2n; // reverse, use CFStringConvertEncodingToNSStringEnco
                      @"com.zipeg.preferences.simplifiedToolbar");
         y = checkBox(v, y, @"Outline view:", @" white background",
                      @"white instead of gradient background for tree view",
-                     @"com.zipeg.preferences.whiteOutline");
+                     @"com.zipeg.preferences.outline.view.style");
         y = checkBox(v, y, @"Detect encoding:", @" automatically",
                      @"Zipeg will attempt to detect national alphabet for item names encoding. "
                      @"If detection is unsuccessful - Zipeg will use default encoding specified below. "

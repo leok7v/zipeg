@@ -56,6 +56,7 @@ static NSString* _enameUTF8;
              @"com.zipeg.preferences.useTrashBin": @true,
              @"com.zipeg.preferences.encoding": _enameUTF8,
              @"com.zipeg.preferences.simplifiedToolbar": @false,
+             @"com.zipeg.preferences.outline.view.style": @0,
              @"com.zipeg.preferences.ask.to.unpack": @true
              };
 }

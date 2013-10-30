@@ -249,9 +249,14 @@ static NSMenu* createSearchMenu() {
         ti = createSegmentedControl(ViewsId, @"View Style", @"Show items in different views",
                                              @[@"folders-blue.png", @"folders-white.png"],
                                              @[@"Modern", @"Legacy"],
-                                             @selector(viewStyleClicked:));
+                                             null);
         NSSegmentedControl* sc = (NSSegmentedControl*)ti.view;
         sc.target = self;
+        NSNumber* style = [NSUserDefaults.standardUserDefaults objectForKey: @"com.zipeg.preferences.outline.view.style"];
+        trace("%@", style);
+        [sc bind: @"selectedIndex" toObject: NSUserDefaultsController.sharedUserDefaultsController
+                        withKeyPath: @"values.com.zipeg.preferences.outline.view.style"
+                            options: @{@"NSContinuouslyUpdatesValue": @true}];
     } else if ([itemIdent isEqual: NavsId]) {
         // NSImage* back = [NSWorkspace.sharedWorkspace iconForFileType: NSFileTypeForHFSTypeCode(kBackwardArrowIcon)];
         // NSImage* next = [NSWorkspace.sharedWorkspace iconForFileType: NSFileTypeForHFSTypeCode(kForwardArrowIcon)];
@@ -270,11 +275,16 @@ static NSMenu* createSearchMenu() {
     return ti;
 }
 
+// TODO: remove me
 - (void) viewStyleClicked: (id) sender {
+/*
     NSSegmentedControl* sc = sender;
     int ss = (int)sc.selectedSegment;
-    _document.viewStyle = ss;
+    // _document.viewStyle = ss; // no longer needed - document is listening to the notification
     // trace(@"selectedItem %@ %d", sender, ss);
+    NSNumber* style = [NSUserDefaults.standardUserDefaults objectForKey: @"com.zipeg.preferences.outline.view.style"];
+    trace("%@", style);
+*/
 }
 
 - (void) navigationClicked: (id) sender {
