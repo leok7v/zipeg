@@ -69,17 +69,25 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
         NSString* origin = [NSUserDefaults.standardUserDefaults stringForKey: kZGPreferencesPosition];
         if (origin != null) {
             self.window.frameTopLeftPoint = NSPointFromString(origin);
+        } else {
+            NSScreen* scr = self.window.screen;
+            CGFloat x = (scr.visibleFrame.size.width - cv.frame.size.width) / 2;
+            CGFloat y = scr.visibleFrame.size.height;
+            self.window.frameTopLeftPoint = NSMakePoint(x, y);
         }
-        // TODO: this will actually hold the ARC references forever unless we do observe Window close
-        // not a big issue since the Preferences are never really closed...
         _windowDidMoveObserver = addObserver(NSWindowDidMoveNotification, self.window, ^(NSNotification* n) {
-            [self windowDidMove: n];
+            NSString* s = NSStringFromPoint(NSMakePoint(self.window.frame.origin.x, NSMaxY(self.window.frame)));
+            [NSUserDefaults.standardUserDefaults setObject: s forKey: kZGPreferencesPosition];
         });
         _windowDidResizeObserver = addObserver(NSWindowDidResizeNotification, self.window, ^(NSNotification* n) {
-            [self windowDidResize: n];
+            NSViewController <ZGPreferencesViewControllerProtocol>* viewController = self.selectedViewController;
+            if (viewController != null) {
+                NSString* s = NSStringFromRect(viewController.view.bounds);
+                NSString* key = PreferencesKeyForViewBounds(viewController.ident);
+                [NSUserDefaults.standardUserDefaults setObject: s forKey: key];
+            }
         });
-        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification,
-                                               self.window,
+        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification, self.window,
             ^(NSNotification* n) {
                 for (NSViewController <ZGPreferencesViewControllerProtocol>* c in _viewControllers) {
                     if ([c respondsToSelector: @selector(viewDidDisappear)]) {
@@ -115,20 +123,6 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
 
 - (BOOL) windowShouldClose: (id) sender {
     return !self.selectedViewController || [self.selectedViewController commitEditing];
-}
-
-- (void) windowDidMove: (NSNotification*) n {
-    NSString* s = NSStringFromPoint(NSMakePoint(self.window.frame.origin.x, NSMaxY(self.window.frame)));
-    [NSUserDefaults.standardUserDefaults setObject: s forKey: kZGPreferencesPosition];
-}
-
-- (void) windowDidResize: (NSNotification*) n {
-    NSViewController <ZGPreferencesViewControllerProtocol>* viewController = self.selectedViewController;
-    if (viewController != null) {
-        NSString* s = NSStringFromRect(viewController.view.bounds);
-        NSString* key = PreferencesKeyForViewBounds(viewController.ident);
-        [NSUserDefaults.standardUserDefaults setObject: s forKey: key];
-    }
 }
 
 - (NSArray*) toolbarItemIds {
@@ -204,7 +198,7 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     return null;
 }
 
-- (void) setSelectedViewController: (NSViewController <ZGPreferencesViewControllerProtocol>*) c {
+- (void) setSelectedViewController: (NSViewController<ZGPreferencesViewControllerProtocol>*) c {
     if (_selectedViewController == c) {
         return;
     }
@@ -230,16 +224,14 @@ static NSString* const PreferencesKeyForViewBounds (NSString* identifier) {
     }
     self.window.toolbar.selectedItemIdentifier = c.ident;
     // Record new selected controller in user defaults
-    [NSUserDefaults.standardUserDefaults setObject: c.ident
-                                            forKey: kZGPreferencesSelected];
+    [NSUserDefaults.standardUserDefaults setObject: c.ident forKey: kZGPreferencesSelected];
     NSView* controllerView = c.view;
     // Retrieve current and minimum frame size for the view
     NSString* key = PreferencesKeyForViewBounds(c.ident);
     NSString* oldViewRectString = [NSUserDefaults.standardUserDefaults stringForKey: key];
     NSString* minViewRectString = [_minimumViewRects objectForKey: c.ident];
     if (minViewRectString == null) {
-        [_minimumViewRects setObject: NSStringFromRect(controllerView.bounds)
-                              forKey: c.ident];
+        [_minimumViewRects setObject: NSStringFromRect(controllerView.bounds) forKey: c.ident];
     }
     BOOL sizableWidth  = controllerView.autoresizingMask & NSViewWidthSizable;
     BOOL sizableHeight = controllerView.autoresizingMask & NSViewHeightSizable;

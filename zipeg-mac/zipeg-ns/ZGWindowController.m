@@ -18,14 +18,14 @@ static NSPoint cascadePoint;
         if (cascadePoint.x == 0 && cascadePoint.y == 0) {
             cascadePoint = NSMakePoint(40, 40);
         }
-        window.restorable = true; // TODO: true for now but should be false
+        window.restorable = true; // TODO: true for now but should be false when Welcome is implemented
         // see notes and link in AppDelegate
         window.delegate = self;
         self.shouldCloseDocument = true;
-        self.shouldCascadeWindows = true; // TODO: this does not work
+        self.shouldCascadeWindows = true; // this has no effect for overwriten NSWindowController
         window.backingType = NSBackingStoreBuffered;
         window.oneShot = true;
-        window.releasedWhenClosed = false; // this will crash close window with ARC if true
+        window.releasedWhenClosed = false; // if set to true - it will crash ARC when closing window
         window.styleMask = NSTitledWindowMask | NSClosableWindowMask |
                            NSMiniaturizableWindowMask | NSResizableWindowMask |
                            NSUnifiedTitleAndToolbarWindowMask |
@@ -33,10 +33,8 @@ static NSPoint cascadePoint;
         window.minSize = NSMakeSize(kWindowMinWidth, kWindowMinHeight);
         window.hasShadow = true;
         window.showsToolbarButton = true;
-
         window.frameAutosaveName = ZGWindowAutosaveName; // otherwise it will try to reopen all archives on startup
         window.frameUsingName = ZGWindowAutosaveName;
-        // trace(@"w=%@ cv=%@", NSStringFromRect(window.frame), NSStringFromRect([window.contentView frame]));
         if (window.frame.size.width < window.minSize.width || window.frame.size.height < window.minSize.height) {
             [window setFrame: NSMakeRect(0, 0, window.minSize.width, window.minSize.height) display: true animate: false];
         }
@@ -56,10 +54,7 @@ static NSPoint cascadePoint;
 - (NSRect) window: (NSWindow*) window willPositionSheet: (NSWindow*) sheet usingRect: (NSRect) rect {
     NSView* cv = (NSView*)window.contentView;
     NSView* cvs = (NSView*)cv.superview;
-    // dumpAllViews();
     NSView* tbv = [cvs findViewByClassName: @"NSToolbarView"];
-    // trace(@"willPositionSheet %@ window.frame=%@ toolbar=%@" , NSStringFromRect(rect),
-    //                           NSStringFromRect(window.frame), NSStringFromRect(tbv.frame));
     rect.origin.y = tbv.frame.origin.y;
     return rect;
 }
@@ -89,7 +84,6 @@ static NSPoint cascadePoint;
     [self.window removeObserver:self forKeyPath: @"firstResponder"];
     _windowDidBecomeKeyObserver = removeObserver(_windowDidBecomeKeyObserver);
     _windowDidResignKey = removeObserver(_windowDidResignKey);
-//  dumpAllViews();
 }
 
 - (void) observeValueForKeyPath: (NSString*) kp ofObject: (id) o change: (NSDictionary*) ch context: (void*) ctx {
@@ -108,12 +102,9 @@ static NSPoint cascadePoint;
     id oldKey = ch[NSKeyValueChangeOldKey];
     NSIndexSet* indexes = ch[NSKeyValueChangeIndexesKey]; // indexes of inserted/remove/replaced objects
     BOOL prio = ch[NSKeyValueChangeNotificationIsPriorKey] != null;
-    trace(@"keyPath=%@ action=%@ %@ newKey=%@ oldKey=%@ indexes=%@  prio=%d",
-          kp, action, o, newKey, oldKey, indexes, prio);
+    trace(@"keyPath=%@ action=%@ %@ newKey=%@ oldKey=%@ indexes=%@  prio=%d", kp, action, o, newKey, oldKey, indexes, prio);
 */
     if ([kp isEqualToString: @"firstResponder"]) {
-        // NSResponder* fr = [self.window firstResponder];
-        // trace(@"first responder changed to %@", fr);
         assert([self.document isKindOfClass: ZGDocument.class]);
         ZGDocument* d = self.document;
         [d firstResponderChanged];
