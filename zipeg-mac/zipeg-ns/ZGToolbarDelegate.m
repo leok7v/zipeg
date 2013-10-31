@@ -22,7 +22,7 @@
     ZGDocument* __weak _document;
     NSSearchField* _searchFieldOutlet;
     NSToolbarItem* _activeSearchItem;
-    id _windowWillCloseObserver;
+    __weak id _windowWillCloseObserver;
 }
 @end
 

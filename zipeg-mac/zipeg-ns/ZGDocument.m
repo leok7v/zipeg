@@ -102,11 +102,10 @@
     NSObject<ZGItemFactory>* _archive;
     NSObject<ZGItemProtocol>* _root;
     NSWindow* __weak _window;
-    // TODO: all observers should be __weak
-    id _windowWillCloseObserver;
-    id _clipViewFrameDidChangeObserver;
-    id _clipViewBoundsDidChangeObserver;
-    id _userDefaultsObserver;
+    __weak id _windowWillCloseObserver;
+    __weak id _clipViewFrameDidChangeObserver;
+    __weak id _clipViewBoundsDidChangeObserver;
+    __weak id _userDefaultsObserver;
     NSTableViewSelectionHighlightStyle _highlightStyle;
     BOOL _isNew;
     uint64_t _timeToShowHeroView;

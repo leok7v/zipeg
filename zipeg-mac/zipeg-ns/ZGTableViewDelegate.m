@@ -9,7 +9,7 @@
 @interface ZGTableViewDelegate () {
     ZGDocument* __weak _document;
     ZGBlock* _delayedSizeToContent;
-    id _windowWillCloseObserver;
+    __weak id _windowWillCloseObserver;
 }
 
 @end

@@ -3,7 +3,7 @@
 #import "ZGImageAndTextCell.h"
 
 @interface ZGSplitViewDelegate () {
-    id _windowWillCloseObserver;
+    __weak id _windowWillCloseObserver;
     ZGDocument* __weak _document;
     NSMutableDictionary* _minSize; // int view index -> float minimum size
     NSMutableDictionary* _w2ix;    // float weight -> int view index

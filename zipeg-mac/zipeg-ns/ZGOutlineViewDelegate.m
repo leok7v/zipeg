@@ -15,7 +15,7 @@
     ZGSectionCell* _sectionCell;
     ZGBlock* _delayedExpand;
     ZGBlock* _delayedSizeToContent;
-    id _windowWillCloseObserver;
+    __weak id _windowWillCloseObserver;
 }
 @end
 
