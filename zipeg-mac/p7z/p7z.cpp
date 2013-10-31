@@ -545,7 +545,7 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
              false /*stdOutMode*/, false /*testMode*/, false /*crcMode*/,
              directoryPath,
              removePathParts,
-             999999 // packSize  // TODO: ??????
+             999999 // packSize  -- does not matter because all the handlers recalculate it anyhow
         );
         ecs.fd = fd;
         if (fd >= 0) {
