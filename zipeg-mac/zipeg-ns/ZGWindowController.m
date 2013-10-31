@@ -4,8 +4,11 @@
 static NSString* ZGWindowAutosaveName = @"ZGWindow";
 
 @implementation ZGWindowController {
-    NSPoint cascadePoint;
+    __weak id _windowDidBecomeKeyObserver;
+    __weak id _windowDidResignKey;
 }
+
+static NSPoint cascadePoint;
 
 - (id)init {
     NSWindow* window = NSWindow.new;
@@ -38,16 +41,10 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
             [window setFrame: NSMakeRect(0, 0, window.minSize.width, window.minSize.height) display: true animate: false];
         }
         [window addObserver:self forKeyPath: @"firstResponder" options: 0 context: null];
-        [NSNotificationCenter.defaultCenter addObserver:self
-                                               selector:@selector(windowDidBecomeKey:)
-                                                   name:NSWindowDidBecomeKeyNotification
-                                                 object:null];
-        [NSNotificationCenter.defaultCenter addObserver:self
-                                               selector:@selector(windowDidResignKey:)
-                                                   name:NSWindowDidResignKeyNotification
-                                                 object:null];
-        cascadePoint = [window cascadeTopLeftFromPoint: cascadePoint];
-        // TODO: ??? may be it is in a wrong place. windowDidLoad is suggested place but it is not called for nib-less windows
+        _windowDidBecomeKeyObserver = addObserver(NSWindowDidBecomeKeyNotification, self,
+                                          ^(NSNotification* n) { [self windowDidBecomeKey: n]; });
+        _windowDidResignKey = addObserver(NSWindowDidResignKeyNotification, self,
+                                          ^(NSNotification* n) { [self windowDidResignKey: n]; });
     }
     return self;
 }
@@ -77,6 +74,11 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
     return [d windowDidResignKey];
 }
 
+- (void) showWindow: (id) sender {
+    cascadePoint = [self.window cascadeTopLeftFromPoint: cascadePoint];
+    [super showWindow: sender];
+}
+
 - (BOOL) windowShouldClose: (id) sender {
     assert([self.document isKindOfClass: ZGDocument.class]);
     ZGDocument* d = self.document;
@@ -85,6 +87,8 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
 
 - (void) windowWillClose: (NSNotification*) notification {
     [self.window removeObserver:self forKeyPath: @"firstResponder"];
+    _windowDidBecomeKeyObserver = removeObserver(_windowDidBecomeKeyObserver);
+    _windowDidResignKey = removeObserver(_windowDidResignKey);
 //  dumpAllViews();
 }
 
