@@ -552,7 +552,6 @@ bool P7Z::extract(int* indices, int n, const char* dest, const char* removePathC
             assert(n == 1); // single file mode
         }
         IInArchive* a = getArchive(archiveLink);
-        // TODO: all for now
         HRESULT result = a->Extract((const unsigned int*)indices, n, false /*test*/, &ecs);
         return result == S_OK;
     } catch (int err) { return reportException(err);
