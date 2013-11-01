@@ -145,6 +145,13 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     }
 }
 
+- (void) terminateLater {
+    if ([NSApp windows].count == 0) {
+        [NSApp terminate: self];
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{ [self terminateLater]; });
+    }
+}
 
 - (NSApplicationTerminateReply) applicationShouldTerminate: (NSApplication*) app {
     ZGDocument* last = null;
@@ -156,11 +163,19 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
             if (![doc documentCanClose]) {
                 cannotClose++;
                 last = doc;
+            } else {
+                [doc close];
             }
         }
     }
     if (cannotClose == 0) {
-        return NSTerminateNow;
+        if ([NSApp windows].count == 0) {
+            return NSTerminateNow;
+        } else {
+            [[NSApp windows] makeObjectsPerformSelector: @selector(close)];
+            dispatch_async(dispatch_get_main_queue(), ^{ [self terminateLater]; });
+            return NSTerminateLater;
+        }
     }
     NSString* message = @"Some operations are still in progress.\n"
                          "Do you want to stop all the operations and quit Zipeg?";

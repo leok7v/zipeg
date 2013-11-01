@@ -389,7 +389,7 @@ enum { // PreviewItemOperation Stages:
     assert(_window == null);
     assert(_archive == null);
     assert(_root == null);
-    [ZGApp deferedTraceAllocs];
+//  [ZGApp deferedTraceAllocs];
 }
 
 - (void) preview: (NSArray*) items {
@@ -910,7 +910,7 @@ static NSTableView* createTableView(NSRect r) {
 }
 
 - (BOOL) documentCanClose {
-    trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
+//  trace("_openOpCount=%d _extractOpCount=%d _exifOpCount=%d _previewOpCount=%d", _openOpCount, _extractOpCount, _exifOpCount, _previewOpCount);
     return _openOpCount == 0 && _extractOpCount == 0;
 }
 
