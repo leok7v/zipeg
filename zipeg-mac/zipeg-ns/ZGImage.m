@@ -388,53 +388,6 @@ enum { // Baseline TIFF Orientation
     return i;
 }
 
-/*
-- (NSImage*) withReflection: (CGFloat) percentage {
-    assert(0 < percentage && percentage <= 1.0);
-    CGRect frame = CGRectMake(0, 0, self.size.width, self.size.height * (1.0 + percentage));
-    NSBitmapImageRep* ir = [NSBitmapImageRep.alloc
-                            initWithBitmapDataPlanes: null
-                            pixelsWide: frame.size.width
-                            pixelsHigh: frame.size.height
-                            bitsPerSample: 8
-                            samplesPerPixel: 4
-                            hasAlpha: true
-                            isPlanar: false
-                            colorSpaceName: NSDeviceRGBColorSpace
-                            bitmapFormat: 0
-                            bytesPerRow: frame.size.width * 4
-                            bitsPerPixel: 32];
-    [NSGraphicsContext saveGraphicsState];
-    NSGraphicsContext.currentContext = [NSGraphicsContext graphicsContextWithBitmapImageRep: ir];
-    [NSColor.clearColor set];
-    NSRectFill(frame);
-    NSGradient* fade = [NSGradient.alloc
-                        initWithStartingColor: [NSColor colorWithCalibratedWhite: 1.0 alpha: 0.2]
-                        endingColor: NSColor.clearColor];
-    NSRect fadeFrame = NSMakeRect(0, 0, self.size.width, ir.size.height - self.size.height);
-    [fade drawInRect: fadeFrame angle: 270.0];
-    NSAffineTransform* transform = NSAffineTransform.transform;
-    [transform translateXBy: 0.0 yBy: fadeFrame.size.height];
-    [transform scaleXBy: 1.0 yBy: -1.0];
-    [transform concat];
-    // draw reflection the upsidedown image over the gradient
-    [self drawAtPoint: NSZeroPoint
-             fromRect: NSMakeRect(0, 0, self.size.width, self.size.height)
-            operation: NSCompositeSourceIn
-             fraction: 1.0];
-    [transform invert];
-    [transform concat];
-    // draw the original image
-    [self drawAtPoint: NSMakePoint(0, frame.size.height - self.size.height)
-             fromRect: NSZeroRect
-            operation: NSCompositeSourceOver fraction:1.0];
-    [NSGraphicsContext restoreGraphicsState];
-    NSImage* i = [NSImage.alloc initWithSize: frame.size];
-    [i addRepresentation: ir];
-    return i;
-}
-*/
-
 - (NSImage*) upsideDownShadowed: (float) fraction {
     assert(0 < fraction && fraction <= 1.0);
     [NSGraphicsContext saveGraphicsState];
@@ -450,7 +403,6 @@ enum { // Baseline TIFF Orientation
     [NSGraphicsContext restoreGraphicsState];
     return r;
 }
-
 
 @end
 
