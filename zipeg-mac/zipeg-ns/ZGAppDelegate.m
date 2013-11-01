@@ -3,6 +3,7 @@
 #import "ZGApp.h"
 #import "ZGDocument.h"
 #import "ZGErrors.h"
+#import "ZGWelcomeWindowController.h"
 #import "ZGBasePreferencesViewController.h"
 #import "ZGPreferencesWindowController.h"
 #import "ZGGeneralPreferencesViewController.h"
@@ -11,8 +12,10 @@
 
 @interface ZGAppDelegate() {
     ZGPreferencesWindowController* _preferencesWindowController;
+    ZGWelcomeWindowController* _welcomeWindowController;
     BOOL _applicationHasStarted;
-    id __weak _windowWillCloseObserver;
+    id __weak _preferencesWindowWillCloseObserver;
+    id __weak _welcomeWindowWillCloseObserver;
 }
 // TODO: remove me
 @property (nonatomic) NSInteger focusedAdvancedControlIndex;
@@ -35,7 +38,10 @@
 }
 
 - (void) dealloc {
+    _preferencesWindowWillCloseObserver = removeObserver(_preferencesWindowWillCloseObserver);
+    _welcomeWindowWillCloseObserver = removeObserver(_welcomeWindowWillCloseObserver);
     _preferencesWindowController = null;
+    _welcomeWindowController = null;
     dealloc_count(self);
 }
 
@@ -61,10 +67,10 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     }
     if (_preferencesWindowController != null) {
         [_preferencesWindowController showWindow: self];
-        _windowWillCloseObserver = addObserver(NSWindowWillCloseNotification,
+        _preferencesWindowWillCloseObserver = addObserver(NSWindowWillCloseNotification,
             _preferencesWindowController.window,
             ^(NSNotification* n) {
-                _windowWillCloseObserver = removeObserver(_windowWillCloseObserver);
+                _preferencesWindowWillCloseObserver = removeObserver(_preferencesWindowWillCloseObserver);
                 _preferencesWindowController.window = null;
                 _preferencesWindowController = null;
             });
@@ -72,10 +78,31 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
 }
 
 - (IBAction) welcome: (id) sender {
-    trace(@"welcome");
+    if (_welcomeWindowController == null) {
+        if (_welcomeWindowController == null) {
+            _welcomeWindowController = ZGWelcomeWindowController.new;
+        }
+        if (_welcomeWindowController != null) {
+            [_welcomeWindowController showWindow: self];
+            _welcomeWindowWillCloseObserver = addObserver(NSWindowWillCloseNotification,
+                _welcomeWindowController.window,
+                ^(NSNotification* n) {
+                    _welcomeWindowWillCloseObserver = removeObserver(_welcomeWindowWillCloseObserver);
+                    _welcomeWindowController.window = null;
+                    _welcomeWindowController = null;
+                });
+        }
+    }
 }
 
-- (void) applicationDidFinishLaunching:(NSNotification *) notification {
+- (void) dismissWelcome {
+    if (_welcomeWindowController != null) {
+        [_welcomeWindowController.window close];
+    }
+}
+
+
+- (void) applicationDidFinishLaunching: (NSNotification*) n {
     NSApplication.sharedApplication.presentationOptions = NSFullScreenWindowMask;
 #ifdef DEBUG
     NSUserDefaults* ud = NSUserDefaults.standardUserDefaults;
@@ -87,6 +114,9 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     [ud synchronize];
 #endif
     ZGErrorsInit();
+    if ([NSApp windows].count == 0) {
+        [self welcome: null];
+    }
     _applicationHasStarted = true;
 }
 
@@ -111,30 +141,12 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     return false;
 }
 
-// TODO: for multi-document model below has no effect. Looks like we need Document controller override :(
-// to distingish between Pro and non-Pro
-
-// http://stackoverflow.com/questions/7564290/why-isnt-applicationshouldopenuntitledfile-being-called
-
 - (BOOL) applicationShouldOpenUntitledFile: (NSApplication*) app {
-#ifdef DEBUG
-    // http://www.cocoawithlove.com/2008/05/open-previous-document-on-application.html
-    // On startup, when asked to open an untitled file, open the last opened file instead
-    if (!_applicationHasStarted) {
-        return [self openLastDocument];
-    }
-    return true;
-#else
-    return false; // TODO: might be true in Pro
-#endif
+    return false;
 }
 
 - (BOOL) applicationOpenUntitledFile: (NSApplication*) app {
-#ifndef DEBUG
     return false;
-#else
-    return true;
-#endif
 }
 
 - (void) cancelAll {
@@ -222,10 +234,6 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     } else {
         return NSTerminateCancel;
     }
-    // NSTerminateLater/NSTerminateCancel: the app itself will be responsible for later termination
-    // OSX will just gray out (disable) App Quit and will stay this way forever... unless you use:
-    // [NSApp replyToApplicationShouldTerminate: r];
-    // see: http://stackoverflow.com/questions/10224141/how-to-handle-cocoa-application-termination-properly
 }
 
 @end

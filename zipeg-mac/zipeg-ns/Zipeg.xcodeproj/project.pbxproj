@@ -321,6 +321,9 @@
 		B36196D617959F6800C515E4 /* ZGBitset.m in Sources */ = {isa = PBXBuildFile; fileRef = B36196D517959F6800C515E4 /* ZGBitset.m */; };
 		B36196D91795BB8E00C515E4 /* ZGUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = B36196D81795BB8E00C515E4 /* ZGUtils.mm */; };
 		B36487C717BDBDD70000C650 /* transparent-1x1.png in Resources */ = {isa = PBXBuildFile; fileRef = B36487C617BDBDD70000C650 /* transparent-1x1.png */; };
+		B365EA48182363FA00A26F8F /* ZGWelcomeWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = B365EA47182363FA00A26F8F /* ZGWelcomeWindowController.m */; };
+		B365EA4B18236FDB00A26F8F /* white_wall_@2X.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B365EA4918236FDB00A26F8F /* white_wall_@2X.jpg */; };
+		B365EA4C18236FDB00A26F8F /* white_wall.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B365EA4A18236FDB00A26F8F /* white_wall.jpg */; };
 		B3767B0017AF978F00971CE4 /* folders-white.png in Resources */ = {isa = PBXBuildFile; fileRef = B3767AFF17AF978F00971CE4 /* folders-white.png */; };
 		B3767B0317AFAAC700971CE4 /* ZGSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = B3767B0217AFAAC700971CE4 /* ZGSheet.m */; };
 		B37E554B179278DF00E54693 /* zipeg.icns in Resources */ = {isa = PBXBuildFile; fileRef = B37E554A179278DF00E54693 /* zipeg.icns */; };
@@ -1106,6 +1109,10 @@
 		B36196D71795BB8E00C515E4 /* ZGUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGUtils.h; sourceTree = "<group>"; };
 		B36196D81795BB8E00C515E4 /* ZGUtils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ZGUtils.mm; sourceTree = "<group>"; };
 		B36487C617BDBDD70000C650 /* transparent-1x1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "transparent-1x1.png"; path = "Resources/transparent-1x1.png"; sourceTree = "<group>"; };
+		B365EA46182363FA00A26F8F /* ZGWelcomeWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGWelcomeWindowController.h; sourceTree = "<group>"; };
+		B365EA47182363FA00A26F8F /* ZGWelcomeWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGWelcomeWindowController.m; sourceTree = "<group>"; };
+		B365EA4918236FDB00A26F8F /* white_wall_@2X.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = "white_wall_@2X.jpg"; path = "Resources/white_wall_@2X.jpg"; sourceTree = "<group>"; };
+		B365EA4A18236FDB00A26F8F /* white_wall.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = white_wall.jpg; path = Resources/white_wall.jpg; sourceTree = "<group>"; };
 		B3767AFF17AF978F00971CE4 /* folders-white.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "folders-white.png"; path = "Resources/folders-white.png"; sourceTree = "<group>"; };
 		B3767B0117AFAAC700971CE4 /* ZGSheet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZGSheet.h; sourceTree = "<group>"; };
 		B3767B0217AFAAC700971CE4 /* ZGSheet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZGSheet.m; sourceTree = "<group>"; };
@@ -2204,6 +2211,8 @@
 				B37E55531792864200E54693 /* ZGSplitViewDelegate.m */,
 				B34FEB6C1792443D005D798B /* ZGDocument.h */,
 				B34FEB6D1792443D005D798B /* ZGDocument.m */,
+				B365EA46182363FA00A26F8F /* ZGWelcomeWindowController.h */,
+				B365EA47182363FA00A26F8F /* ZGWelcomeWindowController.m */,
 				B30A704F17A4B3D200059168 /* ZGWindowController.h */,
 				B30A705017A4B3D200059168 /* ZGWindowController.m */,
 				B3FAD14917E1BAD200266748 /* Preferences */,
@@ -2259,6 +2268,8 @@
 		B37E554C1792844D00E54693 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B365EA4918236FDB00A26F8F /* white_wall_@2X.jpg */,
+				B365EA4A18236FDB00A26F8F /* white_wall.jpg */,
 				B32B60CF17C7D55600FB2ECC /* subtle_white_feathers_@2X.png */,
 				B32B60D017C7D55600FB2ECC /* subtle_white_feathers.png */,
 				B3D8999C17C60351006823AD /* textured_paper.png */,
@@ -2460,12 +2471,14 @@
 				B35D1E441794CBEB00A0210F /* ZGErrors.strings in Resources */,
 				B32EB9C81798CEDA00D8A129 /* MainMenu.xib in Resources */,
 				B3037E0A1799E20E00A49FF3 /* zipeg-archive.icns in Resources */,
+				B365EA4B18236FDB00A26F8F /* white_wall_@2X.jpg in Resources */,
 				B3FC1DA017A0B40B00BE0ED3 /* leaf-0-64x64.png in Resources */,
 				B3FC1DA117A0B40B00BE0ED3 /* leaf-1-64x64.png in Resources */,
 				B3FC1DA217A0B40B00BE0ED3 /* leaf-2-64x64.png in Resources */,
 				B3FC1DA317A0B40B00BE0ED3 /* leaf-3-64x64.png in Resources */,
 				B3E87DAC17A95C6100B246B8 /* folders-blue.png in Resources */,
 				B3767B0017AF978F00971CE4 /* folders-white.png in Resources */,
+				B365EA4C18236FDB00A26F8F /* white_wall.jpg in Resources */,
 				B32A0B8917B2215500225F91 /* done.aiff in Resources */,
 				B32A0B8A17B2215500225F91 /* error.aiff in Resources */,
 				B31A49BE17B2444600030DD5 /* next.png in Resources */,
@@ -2765,6 +2778,7 @@
 				B30853B917D035E10099F6DA /* LzmaRegister.cpp in Sources */,
 				B30853BA17D035E10099F6DA /* LzOutWindow.cpp in Sources */,
 				B30853BB17D035E10099F6DA /* Lzx86Converter.cpp in Sources */,
+				B365EA48182363FA00A26F8F /* ZGWelcomeWindowController.m in Sources */,
 				B30853BC17D035E10099F6DA /* LzxDecoder.cpp in Sources */,
 				B30853CD17D035E10099F6DA /* unpack.cpp in Sources */,
 				B308541A17D038D30099F6DA /* rdwrfn.cpp in Sources */,

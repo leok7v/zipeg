@@ -1,4 +1,5 @@
 #import "ZGApp.h"
+#import "ZGAppDelegate.h"
 #import "ZGDocument.h"
 #import "ZGLocalize.h"
 
@@ -201,6 +202,12 @@ static void loadIcons() {
         traceObservers();
         trace_allocs();
     });
+}
+
++ (void) dismissWelcome {
+    ZGApp* app = (ZGApp*)NSApp;
+    ZGAppDelegate* d = (ZGAppDelegate*)app.delegate;
+    [d dismissWelcome];
 }
 
 // because of NSUserDefaults.resetStandardUserDefaults rewriting

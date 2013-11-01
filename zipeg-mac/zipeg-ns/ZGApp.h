@@ -14,6 +14,7 @@
 + (NSImage*) appIcon16x16;
 + (NSImage*) appIcon32x32;
 + (void) registerApp: (BOOL) force;
++ (void) dismissWelcome;
 
 /* When Zipeg unpacks the folder that does not exist it generates temporary
    folder "../.zipeg.<pid>.<nanotime>destination/" in destination location.

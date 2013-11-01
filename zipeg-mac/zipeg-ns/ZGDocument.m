@@ -334,6 +334,7 @@ enum { // PreviewItemOperation Stages:
 
 - (id) init {
     self = [super.init ctor];
+    [ZGApp dismissWelcome];
     return self;
 }
 

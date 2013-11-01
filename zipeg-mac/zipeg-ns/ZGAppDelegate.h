@@ -1,2 +1,6 @@
-@interface ZGAppDelegate : NSObject <NSApplicationDelegate> @end
+@interface ZGAppDelegate : NSObject <NSApplicationDelegate>
+
+- (void) dismissWelcome;
+
+@end
 

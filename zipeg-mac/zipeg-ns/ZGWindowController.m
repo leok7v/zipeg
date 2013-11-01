@@ -10,10 +10,10 @@ static NSString* ZGWindowAutosaveName = @"ZGWindow";
 
 static NSPoint cascadePoint;
 
-- (id)init {
+- (id) init {
     NSWindow* window = NSWindow.new;
     self = [super initWithWindow: window];
-    if (self) {
+    if (self != null) {
         alloc_count(self);
         if (cascadePoint.x == 0 && cascadePoint.y == 0) {
             cascadePoint = NSMakePoint(40, 40);

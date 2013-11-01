@@ -178,14 +178,21 @@ void dumpViews(NSView* v) {
 }
 
 void dumpAllViews() {
+    NSMutableSet* windows = [NSMutableSet setWithArray: [NSApp windows]];
     NSArray* docs = ((NSDocumentController*)NSDocumentController.sharedDocumentController).documents;
     for (int i = 0; i < docs.count; i++) {
         ZGDocument* doc = (ZGDocument*)docs[i];
         if (doc.window != null) {
-            NSLog(@"%@", doc.displayName);
+            NSLog(@"Document Window: %@", doc.displayName);
             dumpViews([doc.window.contentView superview]);
+            [windows removeObject: doc.window];
             NSLog(@"");
         }
+    }
+    for (NSWindow* w in windows) {
+        NSLog(@"Window: %@", w.title);
+        dumpViews([w.contentView superview]);
+        NSLog(@"");
     }
 }
 
