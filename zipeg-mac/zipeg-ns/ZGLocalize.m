@@ -77,7 +77,7 @@
         NSBundle* systemBundle = [NSBundle bundleWithPath: fw];
         NSArray* localizations = systemBundle.localizations;
         NSLog(@"%@ localizations=%@", fw, localizations);
-        //  for (NSString *language in [[NSUserDefaults standardUserDefaults] objectForKey:@"AppleLanguages"]) {
+        //  for (NSString *language in [NSUserDefaults.standardUserDefaults objectForKey:@"AppleLanguages"]) {
         for (NSString *language in @[@"ru"] /*localizations*/) {
             NSBundle *bundle = [NSBundle bundleWithPath:[systemBundle pathForResource:language ofType:@"lproj"]];
             NSFileManager* fm = NSFileManager.defaultManager;
