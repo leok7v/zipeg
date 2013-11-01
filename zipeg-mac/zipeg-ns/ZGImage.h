@@ -18,8 +18,13 @@
 - (void) drawInRect: (NSRect) d fromRect: (NSRect) r operation: (NSCompositingOperation) op;
 - (void) drawInRect: (NSRect) d fromRect: (NSRect) r operation: (NSCompositingOperation) op opacity: (CGFloat) alpha;
 
+// - (NSImage*) withReflection: (CGFloat) percentage; // returns %% taller image with reflection
+- (NSImage*) upsideDownShadowed: (float) fraction;
+
 + (NSImage*) qlImage: (NSString*) path ofSize: (NSSize) size asIcon: (BOOL) icon;
 + (NSImage*) exifThumbnail: (NSURL*) url;
+
+
 
 @end
 

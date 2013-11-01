@@ -43,11 +43,11 @@
 NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
 
 - (NSInteger)focusedAdvancedControlIndex {
-    return [[NSUserDefaults standardUserDefaults] integerForKey: kFocusedAdvancedControlIndex];
+    return [NSUserDefaults.standardUserDefaults integerForKey: kFocusedAdvancedControlIndex];
 }
 
 - (void)setFocusedAdvancedControlIndex: (NSInteger) focusedAdvancedControlIndex {
-    [[NSUserDefaults standardUserDefaults] setInteger:focusedAdvancedControlIndex forKey: kFocusedAdvancedControlIndex];
+    [NSUserDefaults.standardUserDefaults setInteger:focusedAdvancedControlIndex forKey: kFocusedAdvancedControlIndex];
 }
 
 - (IBAction) preferences: (id) sender {
