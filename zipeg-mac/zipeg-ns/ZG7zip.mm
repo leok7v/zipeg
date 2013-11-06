@@ -956,6 +956,7 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
             assert(isEqual(parent, it.parent));
         }
     }
+    assert(parent != null);
     if (!isEqual(parent, _root)) {
         pc = 0;
         NSObject<ZGItemProtocol>* p = parent;
@@ -999,6 +1000,9 @@ static NSObject* p7zValueToObject(P7Z::Value& v) {
         int* indices = null;
         const char** prefixComponents = null;
         int pc = 0;
+        if (itms != null && itms.count == 1 && isEqual(itms[0], _root)) {
+            itms = null; // see assert in prefixComponents @[_root] must be treated as null
+        }
         if (itms != null && itms.count > 0) {
             prefixComponents = [self prefixComponents: itms count: &pc];
             if (pc < 0) {

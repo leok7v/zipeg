@@ -353,7 +353,7 @@
         }
     }
     if (_alert != null) {
-        setTarget(_contentView, self, _alert);
+        setTarget(_contentView, self, _alert); // _contentView target from self -> _alert
         _alert = null;
         [self killTimer];
         if (_delayedDismiss != null) {
