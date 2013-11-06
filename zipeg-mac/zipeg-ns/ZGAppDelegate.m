@@ -161,6 +161,7 @@ NSString* const kFocusedAdvancedControlIndex = @"FocusedAdvancedControlIndex";
     if ([NSApp windows].count == 0) {
         [NSApp terminate: self];
     } else {
+        [[NSApp windows] makeObjectsPerformSelector: @selector(close)];
         dispatch_async(dispatch_get_main_queue(), ^{ [self terminateLater]; });
     }
 }
